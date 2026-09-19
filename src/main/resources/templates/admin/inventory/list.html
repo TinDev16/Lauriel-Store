@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Kho hàng','inventory')}">
+<body>
+<section>
+<form class="row g-2 mb-3" method="get" th:action="@{/admin/inventory}">
+<div class="col-md-4">
+<input class="form-control" type="number" min="0" step="1" name="threshold" placeholder="Tồn kho thấp ≤ (để trống để xem tất cả)" th:value="${threshold}">
+</div>
+<div class="col-auto">
+<button class="btn btn-primary">Lọc</button>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/inventory}">Đặt lại</a>
+</div>
+</form>
+<p class="text-muted">Số lượng chỉ xem; thay đổi tồn kho qua phiếu nhập và đơn hàng.</p>
+<div class="card">
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead>
+<tr>
+<th>Mã biến thể</th>
+<th>Sản phẩm</th>
+<th>Mã SKU</th>
+<th>Kích cỡ</th>
+<th>Màu sắc</th>
+<th>Số lượng</th>
+<th>Giá</th>
+<th>Trạng thái</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="r:${page.content}">
+<td th:text="${r.variantId}">
+</td>
+<td th:text="${r.productName}">
+</td>
+<td th:text="${r.sku}">
+</td>
+<td th:text="${r.size.sizeName}">
+</td>
+<td th:text="${r.color.colorName}">
+</td>
+<td th:text="${r.quantity}">
+</td>
+<td th:text="${@view.money(r.price)}">
+</td>
+<td th:text="${@view.label(r.status)}">
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(page.content)}">
+<td colspan="8" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div th:replace="~{fragments/pagination :: pagination}">
+</div>
+</section>
+</body>
+</html>

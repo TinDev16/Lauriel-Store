@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thông tin nhà cung cấp','suppliers')}">
+<body>
+<section>
+<div class="card">
+<div class="card-body">
+<form method="post" th:action="@{${action}}" th:object="${form}">
+<div th:replace="~{fragments/fields :: errors}">
+</div>
+<div th:replace="~{fragments/fields :: input('supplierName','Tên nhà cung cấp','text')}">
+</div>
+<div th:replace="~{fragments/fields :: input('phone','Số điện thoại','text')}">
+</div>
+<div th:replace="~{fragments/fields :: input('email','Thư điện tử','email')}">
+</div>
+<div th:replace="~{fragments/fields :: text('address','Địa chỉ')}">
+</div>
+<div th:replace="~{fragments/fields :: status}">
+</div>
+<button class="btn btn-primary">Lưu</button>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/suppliers}">Quay lại</a>
+</form>
+</div>
+</div>
+</section>
+</body>
+</html>

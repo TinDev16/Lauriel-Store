@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">LAURIEL</string>
+    <string name="brand">LAURIEL</string>
+    <string name="login">Đăng nhập</string>
+    <string name="register">Đăng ký</string>
+    <string name="username">Tên đăng nhập</string>
+    <string name="password">Mật khẩu</string>
+    <string name="email">Email</string>
+    <string name="full_name">Họ tên</string>
+    <string name="phone">Số điện thoại</string>
+    <string name="home">Trang chủ</string>
+    <string name="shop">Cửa hàng</string>
+    <string name="cart">Giỏ hàng</string>
+    <string name="orders">Đơn hàng</string>
+    <string name="profile">Tài khoản</string>
+    <string name="search_hint">Tìm sản phẩm</string>
+    <string name="filter">Bộ lọc</string>
+    <string name="load_more">Xem thêm</string>
+    <string name="retry">Thử lại</string>
+    <string name="add_cart">Thêm vào giỏ</string>
+    <string name="checkout">Đặt hàng</string>
+    <string name="logout">Đăng xuất</string>
+    <string name="shipping_address">Địa chỉ giao hàng</string>
+    <string name="voucher_code">Mã giảm giá</string>
+    <string name="apply">Áp dụng</string>
+    <string name="empty_products">Không có sản phẩm phù hợp.</string>
+    <string name="empty_cart">Giỏ hàng đang trống.</string>
+    <string name="empty_orders">Bạn chưa có đơn hàng nào.</string>
+    <string name="network_error">Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối.</string>
+    <string name="final_price_note">Giá cuối cùng được xác nhận khi đặt hàng.</string>
+</resources>

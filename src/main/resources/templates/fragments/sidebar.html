@@ -1,0 +1,128 @@
+<aside class="sidebar-wrapper" id="sidebar" xmlns:th="http://www.thymeleaf.org" th:fragment="sidebar(menu)">
+<a class="sidebar-brand" th:href="@{/admin}">
+<i class="bi bi-asterisk">
+</i>
+<span>Lauriel Store</span>
+</a>
+<div class="flex-grow-1 overflow-y-auto">
+<div class="sidebar-menu-section">
+<div class="sidebar-menu-title">Trình đơn</div>
+<ul class="sidebar-menu-list">
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'dashboard'} ? 'active'" th:href="@{/admin}">
+<i class="bi bi-grid">
+</i>
+<span>Tổng quan</span>
+</a>
+</li>
+</ul>
+</div>
+<div class="sidebar-menu-section">
+<div class="sidebar-menu-title">Danh mục</div>
+<ul class="sidebar-menu-list">
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'products'} ? 'active'" th:href="@{/admin/products}">
+<i class="bi bi-bag">
+</i>
+<span>Sản phẩm</span>
+</a>
+</li>
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'sizes'} ? 'active'" th:href="@{/admin/sizes}">
+<i class="bi bi-rulers">
+</i>
+<span>Kích cỡ</span>
+</a>
+</li>
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'colors'} ? 'active'" th:href="@{/admin/colors}">
+<i class="bi bi-palette">
+</i>
+<span>Màu sắc</span>
+</a>
+</li>
+</ul>
+</div>
+<div class="sidebar-menu-section">
+<div class="sidebar-menu-title">Kho hàng</div>
+<ul class="sidebar-menu-list">
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'inventory'} ? 'active'" th:href="@{/admin/inventory}">
+<i class="bi bi-boxes">
+</i>
+<span>Kho hàng</span>
+</a>
+</li>
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'inventory/transactions'} ? 'active'" th:href="@{/admin/inventory/transactions}">
+<i class="bi bi-clock-history">
+</i>
+<span>Lịch sử kho</span>
+</a>
+</li>
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'purchase-receipts'} ? 'active'" th:href="@{/admin/purchase-receipts}">
+<i class="bi bi-receipt">
+</i>
+<span>Phiếu nhập kho</span>
+</a>
+</li>
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'suppliers'} ? 'active'" th:href="@{/admin/suppliers}">
+<i class="bi bi-truck">
+</i>
+<span>Nhà cung cấp</span>
+</a>
+</li>
+</ul>
+</div>
+<div class="sidebar-menu-section">
+<div class="sidebar-menu-title">Bán hàng</div>
+<ul class="sidebar-menu-list">
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'orders'} ? 'active'" th:href="@{/admin/orders}">
+<i class="bi bi-cart">
+</i>
+<span>Đơn hàng</span>
+</a>
+</li>
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'customers'} ? 'active'" th:href="@{/admin/customers}">
+<i class="bi bi-people">
+</i>
+<span>Khách hàng</span>
+</a>
+</li>
+</ul>
+</div>
+<div class="sidebar-menu-section" th:if="${isAdmin}">
+<div class="sidebar-menu-title">Tiếp thị</div>
+<ul class="sidebar-menu-list">
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'vouchers'} ? 'active'" th:href="@{/admin/vouchers}">
+<i class="bi bi-ticket-perforated">
+</i>
+<span>Mã giảm giá</span>
+</a>
+</li>
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'promotions'} ? 'active'" th:href="@{/admin/promotions}">
+<i class="bi bi-megaphone">
+</i>
+<span>Khuyến mãi</span>
+</a>
+</li>
+</ul>
+</div>
+</div>
+<div class="sidebar-profile">
+<i class="bi bi-person-circle fs-3">
+</i>
+<div class="sidebar-profile-info">
+<div class="sidebar-profile-name" th:text="${username}">
+</div>
+<div class="sidebar-profile-email" th:text="${isAdmin ? 'Quản trị viên' : 'Nhân viên'}">
+</div>
+</div>
+</div>
+</aside>

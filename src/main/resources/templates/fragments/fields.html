@@ -1,0 +1,32 @@
+<div xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="input(name,label,type)" class="mb-3">
+<label class="form-label" th:for="${name}" th:text="${label}">
+</label>
+<input class="form-control" th:type="${type}" th:field="*{__${name}__}" th:attr="step=${type == 'number' ? (name == 'quantity' or name == 'variantId' ? '1' : '0.01') : null}">
+<div class="text-danger small" th:errors="*{__${name}__}">
+</div>
+</div>
+<div th:fragment="text(name,label)" class="mb-3">
+<label class="form-label" th:for="${name}" th:text="${label}">
+</label>
+<textarea class="form-control" rows="3" th:field="*{__${name}__}">
+</textarea>
+<div class="text-danger small" th:errors="*{__${name}__}">
+</div>
+</div>
+<div th:fragment="status" class="mb-3">
+<label class="form-label" for="status">Trạng thái</label>
+<select class="form-select" th:field="*{status}">
+<option th:each="s:${statuses}" th:value="${s}" th:text="${@view.label(s)}">
+</option>
+</select>
+<div class="text-danger small" th:errors="*{status}">
+</div>
+</div>
+<div th:fragment="errors" class="alert alert-danger" th:if="${#fields.hasErrors('*')}">
+<ul class="mb-0">
+<li th:each="e:${#fields.allErrors()}" th:text="${e}">
+</li>
+</ul>
+</div>
+</div>

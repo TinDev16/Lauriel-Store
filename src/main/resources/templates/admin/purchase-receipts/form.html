@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Tạo phiếu nhập nháp','purchase-receipts')}">
+<body>
+<section>
+<p class="text-muted">Chọn nhà cung cấp trong danh sách, sau đó thêm từng mặt hàng ở chi tiết phiếu.</p>
+<div class="card">
+<div class="card-body">
+<form method="post" th:action="@{/admin/purchase-receipts}" th:object="${form}">
+<div th:replace="~{fragments/fields :: errors}">
+</div>
+<input type="hidden" name="page" th:value="${page.page}">
+<input type="hidden" name="size" th:value="${page.size}">
+<label class="form-label" for="supplierId">Nhà cung cấp</label>
+<select class="form-select mb-2" th:field="*{supplierId}">
+<option value="">Chọn nhà cung cấp</option>
+<option th:each="s:${page.content}" th:value="${s.supplierId}" th:text="|${s.supplierName} (${@view.label(s.status)})|">
+</option>
+</select>
+<div class="text-danger small mb-3" th:errors="*{supplierId}">
+</div>
+<button class="btn btn-primary">Tạo phiếu nháp</button>
+</form>
+</div>
+</div>
+<div th:replace="~{fragments/pagination :: pagination}">
+</div>
+</section>
+</body>
+</html>

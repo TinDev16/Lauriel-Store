@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Chi tiết đơn hàng','orders')}">
+<body>
+<section>
+<div class="card mb-3">
+<div class="card-body">
+<h2 class="h5" th:text="|Đơn #${order.orderId} · ${@view.label(order.status)}|">
+</h2>
+<p th:text="|Khách hàng: ${customer.fullName} (#${customer.customerId})|">
+</p>
+<p th:text="|Số điện thoại: ${customer.phone == null ? '—' : customer.phone}|">
+</p>
+<p class="preserve-lines" th:text="|Địa chỉ giao hàng: ${order.shippingAddress}|">
+</p>
+<p th:text="${@view.date(order.createdAt)}">
+</p>
+</div>
+</div>
+<div class="card mb-3">
+<div class="table-responsive">
+<table class="table">
+<thead>
+<tr>
+<th>Sản phẩm / Mã SKU</th>
+<th>Kích cỡ / Màu sắc</th>
+<th>SL</th>
+<th>Đơn giá lúc đặt</th>
+<th>Giảm khuyến mãi / sản phẩm</th>
+<th>Thành tiền</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="r:${order.items}">
+<td>
+<span th:text="${r.productName}">
+</span>
+<br>
+<small th:text="${r.sku}">
+</small>
+</td>
+<td th:text="|${r.size.sizeName} / ${r.color.colorName}|">
+</td>
+<td th:text="${r.quantity}">
+</td>
+<td th:text="${@view.money(r.unitPrice)}">
+</td>
+<td th:text="${@view.money(r.discountAmount)}">
+</td>
+<td th:text="${@view.money(r.subtotal)}">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card mb-3">
+<div class="card-body">
+<p th:text="|Voucher: ${order.voucherCode == null ? '—' : order.voucherCode}|">
+</p>
+<p th:text="|Tổng sau khuyến mãi: ${@view.money(order.totalAmount)}|">
+</p>
+<p th:text="|Giảm bằng mã: ${@view.money(order.discountAmount)}|">
+</p>
+<h3 class="h5" th:text="|Số tiền phải trả: ${@view.money(order.finalAmount)}|">
+</h3>
+</div>
+</div>
+<form class="d-flex gap-2 mb-3" method="post" th:if="${!#lists.isEmpty(transitions)}" th:action="@{/admin/orders/{id}/status(id=${order.orderId})}" data-confirm="Cập nhật trạng thái đơn? Hủy đơn sẽ hoàn kho và voucher.">
+<select name="status" class="form-select w-auto">
+<option th:each="s:${transitions}" th:value="${s}" th:text="${@view.label(s)}">
+</option>
+</select>
+<button class="btn btn-primary">Cập nhật trạng thái</button>
+</form>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/orders}">Danh sách đơn</a>
+</section>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thông tin khuyến mãi','promotions')}">
+<body>
+<section>
+<div class="card">
+<div class="card-body">
+<form method="post" th:action="@{${action}}" th:object="${form}">
+<div th:replace="~{fragments/fields :: errors}">
+</div>
+<div th:replace="~{fragments/fields :: input('promotionName','Tên Promotion','text')}">
+</div>
+<div th:replace="~{fragments/fields :: text('description','Mô tả')}">
+</div>
+<div th:replace="~{fragments/fields :: input('discountPercent','Phần trăm giảm','number')}">
+</div>
+<div th:replace="~{fragments/fields :: input('startDate','Bắt đầu','datetime-local')}">
+</div>
+<div th:replace="~{fragments/fields :: input('endDate','Kết thúc','datetime-local')}">
+</div>
+<div th:replace="~{fragments/fields :: status}">
+</div>
+<button class="btn btn-primary">Lưu</button>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/promotions}">Quay lại</a>
+</form>
+</div>
+</div>
+</section>
+</body>
+</html>

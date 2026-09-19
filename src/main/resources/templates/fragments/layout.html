@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(content,title,menu)">
+<head th:replace="~{fragments/head :: head(${title})}">
+</head>
+<body>
+<aside th:replace="~{fragments/sidebar :: sidebar(${menu})}">
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay">
+</div>
+<div class="main-wrapper">
+<header th:replace="~{fragments/header :: header}">
+</header>
+<main class="container-fluid p-4">
+<div class="page-header">
+<h1 class="h3" th:text="${title}">
+</h1>
+</div>
+<div th:replace="~{fragments/alerts :: alerts}">
+</div>
+<th:block th:replace="${content}">
+</th:block>
+</main>
+<footer th:replace="~{fragments/footer :: footer}">
+</footer>
+</div>
+<script th:src="@{/assets/libs/bootstrap/js/bootstrap.bundle.min.js}">
+</script>
+<script th:src="@{/assets/js/admin.js}">
+</script>
+</body>
+</html>

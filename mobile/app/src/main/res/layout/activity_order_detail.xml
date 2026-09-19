@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/background" android:padding="@dimen/space_lg">
+  <com.google.android.material.button.MaterialButton android:id="@+id/back" style="@style/PrimaryButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_min" android:layout_marginTop="@dimen/space_md" android:text="← Đơn hàng"/>
+  <TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Chi tiết đơn hàng" android:textColor="@color/ink" android:textSize="28sp" android:textStyle="bold"/>
+  <ProgressBar android:id="@+id/loading" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
+  <TextView android:id="@+id/error" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textColor="@color/danger" android:textSize="14sp" android:layout_marginTop="@dimen/space_sm"/>
+  <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+    <TextView android:id="@+id/details" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="16sp" android:lineSpacingExtra="5dp"/>
+  </ScrollView>
+  <com.google.android.material.button.MaterialButton android:id="@+id/cancel" style="@style/PrimaryButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_min" android:layout_marginTop="@dimen/space_md" android:text="Hủy đơn"/>
+</LinearLayout>

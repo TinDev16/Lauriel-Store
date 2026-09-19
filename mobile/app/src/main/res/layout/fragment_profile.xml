@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/background" android:padding="@dimen/space_lg">
+  <TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/profile" android:textColor="@color/ink" android:textSize="28sp" android:textStyle="bold"/>
+  <ProgressBar android:id="@+id/loading" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
+  <TextView android:id="@+id/error" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textColor="@color/danger" android:textSize="14sp" android:layout_marginTop="@dimen/space_sm"/>
+  <TextView android:id="@+id/account" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textColor="@color/ink" android:textSize="18sp"/>
+  <com.google.android.material.button.MaterialButton android:id="@+id/retry" style="@style/PrimaryButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_min" android:layout_marginTop="@dimen/space_md" android:text="@string/retry"/>
+  <com.google.android.material.button.MaterialButton android:id="@+id/logout" style="@style/PrimaryButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_min" android:layout_marginTop="@dimen/space_md" android:text="@string/logout"/>
+</LinearLayout>

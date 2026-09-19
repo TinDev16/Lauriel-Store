@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('500')}">
+</head>
+<body>
+<div class="error-wrapper">
+<div class="error-container text-center">
+<div class="error-code">500</div>
+<h1 class="h3">Có lỗi khi xử lý yêu cầu</h1>
+<p th:if="${message}" th:text="${message}">
+</p>
+<div class="d-flex justify-content-center gap-2">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin}">Tổng quan</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/login}">Đăng nhập</a>
+</div>
+</div>
+</div>
+</body>
+</html>

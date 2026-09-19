@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/background" android:padding="@dimen/space_lg">
+  <TextView android:id="@+id/brand" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/brand" android:textColor="@color/ink" android:textSize="34sp" android:textStyle="bold" android:gravity="center" android:layout_marginTop="120dp"/>
+  <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Đang kiểm tra phiên đăng nhập" android:textColor="@color/muted" android:textSize="16sp" android:gravity="center" android:layout_marginTop="@dimen/space_lg"/>
+  <ProgressBar android:id="@+id/loading" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
+  <com.google.android.material.button.MaterialButton android:id="@+id/retry" style="@style/PrimaryButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="@dimen/touch_min" android:visibility="gone" android:layout_marginTop="@dimen/space_md" android:text="@string/retry"/>
+</LinearLayout>

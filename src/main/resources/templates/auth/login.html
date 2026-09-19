@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Đăng nhập')}">
+</head>
+<body>
+<div class="login-wrapper">
+<div class="login-bg-shape login-bg-shape-1">
+</div>
+<div class="login-bg-shape login-bg-shape-2">
+</div>
+<div class="login-card">
+<a class="login-brand text-decoration-none" th:href="@{/login}">
+<i class="bi bi-asterisk">
+</i>
+<span>Lauriel Store</span>
+</a>
+<p class="login-subtitle">Đăng nhập dành cho quản trị viên / nhân viên</p>
+<div class="alert alert-danger" th:if="${param.error}">Không thể đăng nhập. Kiểm tra tài khoản và mật khẩu.</div>
+<div class="alert alert-success" th:if="${param.logout}">Bạn đã đăng xuất.</div>
+<form method="post" th:action="@{/login}">
+<div class="login-form-group">
+<label for="username" class="login-form-label">Tên đăng nhập</label>
+<div class="login-input-group">
+<i class="bi bi-person input-icon">
+</i>
+<input id="username" name="username" class="login-input" autocomplete="username" maxlength="100" required autofocus>
+</div>
+</div>
+<div class="login-form-group">
+<label for="password" class="login-form-label">Mật khẩu</label>
+<div class="login-input-group">
+<i class="bi bi-shield-lock input-icon">
+</i>
+<input type="password" id="password" name="password" class="login-input" autocomplete="current-password" required>
+</div>
+</div>
+<button class="btn-login">Đăng nhập <i class="bi bi-arrow-right">
+</i>
+</button>
+</form>
+<p class="login-footer-text">Lauriel Store · Quản lý cửa hàng</p>
+</div>
+</div>
+</body>
+</html>

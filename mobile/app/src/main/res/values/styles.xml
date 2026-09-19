@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.Lauriel" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/ink</item><item name="colorPrimaryVariant">@color/ink</item>
+        <item name="colorOnPrimary">@color/surface</item><item name="colorSecondary">@color/ink</item>
+        <item name="android:statusBarColor">@color/background</item><item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/background</item>
+    </style>
+    <style name="PrimaryButton" parent="Widget.MaterialComponents.Button"><item name="backgroundTint">@color/ink</item><item name="android:textColor">@color/surface</item><item name="cornerRadius">10dp</item></style>
+</resources>

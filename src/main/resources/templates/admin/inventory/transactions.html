@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Lịch sử kho','inventory/transactions')}">
+<body>
+<section>
+<form class="row g-2 mb-3" method="get" th:action="@{/admin/inventory/transactions}">
+<div class="col-md-2">
+<label class="form-label">Loại</label>
+<select name="type" class="form-select">
+<option value="">Tất cả</option>
+<option th:each="s:${transactionTypes}" th:value="${s}" th:text="${@view.label(s)}" th:selected="${s == type}">
+</option>
+</select>
+</div>
+<div class="col-md-2">
+<label class="form-label">Mã biến thể</label>
+<input class="form-control" name="variantId" type="number" min="1" step="1" th:value="${variantId}">
+</div>
+<div class="col-md-3">
+<label class="form-label">Từ</label>
+<input class="form-control" type="datetime-local" name="from" th:value="${from}">
+</div>
+<div class="col-md-3">
+<label class="form-label">Đến</label>
+<input class="form-control" type="datetime-local" name="to" th:value="${to}">
+</div>
+<div class="col-auto">
+<button class="btn btn-primary">Lọc</button>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/inventory/transactions}">Đặt lại</a>
+</div>
+</form>
+<div class="card">
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead>
+<tr>
+<th>Thời gian</th>
+<th>Sản phẩm / Mã SKU</th>
+<th>Loại</th>
+<th>Số lượng</th>
+<th>Tham chiếu</th>
+<th>Người thực hiện</th>
+<th>Ghi chú</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="r:${page.content}">
+<td th:text="${@view.date(r.createdAt)}">
+</td>
+<td>
+<span th:text="${r.productName}">
+</span>
+<br>
+<small th:text="${r.sku}">
+</small>
+</td>
+<td th:text="${@view.label(r.type)}">
+</td>
+<td th:text="${r.quantity}">
+</td>
+<td th:text="|${@view.label(r.referenceType)} #${r.referenceId}|">
+</td>
+<td th:text="${r.performedBy == null ? '—' : r.performedBy.username}">
+</td>
+<td th:text="${r.note}">
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(page.content)}">
+<td colspan="7" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div th:replace="~{fragments/pagination :: pagination}">
+</div>
+</section>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Biến thể sản phẩm','products')}">
+<body>
+<section>
+<h2 class="h5" th:text="${product.productName}">
+</h2>
+<div class="mb-3">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{id}/variants/new(id=${product.productId})}">Thêm biến thể</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Sản phẩm</a>
+</div>
+<div class="card">
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead>
+<tr>
+<th>Mã SKU</th>
+<th>Kích cỡ</th>
+<th>Màu sắc</th>
+<th>Giá</th>
+<th>Giá sau giảm</th>
+<th>Tồn kho (chỉ xem)</th>
+<th>Trạng thái</th>
+<th>Thao tác</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="r:${page.content}">
+<td th:text="${r.sku}">
+</td>
+<td th:text="${r.size.sizeName}">
+</td>
+<td th:text="${r.color.colorName}">
+</td>
+<td th:text="${@view.money(r.price)}">
+</td>
+<td th:text="${@view.money(r.effectivePrice)}">
+</td>
+<td th:text="${r.quantity}">
+</td>
+<td th:text="${@view.label(r.status)}">
+</td>
+<td>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{p}/variants/{id}/edit(p=${product.productId},id=${r.variantId})}">Sửa thông tin</a>
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(page.content)}">
+<td colspan="8" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div th:replace="~{fragments/pagination :: pagination}">
+</div>
+</section>
+</body>
+</html>

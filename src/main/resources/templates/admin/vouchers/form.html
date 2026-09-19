@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thông tin mã giảm giá','vouchers')}">
+<body>
+<section>
+<div class="card">
+<div class="card-body">
+<form method="post" th:action="@{${action}}" th:object="${form}">
+<div th:replace="~{fragments/fields :: errors}">
+</div>
+<div th:replace="~{fragments/fields :: input('code','Mã','text')}">
+</div>
+<div th:replace="~{fragments/fields :: input('voucherName','Tên Voucher','text')}">
+</div>
+<div class="mb-3">
+<label class="form-label" for="discountType">Loại giảm giá</label>
+<select class="form-select" th:field="*{discountType}">
+<option th:each="s:${discountTypes}" th:value="${s}" th:text="${@view.label(s)}">
+</option>
+</select>
+<div class="text-danger small" th:errors="*{discountType}">
+</div>
+</div>
+<div th:replace="~{fragments/fields :: input('discountValue','Giá trị giảm','number')}">
+</div>
+<div th:replace="~{fragments/fields :: input('minOrderAmount','Giá trị đơn tối thiểu','number')}">
+</div>
+<div th:replace="~{fragments/fields :: input('maxDiscountAmount','Giảm tối đa (không bắt buộc)','number')}">
+</div>
+<div th:replace="~{fragments/fields :: input('quantity','Số lượt còn lại','number')}">
+</div>
+<div th:replace="~{fragments/fields :: input('startDate','Bắt đầu','datetime-local')}">
+</div>
+<div th:replace="~{fragments/fields :: input('endDate','Kết thúc','datetime-local')}">
+</div>
+<div th:replace="~{fragments/fields :: status}">
+</div>
+<button class="btn btn-primary">Lưu</button>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/vouchers}">Quay lại</a>
+</form>
+</div>
+</div>
+</section>
+</body>
+</html>

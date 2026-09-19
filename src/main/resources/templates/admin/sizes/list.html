@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Kích cỡ','sizes')}">
+<body>
+<section>
+<div class="mb-3">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/sizes/new}">Thêm kích cỡ</a>
+</div>
+<div class="card">
+<div class="table-responsive">
+<table class="table mb-0">
+<thead>
+<tr>
+<th>Mã</th>
+<th>Tên</th>
+<th>Thao tác</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="r:${items}">
+<td th:text="${r.sizeId}">
+</td>
+<td th:text="${r.sizeName}">
+</td>
+<td>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/sizes/{id}/edit(id=${r.sizeId})}">Sửa</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</body>
+</html>

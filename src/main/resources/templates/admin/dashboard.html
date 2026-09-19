@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Tổng quan','dashboard')}">
+<body>
+<section>
+<div class="row g-3">
+<div class="col-sm-6 col-xl-3">
+<div class="card h-100">
+<div class="card-body">
+<p class="text-muted">Sản phẩm đang bán</p>
+<h2 th:text="${summary.activeProducts}">
+</h2>
+</div>
+</div>
+</div>
+<div class="col-sm-6 col-xl-3">
+<div class="card h-100">
+<div class="card-body">
+<p class="text-muted">Tổng biến thể</p>
+<h2 th:text="${summary.variants}">
+</h2>
+</div>
+</div>
+</div>
+<div class="col-sm-6 col-xl-3">
+<div class="card h-100">
+<div class="card-body">
+<p class="text-muted">Đơn chờ xác nhận</p>
+<h2 th:text="${summary.pendingOrders}">
+</h2>
+</div>
+</div>
+</div>
+<div class="col-sm-6 col-xl-3">
+<div class="card h-100">
+<div class="card-body">
+<p class="text-muted">Đơn hôm nay</p>
+<h2 th:text="${summary.todayOrders}">
+</h2>
+</div>
+</div>
+</div>
+<div class="col-sm-6 col-xl-3">
+<div class="card h-100">
+<div class="card-body">
+<p class="text-muted">Khách hàng</p>
+<h2 th:text="${summary.customers}">
+</h2>
+</div>
+</div>
+</div>
+<div class="col-sm-6 col-xl-3">
+<div class="card h-100">
+<div class="card-body">
+<p class="text-muted">Phiếu nháp</p>
+<h2 th:text="${summary.draftReceipts}">
+</h2>
+</div>
+</div>
+</div>
+<div class="col-sm-6 col-xl-3">
+<div class="card h-100">
+<div class="card-body">
+<p class="text-muted">Tồn kho thấp (≤ 5)</p>
+<h2 th:text="${summary.lowStock}">
+</h2>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4 d-flex gap-2">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/orders}">Xem đơn hàng</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/inventory?threshold=5}">Kiểm tra tồn thấp</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/purchase-receipts/new}">Tạo phiếu nhập</a>
+</div>
+</section>
+</body>
+</html>

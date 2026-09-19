@@ -1,0 +1,8 @@
+<nav xmlns:th="http://www.thymeleaf.org" th:fragment="pagination" aria-label="Phân trang" class="d-flex justify-content-between align-items-center mt-3">
+<span class="text-muted small" th:text="|Tổng ${page.totalElements} · Trang ${page.page + 1}/${page.totalPages == 0 ? 1 : page.totalPages}|">
+</span>
+<div class="btn-group">
+<a class="btn btn-outline-secondary" th:if="${page.page > 0}" th:href="${previousPageUrl}">Trước</a>
+<a class="btn btn-outline-secondary" th:if="${page.page + 1 < page.totalPages}" th:href="${nextPageUrl}">Tiếp</a>
+</div>
+</nav>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thông tin biến thể','products')}">
+<body>
+<section>
+<h2 class="h5" th:text="${product.productName}">
+</h2>
+<div class="card">
+<div class="card-body">
+<form method="post" th:action="@{${action}}" th:object="${form}">
+<div th:replace="~{fragments/fields :: errors}">
+</div>
+<div class="alert alert-info">Số lượng chỉ xem. Nhập kho bằng phiếu nhập kho.</div>
+<p th:if="${quantity != null}" th:text="|Số lượng: ${quantity}|">
+</p>
+<div th:replace="~{fragments/fields :: input('sku','SKU','text')}">
+</div>
+<div class="mb-3">
+<label class="form-label" for="sizeId">Kích cỡ</label>
+<select class="form-select" th:field="*{sizeId}">
+<option value="">Chọn kích cỡ</option>
+<option th:each="s:${sizes}" th:value="${s.sizeId}" th:text="${s.sizeName}">
+</option>
+</select>
+<div class="text-danger small" th:errors="*{sizeId}">
+</div>
+</div>
+<div class="mb-3">
+<label class="form-label" for="colorId">Màu sắc</label>
+<select class="form-select" th:field="*{colorId}">
+<option value="">Chọn màu sắc</option>
+<option th:each="c:${colors}" th:value="${c.colorId}" th:text="${c.colorName}">
+</option>
+</select>
+<div class="text-danger small" th:errors="*{colorId}">
+</div>
+</div>
+<div th:replace="~{fragments/fields :: input('price','Giá','number')}">
+</div>
+<div th:replace="~{fragments/fields :: status}">
+</div>
+<button class="btn btn-primary">Lưu</button>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{id}/variants(id=${product.productId})}">Quay lại</a>
+</form>
+</div>
+</div>
+</section>
+</body>
+</html>

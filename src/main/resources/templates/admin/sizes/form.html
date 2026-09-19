@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thông tin kích cỡ','sizes')}">
+<body>
+<section>
+<div class="card">
+<div class="card-body">
+<form method="post" th:action="@{${action}}" th:object="${form}">
+<div th:replace="~{fragments/fields :: errors}">
+</div>
+<div th:replace="~{fragments/fields :: input('sizeName','Tên Size','text')}">
+</div>
+<button class="btn btn-primary">Lưu</button>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/sizes}">Quay lại</a>
+</form>
+</div>
+</div>
+</section>
+</body>
+</html>

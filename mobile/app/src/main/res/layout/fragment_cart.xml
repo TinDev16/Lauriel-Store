@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/background" android:padding="@dimen/space_lg">
+  <TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/cart" android:textColor="@color/ink" android:textSize="28sp" android:textStyle="bold"/>
+  <TextView android:id="@+id/subtotal" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textColor="@color/ink" android:textSize="20sp"/>
+  <TextView android:id="@+id/note" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/final_price_note" android:textColor="@color/muted" android:textSize="13sp"/>
+  <ProgressBar android:id="@+id/loading" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
+  <TextView android:id="@+id/error" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textColor="@color/danger" android:textSize="14sp" android:layout_marginTop="@dimen/space_sm"/>
+  <TextView android:id="@+id/empty" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textColor="@color/muted" android:textSize="16sp" android:visibility="gone" android:layout_marginTop="@dimen/space_lg"/>
+  <androidx.recyclerview.widget.RecyclerView android:id="@+id/list" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:clipToPadding="false" android:paddingTop="@dimen/space_md"/>
+  <com.google.android.material.button.MaterialButton android:id="@+id/checkout" style="@style/PrimaryButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/touch_min" android:layout_marginTop="@dimen/space_md" android:text="Tiến hành đặt hàng"/>
+</LinearLayout>

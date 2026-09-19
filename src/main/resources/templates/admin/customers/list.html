@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Khách hàng (chỉ xem)','customers')}">
+<body>
+<section>
+<div class="card">
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead>
+<tr>
+<th>Mã</th>
+<th>Tên đăng nhập</th>
+<th>Họ tên</th>
+<th>Thư điện tử</th>
+<th>Số điện thoại</th>
+<th>Trạng thái tài khoản</th>
+<th>Ngày tạo</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="r:${page.content}">
+<td th:text="${r.customerId}">
+</td>
+<td th:text="${r.username == null ? '—' : r.username}">
+</td>
+<td th:text="${r.fullName}">
+</td>
+<td th:text="${r.email == null ? '—' : r.email}">
+</td>
+<td th:text="${r.phone}">
+</td>
+<td th:text="${r.status == null ? 'Chưa liên kết tài khoản' : @view.label(r.status)}">
+</td>
+<td th:text="${@view.date(r.createdAt)}">
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(page.content)}">
+<td colspan="7" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div th:replace="~{fragments/pagination :: pagination}">
+</div>
+</section>
+</body>
+</html>

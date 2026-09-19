@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Khuyến mãi','promotions')}">
+<body>
+<section>
+<div class="mb-3">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/promotions/new}">Thêm khuyến mãi</a>
+</div>
+<div class="card">
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead>
+<tr>
+<th>Tên</th>
+<th>Giảm giá %</th>
+<th>Bắt đầu</th>
+<th>Kết thúc</th>
+<th>Trạng thái</th>
+<th>Thao tác</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="r:${page.content}">
+<td th:text="${r.promotionName}">
+</td>
+<td th:text="${r.discountPercent}">
+</td>
+<td th:text="${@view.date(r.startDate)}">
+</td>
+<td th:text="${@view.date(r.endDate)}">
+</td>
+<td th:text="${@view.label(r.status)}">
+</td>
+<td class="text-nowrap">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/promotions/{id}/edit(id=${r.promotionId})}">Sửa</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/promotions/{id}/products(id=${r.promotionId})}">Sản phẩm</a>
+<form class="d-inline" method="post" th:action="@{/admin/promotions/{id}/status(id=${r.promotionId})}" data-confirm="Thay đổi trạng thái?">
+<input type="hidden" name="status" th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
+<button class="btn btn-outline-secondary btn-sm" th:text="${r.status.name() == 'ACTIVE' ? 'Ngừng hoạt động' : 'Kích hoạt'}">
+</button>
+</form>
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(page.content)}">
+<td colspan="6" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div th:replace="~{fragments/pagination :: pagination}">
+</div>
+</section>
+</body>
+</html>

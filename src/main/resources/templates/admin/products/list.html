@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Sản phẩm','products')}">
+<body>
+<section>
+<div class="mb-3">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/new}">Thêm sản phẩm</a>
+</div>
+<form class="row g-2 mb-3" method="get" th:action="@{/admin/products}">
+<div class="col-md-5">
+<input class="form-control" name="keyword" placeholder="Tìm tên sản phẩm" th:value="${keyword}">
+</div>
+<div class="col-md-3">
+<select name="status" class="form-select">
+<option value="">Tất cả</option>
+<option th:each="s:${statuses}" th:value="${s}" th:text="${@view.label(s)}" th:selected="${s == status}">
+</option>
+</select>
+</div>
+<div class="col-auto">
+<button class="btn btn-primary">Lọc</button>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Đặt lại</a>
+</div>
+</form>
+<div class="card">
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead>
+<tr>
+<th>Hình ảnh</th>
+<th>Sản phẩm</th>
+<th>Giá cơ bản</th>
+<th>Trạng thái</th>
+<th>Biến thể</th>
+<th>Thao tác</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="r:${page.content}">
+<td>
+<img th:if="${r.imgUrl != null and !#strings.isEmpty(r.imgUrl)}" th:src="${r.imgUrl}" class="product-thumbnail" alt="Sản phẩm" loading="lazy">
+</td>
+<td th:text="${r.productName}">
+</td>
+<td th:text="${@view.money(r.price)}">
+</td>
+<td th:text="${@view.label(r.status)}">
+</td>
+<td th:text="${counts.getOrDefault(r.productId,0L)}">
+</td>
+<td class="text-nowrap">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{id}/edit(id=${r.productId})}">Sửa</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{id}/variants(id=${r.productId})}">Biến thể</a>
+<form class="d-inline" method="post" th:action="@{/admin/products/{id}/status(id=${r.productId})}" data-confirm="Thay đổi trạng thái?">
+<input type="hidden" name="status" th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
+<button class="btn btn-outline-secondary btn-sm" th:text="${r.status.name() == 'ACTIVE' ? 'Ngừng hoạt động' : 'Kích hoạt'}">
+</button>
+</form>
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(page.content)}">
+<td colspan="6" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div th:replace="~{fragments/pagination :: pagination}">
+</div>
+</section>
+</body>
+</html>

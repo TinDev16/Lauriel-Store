@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thông tin sản phẩm','products')}">
+<body>
+<section>
+<div class="card">
+<div class="card-body">
+<form method="post" th:action="@{${action}}" th:object="${form}">
+<div th:replace="~{fragments/fields :: errors}">
+</div>
+<div th:replace="~{fragments/fields :: input('productName','Tên sản phẩm','text')}">
+</div>
+<div th:replace="~{fragments/fields :: text('description','Mô tả')}">
+</div>
+<div th:replace="~{fragments/fields :: input('price','Giá cơ bản','number')}">
+</div>
+<div th:replace="~{fragments/fields :: input('imgUrl','URL hình ảnh','text')}">
+</div>
+<div th:replace="~{fragments/fields :: status}">
+</div>
+<button class="btn btn-primary">Lưu</button>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Quay lại</a>
+</form>
+</div>
+</div>
+</section>
+</body>
+</html>

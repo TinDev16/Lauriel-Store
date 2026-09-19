@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Phiếu nhập kho','purchase-receipts')}">
+<body>
+<section>
+<div class="mb-3">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/purchase-receipts/new}">Tạo phiếu nhập</a>
+</div>
+<div class="card">
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead>
+<tr>
+<th>Mã</th>
+<th>Nhà cung cấp</th>
+<th>Người tạo</th>
+<th>Trạng thái</th>
+<th>Tổng tiền</th>
+<th>Thời gian</th>
+<th>Thao tác</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="r:${page.content}">
+<td th:text="${r.receiptId}">
+</td>
+<td th:text="${r.supplier.supplierName}">
+</td>
+<td th:text="${r.createdBy.username}">
+</td>
+<td th:text="${@view.label(r.status)}">
+</td>
+<td th:text="${@view.money(r.totalAmount)}">
+</td>
+<td th:text="${@view.date(r.createdAt)}">
+</td>
+<td>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/purchase-receipts/{id}(id=${r.receiptId})}">Chi tiết</a>
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(page.content)}">
+<td colspan="7" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div th:replace="~{fragments/pagination :: pagination}">
+</div>
+</section>
+</body>
+</html>

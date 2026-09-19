@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Nhà cung cấp','suppliers')}">
+<body>
+<section>
+<div class="mb-3">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/suppliers/new}">Thêm nhà cung cấp</a>
+</div>
+<div class="card">
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead>
+<tr>
+<th>Mã</th>
+<th>Nhà cung cấp</th>
+<th>Số điện thoại</th>
+<th>Thư điện tử</th>
+<th>Địa chỉ</th>
+<th>Trạng thái</th>
+<th>Thao tác</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="r:${page.content}">
+<td th:text="${r.supplierId}">
+</td>
+<td th:text="${r.supplierName}">
+</td>
+<td th:text="${r.phone}">
+</td>
+<td th:text="${r.email}">
+</td>
+<td th:text="${r.address}">
+</td>
+<td th:text="${@view.label(r.status)}">
+</td>
+<td class="text-nowrap">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/suppliers/{id}/edit(id=${r.supplierId})}">Sửa</a>
+<form class="d-inline" method="post" th:action="@{/admin/suppliers/{id}/status(id=${r.supplierId})}" data-confirm="Thay đổi trạng thái?">
+<input type="hidden" name="status" th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
+<button class="btn btn-outline-secondary btn-sm" th:text="${r.status.name() == 'ACTIVE' ? 'Ngừng hoạt động' : 'Kích hoạt'}">
+</button>
+</form>
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(page.content)}">
+<td colspan="7" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div th:replace="~{fragments/pagination :: pagination}">
+</div>
+</section>
+</body>
+</html>

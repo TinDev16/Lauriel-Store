@@ -21,7 +21,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '3b6d01a6-4b56-11f1-bebb-d03957e471cc:1-173';
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '3b6d01a6-4b56-11f1-bebb-d03957e471cc:1-351';
 
 --
 -- Table structure for table `colors`
@@ -35,7 +35,7 @@ CREATE TABLE `colors` (
   `color_name` varchar(50) NOT NULL,
   PRIMARY KEY (`color_id`),
   UNIQUE KEY `color_name` (`color_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -44,6 +44,7 @@ CREATE TABLE `colors` (
 
 LOCK TABLES `colors` WRITE;
 /*!40000 ALTER TABLE `colors` DISABLE KEYS */;
+INSERT INTO `colors` VALUES (4,'Đen'),(1,'Đỏ'),(5,'Trắng'),(3,'Vàng'),(2,'Xanh');
 /*!40000 ALTER TABLE `colors` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -64,7 +65,7 @@ CREATE TABLE `customers` (
   PRIMARY KEY (`customer_id`),
   UNIQUE KEY `user_id` (`user_id`),
   CONSTRAINT `fk_customers_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -73,6 +74,7 @@ CREATE TABLE `customers` (
 
 LOCK TABLES `customers` WRITE;
 /*!40000 ALTER TABLE `customers` DISABLE KEYS */;
+INSERT INTO `customers` VALUES (1,1,'Le Tin tin','0935991480',NULL,'2026-09-19 13:46:19');
 /*!40000 ALTER TABLE `customers` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -99,7 +101,7 @@ CREATE TABLE `inventory_transactions` (
   CONSTRAINT `fk_inventory_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_inventory_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`),
   CONSTRAINT `chk_inventory_quantity` CHECK ((`quantity` > 0))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -108,6 +110,7 @@ CREATE TABLE `inventory_transactions` (
 
 LOCK TABLES `inventory_transactions` WRITE;
 /*!40000 ALTER TABLE `inventory_transactions` DISABLE KEYS */;
+INSERT INTO `inventory_transactions` VALUES (1,1,2,'IMPORT',100,'PURCHASE_RECEIPT',1,NULL,'2026-09-19 22:17:11');
 /*!40000 ALTER TABLE `inventory_transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -241,7 +244,7 @@ CREATE TABLE `product_variants` (
   CONSTRAINT `fk_variants_size` FOREIGN KEY (`size_id`) REFERENCES `sizes` (`size_id`),
   CONSTRAINT `chk_variants_price` CHECK ((`price` >= 0)),
   CONSTRAINT `chk_variants_quantity` CHECK ((`quantity` >= 0))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -250,6 +253,7 @@ CREATE TABLE `product_variants` (
 
 LOCK TABLES `product_variants` WRITE;
 /*!40000 ALTER TABLE `product_variants` DISABLE KEYS */;
+INSERT INTO `product_variants` VALUES (1,1,3,4,'1',10000.00,100,'ACTIVE');
 /*!40000 ALTER TABLE `product_variants` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -271,7 +275,7 @@ CREATE TABLE `products` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`product_id`),
   CONSTRAINT `chk_products_price` CHECK ((`price` >= 0))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -280,6 +284,7 @@ CREATE TABLE `products` (
 
 LOCK TABLES `products` WRITE;
 /*!40000 ALTER TABLE `products` DISABLE KEYS */;
+INSERT INTO `products` VALUES (1,'Quần đùi nam','bàn',100000.00,'/uploads/products/eb9c6c38-1fd7-4af0-872f-6549f15d01db.png','ACTIVE','2026-09-19 22:08:06','2026-09-19 22:55:46');
 /*!40000 ALTER TABLE `products` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -368,6 +373,7 @@ CREATE TABLE `purchase_receipt_details` (
 
 LOCK TABLES `purchase_receipt_details` WRITE;
 /*!40000 ALTER TABLE `purchase_receipt_details` DISABLE KEYS */;
+INSERT INTO `purchase_receipt_details` VALUES (1,1,100,60000.00,6000000.00);
 /*!40000 ALTER TABLE `purchase_receipt_details` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -391,7 +397,7 @@ CREATE TABLE `purchase_receipts` (
   CONSTRAINT `fk_receipts_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`supplier_id`),
   CONSTRAINT `fk_receipts_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
   CONSTRAINT `chk_receipts_total` CHECK ((`total_amount` >= 0))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -400,6 +406,7 @@ CREATE TABLE `purchase_receipts` (
 
 LOCK TABLES `purchase_receipts` WRITE;
 /*!40000 ALTER TABLE `purchase_receipts` DISABLE KEYS */;
+INSERT INTO `purchase_receipts` VALUES (1,1,2,6000000.00,'COMPLETED','2026-09-19 22:16:14');
 /*!40000 ALTER TABLE `purchase_receipts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -415,7 +422,7 @@ CREATE TABLE `roles` (
   `role_name` varchar(50) NOT NULL,
   PRIMARY KEY (`role_id`),
   UNIQUE KEY `role_name` (`role_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -424,6 +431,7 @@ CREATE TABLE `roles` (
 
 LOCK TABLES `roles` WRITE;
 /*!40000 ALTER TABLE `roles` DISABLE KEYS */;
+INSERT INTO `roles` VALUES (1,'ADMIN'),(3,'CUSTOMER'),(2,'STAFF');
 /*!40000 ALTER TABLE `roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -439,7 +447,7 @@ CREATE TABLE `sizes` (
   `size_name` varchar(20) NOT NULL,
   PRIMARY KEY (`size_id`),
   UNIQUE KEY `size_name` (`size_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -448,6 +456,7 @@ CREATE TABLE `sizes` (
 
 LOCK TABLES `sizes` WRITE;
 /*!40000 ALTER TABLE `sizes` DISABLE KEYS */;
+INSERT INTO `sizes` VALUES (4,'L'),(3,'M'),(2,'S'),(5,'XL'),(1,'XS');
 /*!40000 ALTER TABLE `sizes` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -467,7 +476,7 @@ CREATE TABLE `suppliers` (
   `status` enum('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`supplier_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -476,6 +485,7 @@ CREATE TABLE `suppliers` (
 
 LOCK TABLES `suppliers` WRITE;
 /*!40000 ALTER TABLE `suppliers` DISABLE KEYS */;
+INSERT INTO `suppliers` VALUES (1,'MuJi','0123456789','muji@gmail.com','Go Vap, TpHCM','ACTIVE','2026-09-19 22:16:07');
 /*!40000 ALTER TABLE `suppliers` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -501,7 +511,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `email` (`email`),
   KEY `fk_users_role` (`role_id`),
   CONSTRAINT `fk_users_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`role_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -510,6 +520,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES (1,3,'letutin','$2a$10$YAUinqJGXo09HJeTsa8KL.BjIo8RQfnzWwncY8UrmyAe9OkStDWCq','Le Tin tin','0935991480','letutin@gmail.com','ACTIVE','2026-09-19 13:46:19'),(2,1,'admin','$2a$10$RxksS16sZo0dhdosZQAbpedSk/cawNn0XSbOWM2PFjvGcg0u5nNKK','Administrator',NULL,NULL,'ACTIVE','2026-09-19 14:05:41');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -561,4 +572,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-09-18 20:44:25
+-- Dump completed on 2026-09-20 16:36:16

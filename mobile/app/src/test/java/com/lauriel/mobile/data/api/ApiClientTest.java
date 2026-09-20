@@ -84,7 +84,13 @@ public class ApiClientTest {
         server.enqueue(new MockResponse().setResponseCode(409).setBody("{\"status\":409,\"message\":\"Order changed\"}"));
         assertFalse(api("jwt",new AtomicInteger()).cancel(5).execute().isSuccessful());
     }
-    @Test public void promotionEffectivePriceKeepsBasePrice() {
+    @Test public void imagePathsResolveAgainstBackendAndKeepAbsoluteUrls() {
+        String base=com.lauriel.mobile.BuildConfig.API_BASE_URL;
+        String expected=okhttp3.HttpUrl.parse(base).resolve("/uploads/products/test.png").toString();
+        assertEquals(expected,ApiClient.imageUrl("/uploads/products/test.png"));
+        assertEquals("https://cdn.example.com/photo.jpg",ApiClient.imageUrl("https://cdn.example.com/photo.jpg"));
+        assertNull(ApiClient.imageUrl("  "));
+    }    @Test public void promotionEffectivePriceKeepsBasePrice() {
         var variant=new Gson().fromJson("{\"price\":\"250000\",\"effectivePrice\":\"200000\",\"promotion\":{\"discountPercent\":20}}",Models.Variant.class);
         assertEquals(new BigDecimal("250000"),variant.price);
         assertEquals(new BigDecimal("200000"),variant.effectivePrice);

@@ -27,6 +27,7 @@ $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
 ```
 
 APK debug: `mobile/app/build/outputs/apk/debug/app-debug.apk`.
+Sau khi cập nhật mã Android, nhấn Run trong Android Studio để cài bản mới lên emulator. Lệnh assembleDebug chỉ tạo APK, không cập nhật ứng dụng đang cài; nếu cần có thể dùng adb install -r mobile/app/build/outputs/apk/debug/app-debug.apk.
 Unit test JUnit/MockWebServer/Robolectric dùng fixture riêng, không gọi MySQL thật.
 
 ## Backend URL
@@ -71,5 +72,5 @@ Cart và tiền tạm tính là hiển thị local; giá cuối cùng và tồn 
 
 JWT lưu trong SharedPreferences gắn với cài đặt app; password không lưu, Android backup bị tắt.
 API 401 của request có Bearer sẽ xóa session và điều hướng về Login; 403/409 giữ message phù hợp.
-Ảnh Product dùng URL `imgUrl` từ backend, Glide hiển thị placeholder nếu URL null/lỗi.
+Ảnh sản phẩm do web quản trị tải lên dùng đường dẫn /uploads/products/...; ứng dụng ghép đường dẫn này với địa chỉ backend (10.0.2.2 trên emulator) để Glide tải ảnh ở danh sách, chi tiết và giỏ hàng. URL ảnh cũ dạng đầy đủ vẫn hiển thị; nếu ảnh trống/lỗi, ứng dụng dùng ảnh mặc định.
 Không có dữ liệu giả trong đường chạy chính.

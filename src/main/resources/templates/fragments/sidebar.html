@@ -17,7 +17,12 @@
 </li>
 </ul>
 </div>
-<div class="sidebar-menu-section">
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'statistics'} ? 'active'" th:href="@{/admin/statistics}">
+<i class="bi bi-bar-chart-line"></i>
+<span>Thống kê</span>
+</a>
+</li><div class="sidebar-menu-section">
 <div class="sidebar-menu-title">Danh mục</div>
 <ul class="sidebar-menu-list">
 <li class="sidebar-menu-item">

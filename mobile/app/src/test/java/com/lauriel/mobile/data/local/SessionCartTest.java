@@ -37,6 +37,26 @@ public class SessionCartTest {
     @Test public void logoutClearsIdentity(){session.save(login("CUSTOMER"));session.clear();assertNull(session.token());assertEquals(-1,session.userId());}
     @Test public void addVariant(){cart.add(item(1,2,5));assertEquals(1,cart.items().size());assertEquals(2,cart.items().get(0).quantity);}
     @Test public void duplicateVariantMerges(){cart.add(item(1,2,5));cart.add(item(1,3,5));assertEquals(1,cart.items().size());assertEquals(5,cart.items().get(0).quantity);}
+    @Test public void existingCartItemReceivesNewImageWhenAddedAgain(){
+        cart.add(item(1,1,5));
+        cart.add(new CartStore.CartItem(1,7,"Shirt","SKU-1","M","Black",
+                "/uploads/products/new.png",new BigDecimal("120.50"),1,5));
+        assertEquals("/uploads/products/new.png",cart.items().get(0).image);
+    }
+    @Test public void cartImageRefreshPersistsWithoutChangingQuantity(){
+        cart.add(item(1,2,5));
+        cart.add(item(2,1,5));
+        long checkoutRevision=cart.revision();
+        CartStore observer=new CartStore(context,42);
+        assertTrue(cart.updateImage(7,"/uploads/products/new.png"));
+        assertEquals(checkoutRevision,cart.revision());
+        assertEquals("/uploads/products/new.png",observer.items().get(0).image);
+        assertFalse(cart.updateImage(7,"/uploads/products/new.png"));
+        var saved=new CartStore(context,42).items();
+        assertEquals(2,saved.get(0).quantity);
+        assertEquals("/uploads/products/new.png",saved.get(0).image);
+        assertEquals("/uploads/products/new.png",saved.get(1).image);
+    }
     @Test public void duplicateCannotExceedStock(){cart.add(item(1,4,5));try{cart.add(item(1,2,5));fail();}catch(IllegalArgumentException expected){}assertEquals(4,cart.items().get(0).quantity);}
     @Test public void updateQuantity(){cart.add(item(1,1,5));cart.setQuantity(1,4);assertEquals(4,cart.items().get(0).quantity);}
     @Test public void quantityZeroRemoves(){cart.add(item(1,1,5));cart.setQuantity(1,0);assertTrue(cart.isEmpty());}

@@ -60,7 +60,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/login", "/error", "/403", "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-                        .requestMatchers("/admin", "/admin/dashboard", "/admin/products", "/admin/products/**",
+                        .requestMatchers(HttpMethod.GET, "/uploads/products/**").permitAll()
+                        .requestMatchers("/admin", "/admin/dashboard", "/admin/statistics", "/admin/products", "/admin/products/**",
                                 "/admin/sizes", "/admin/sizes/**", "/admin/colors", "/admin/colors/**",
                                 "/admin/inventory", "/admin/inventory/**", "/admin/suppliers", "/admin/suppliers/**",
                                 "/admin/purchase-receipts", "/admin/purchase-receipts/**",

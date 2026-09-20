@@ -26,6 +26,7 @@ public final class CartStore {
     private final long owner;
     private List<CartItem> items;
     private long revision;
+    private long metadataRevision;
     public CartStore(Context context,long userId){
         if(userId<=0)throw new IllegalArgumentException("Thiếu mã khách hàng");
         owner=userId; prefs=context.getApplicationContext().getSharedPreferences("cart_"+userId,Context.MODE_PRIVATE);
@@ -33,6 +34,7 @@ public final class CartStore {
         catch(RuntimeException ignored){items=new ArrayList<>();}
         if(items==null)items=new ArrayList<>();
         revision=prefs.getLong("revision",0);
+        metadataRevision=prefs.getLong("metadataRevision",0);
     }
     public long owner(){return owner;}
     public synchronized long revision(){refresh();return revision;}
@@ -44,11 +46,20 @@ public final class CartStore {
         for(CartItem old:items)if(old.variantId==item.variantId){
             int next=Math.addExact(old.quantity,item.quantity);
             if(next>item.knownStock)throw new IllegalArgumentException("Số lượng vượt quá tồn kho đã biết");
-            old.quantity=next;old.knownStock=item.knownStock;old.displayPrice=item.displayPrice;
+            old.quantity=next;old.knownStock=item.knownStock;old.displayPrice=item.displayPrice;old.image=item.image;
             persist();return;
         }
         if(item.quantity>item.knownStock)throw new IllegalArgumentException("Số lượng vượt quá tồn kho đã biết");
         items.add(copy(item));persist();
+    }
+    public synchronized boolean updateImage(long productId,String image){
+        refresh();
+        boolean changed=false;
+        for(CartItem item:items)if(item.productId==productId&&!Objects.equals(item.image,image)){
+            item.image=image;changed=true;
+        }
+        if(changed)persistImageMetadata();
+        return changed;
     }
     public synchronized void setQuantity(long variantId,int quantity){
         refresh();
@@ -81,11 +92,17 @@ public final class CartStore {
     }
     private void refresh(){
         long stored=prefs.getLong("revision",0);
-        if(stored==revision)return;
+        long storedMetadata=prefs.getLong("metadataRevision",0);
+        if(stored==revision&&storedMetadata==metadataRevision)return;
         try {items=gson.fromJson(prefs.getString("items","[]"),LIST_TYPE);}
         catch(RuntimeException ignored){items=new ArrayList<>();}
         if(items==null)items=new ArrayList<>();
         revision=stored;
+        metadataRevision=storedMetadata;
     }
     private void persist(){revision++;prefs.edit().putString("items",gson.toJson(items)).putLong("revision",revision).apply();}
+    private void persistImageMetadata(){
+        metadataRevision++;
+        prefs.edit().putString("items",gson.toJson(items)).putLong("metadataRevision",metadataRevision).apply();
+    }
 }

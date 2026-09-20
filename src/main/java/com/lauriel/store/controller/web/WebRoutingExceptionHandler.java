@@ -1,6 +1,8 @@
 package com.lauriel.store.controller.web;
 
 import com.lauriel.store.exception.GlobalExceptionHandler;
+import com.lauriel.store.dto.response.ErrorResponse;
+import java.time.LocalDateTime;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.Ordered;
@@ -8,6 +10,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -21,6 +25,19 @@ public class WebRoutingExceptionHandler {
         this.apiErrors = apiErrors;
     }
 
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public Object oversizedUpload(HttpServletRequest request, HttpServletResponse response) {
+        String message = "Ảnh tải lên vượt quá giới hạn 20 MB. Vui lòng chọn ảnh nhỏ hơn.";
+        if (request.getRequestURI().startsWith(request.getContextPath() + "/api/")) {
+            return ResponseEntity.status(413).body(new ErrorResponse(
+                    LocalDateTime.now(), 413, "Content Too Large", message));
+        }
+        response.setContentType("text/html;charset=UTF-8");
+        var view = new ModelAndView("error/413");
+        view.setStatus(HttpStatus.valueOf(413));
+        view.addObject("message", message);
+        return view;
+    }
     @ExceptionHandler({
         org.springframework.web.HttpRequestMethodNotSupportedException.class,
         org.springframework.web.HttpMediaTypeNotSupportedException.class,

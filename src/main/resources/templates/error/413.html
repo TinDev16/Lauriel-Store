@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Ảnh quá lớn')}"></head>
+<body>
+<div class="error-wrapper">
+<div class="error-container text-center">
+<div class="error-code">413</div>
+<h1 class="h3">Ảnh tải lên quá lớn</h1>
+<p>Ảnh tải lên vượt quá giới hạn 20 MB. Vui lòng chọn ảnh nhỏ hơn.</p>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Về danh sách sản phẩm</a>
+</div>
+</div>
+</body>
+</html>

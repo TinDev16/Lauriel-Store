@@ -16,6 +16,8 @@ import com.lauriel.store.security.StoreUserDetails;
 import com.lauriel.store.service.*;
 import com.lauriel.store.support.*;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.*;
 import java.util.*;
 import org.junit.jupiter.api.*;
@@ -24,6 +26,7 @@ import org.junit.jupiter.params.provider.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.*;
 import org.springframework.test.web.servlet.*;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -35,6 +38,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.MOCK)
 class WebAdminTest {
+    private static Path imageDirectory;
     private static final String PASSWORD="WebFixturePassword123";
     private static final String HASH=new BCryptPasswordEncoder().encode(PASSWORD);
     @Autowired WebApplicationContext context;
@@ -72,6 +76,8 @@ class WebAdminTest {
         p.add("spring.datasource.password",()->"");p.add("spring.datasource.driver-class-name",()->"org.h2.Driver");
         p.add("spring.jpa.hibernate.ddl-auto",()->"validate");p.add("spring.jpa.open-in-view",()->"false");
         p.add("app.jwt.secret",()->secret);
+        imageDirectory=Files.createTempDirectory("lauriel-product-images-");
+        p.add("app.images.directory",()->imageDirectory.toString());
     }
     @BeforeEach void fixtures() {
         mvc=MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
@@ -112,6 +118,9 @@ class WebAdminTest {
     private MockHttpServletRequestBuilder admin(MockHttpServletRequestBuilder r) {
         return r.with(user(new StoreUserDetails(accounts.get("ADMIN"))));
     }
+    private org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder admin(org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder r) {
+        return r.with(user(new StoreUserDetails(accounts.get("ADMIN"))));
+    }
     private MockHttpServletRequestBuilder staff(MockHttpServletRequestBuilder r) {
         return r.with(user(new StoreUserDetails(accounts.get("STAFF"))));
     }
@@ -146,6 +155,44 @@ class WebAdminTest {
                 .param("discountPercent","25").param("startDate","2026-01-01T00:00").param("endDate","2027-01-01T00:00").param("status","ACTIVE"));
     }
 
+    @Test void productImageUploadCanBeViewedReplacedAndRetained() throws Exception {
+        byte[] png = new byte[] {(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10, 1, 2, 3};
+        MockMultipartFile first = new MockMultipartFile("imageFile", "first.png", "image/png", png);
+        mvc.perform(admin(multipart("/admin/products").file(first).with(csrf())
+                .param("productName", "Image product").param("price", "300000").param("status", "ACTIVE")))
+                .andExpect(redirectedUrl("/admin/products"));
+        var created = products.findAll().stream().filter(p -> p.getProductName().equals("Image product")).findFirst().orElseThrow();
+        String firstUrl = created.getImgUrl();
+        assertThat(firstUrl).startsWith("/uploads/products/");
+        mvc.perform(get(firstUrl)).andExpect(status().isOk()).andExpect(content().bytes(png));
+        mvc.perform(admin(get("/admin/products"))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("src=\"" + firstUrl + "\"")));
+        mvc.perform(admin(get("/admin/products/" + created.getProductId() + "/edit")))
+                .andExpect(status().isOk()).andExpect(content().string(containsString(firstUrl)));
+
+        String editUrl = "/admin/products/" + created.getProductId();
+        mvc.perform(admin(multipart(editUrl).with(csrf()).param("productName", "Image product")
+                .param("price", "300000").param("status", "ACTIVE")))
+                .andExpect(redirectedUrl("/admin/products"));
+        assertThat(products.findById(created.getProductId()).orElseThrow().getImgUrl()).isEqualTo(firstUrl);
+
+        MockMultipartFile replacement = new MockMultipartFile("imageFile", "second.png", "image/png", png);
+        mvc.perform(admin(multipart(editUrl).file(replacement).with(csrf()).param("productName", "Image product")
+                .param("price", "300000").param("status", "ACTIVE")))
+                .andExpect(redirectedUrl("/admin/products"));
+        String secondUrl = products.findById(created.getProductId()).orElseThrow().getImgUrl();
+        assertThat(secondUrl).isNotEqualTo(firstUrl);
+        mvc.perform(get(secondUrl)).andExpect(status().isOk()).andExpect(content().bytes(png));
+        assertThat(Files.exists(imageDirectory.resolve(firstUrl.substring("/uploads/products/".length())))).isFalse();
+    }
+
+    @Test void invalidProductImageShowsFormWithoutCreatingProduct() throws Exception {
+        MockMultipartFile invalid = new MockMultipartFile("imageFile", "fake.png", "image/png", new byte[] {1, 2, 3});
+        mvc.perform(admin(multipart("/admin/products").file(invalid).with(csrf())
+                .param("productName", "Invalid image product").param("price", "300000").param("status", "ACTIVE")))
+                .andExpect(status().isOk()).andExpect(model().attributeHasErrors("form"));
+        assertThat(products.findAll()).noneMatch(p -> p.getProductName().equals("Invalid image product"));
+    }
     @Test void loginPageIsPublicWithCsrfAndRealForm() throws Exception {
         mvc.perform(get("/login")).andExpect(status().isOk()).andExpect(view().name("auth/login"))
                 .andExpect(content().string(containsString("name=\"username\"")))
@@ -256,7 +303,7 @@ class WebAdminTest {
     }
     @Test void variantMetadataCannotChangeQuantity() throws Exception {
         var result=mvc.perform(staff(get(productPath()+"/variants/"+variant.getVariantId()+"/edit"))).andExpect(status().isOk()).andReturn();
-        assertThat(result.getResponse().getContentAsString()).contains("Quantity: 5").doesNotContain("name=\"quantity\"");
+        assertThat(result.getResponse().getContentAsString()).contains("Số lượng: 5").doesNotContain("name=\"quantity\"");
         mvc.perform(staff(post(productPath()+"/variants/"+variant.getVariantId()).with(csrf()).param("sku","NEW-WEB-SKU")
                 .param("sizeId",variant.getSize().getSizeId().toString()).param("colorId",variant.getColor().getColorId().toString())
                 .param("price","350000").param("status","ACTIVE").param("quantity","999")))
@@ -364,7 +411,7 @@ class WebAdminTest {
     }
     @Test void customerListHandlesUnlinkedAccount() throws Exception {
         mvc.perform(staff(get("/admin/customers"))).andExpect(status().isOk()).andExpect(content().string(containsString("Walk-in customer")))
-                .andExpect(content().string(containsString("No linked account")));
+                .andExpect(content().string(containsString("Chưa liên kết tài khoản")));
     }
     @Test void sizeColorSupplierFormsReuseServices() throws Exception {
         mvc.perform(staff(post("/admin/sizes").with(csrf()).param("sizeName","XL"))).andExpect(redirectedUrl("/admin/sizes"));

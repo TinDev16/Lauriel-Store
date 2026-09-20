@@ -41,7 +41,7 @@ public class ProductDetailActivity extends BaseActivity {
     private void render(){
         b.name.setText(product.productName);b.description.setText(product.description);
         b.price.setText(Formatters.money(product.basePrice));
-        Glide.with(b.image).load(product.imgUrl).placeholder(R.drawable.image_placeholder)
+        Glide.with(b.image).load(com.lauriel.mobile.data.api.ApiClient.imageUrl(product.imgUrl)).placeholder(R.drawable.image_placeholder)
                 .error(R.drawable.image_placeholder).centerCrop().into(b.image);
         b.sizes.removeAllViews();b.colors.removeAllViews();
         if(product.variants==null||product.variants.isEmpty()){b.stock.setText("Không có biến thể khả dụng.");return;}

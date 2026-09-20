@@ -4,24 +4,30 @@
 <section>
 <div class="card">
 <div class="card-body">
-<form method="post" th:action="@{${action}}" th:object="${form}">
-<div th:replace="~{fragments/fields :: errors}">
+<form method="post" enctype="multipart/form-data" th:action="@{${action}}" th:object="${form}">
+<div th:replace="~{fragments/fields :: errors}"></div>
+<div th:replace="~{fragments/fields :: input('productName','Tên sản phẩm','text')}"></div>
+<div th:replace="~{fragments/fields :: text('description','Mô tả')}"></div>
+<div th:replace="~{fragments/fields :: input('price','Giá cơ bản','number')}"></div>
+<div class="mb-3">
+<label class="form-label d-block" for="imageFile">Hình ảnh sản phẩm</label>
+<input id="imageFile" class="visually-hidden" type="file" name="imageFile" accept="image/png,image/jpeg,image/gif,image/webp" aria-describedby="imageHelp">
+<label class="btn btn-outline-primary btn-sm" for="imageFile">Chọn hình ảnh</label>
+<span id="selectedImageName" class="ms-2 text-muted">Chưa chọn ảnh mới</span>
+<div id="imageError" class="text-danger small mt-1" role="alert" hidden></div>
+<div id="imageHelp" class="form-text" th:text="${id == null ? 'Chọn ảnh PNG, JPEG, GIF hoặc WebP, tối đa 20 MB. Có thể để trống.' : 'Chọn ảnh PNG, JPEG, GIF hoặc WebP, tối đa 20 MB. Để trống để giữ ảnh hiện tại.'}"></div>
+<div class="mt-3">
+<img id="existingImagePreview" th:if="${currentImageUrl != null and !#strings.isEmpty(currentImageUrl)}" th:src="${currentImageUrl}" class="img-thumbnail" style="max-width:240px;max-height:240px;object-fit:contain" alt="Ảnh sản phẩm hiện tại">
+<img id="newImagePreview" class="img-thumbnail" style="max-width:240px;max-height:240px;object-fit:contain" alt="Ảnh vừa chọn" hidden>
 </div>
-<div th:replace="~{fragments/fields :: input('productName','Tên sản phẩm','text')}">
 </div>
-<div th:replace="~{fragments/fields :: text('description','Mô tả')}">
-</div>
-<div th:replace="~{fragments/fields :: input('price','Giá cơ bản','number')}">
-</div>
-<div th:replace="~{fragments/fields :: input('imgUrl','URL hình ảnh','text')}">
-</div>
-<div th:replace="~{fragments/fields :: status}">
-</div>
+<div th:replace="~{fragments/fields :: status}"></div>
 <button class="btn btn-primary">Lưu</button>
 <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Quay lại</a>
 </form>
 </div>
 </div>
+<script th:src="@{/js/product-image-preview.js}" defer></script>
 </section>
 </body>
 </html>

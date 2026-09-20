@@ -203,7 +203,7 @@ chuyển thành JSON 409 không lộ SQL/stack trace.
 Quantity chỉ thuộc ProductVariant; variant mới luôn có quantity=0. Catalog không nhận
 quantity trong create/update. DynamicUpdate chỉ ghi cột metadata thay đổi, tránh ghi lại
 quantity từ snapshot cũ khi tồn kho đã thay đổi. Nghiệp vụ tồn kho dành cho Phase 4.
-Ảnh chỉ lưu imgUrl, chưa có upload hoặc tích hợp cloud.
+Trang quản trị sản phẩm cho phép chọn file PNG, JPEG, GIF hoặc WebP (tối đa 20 MB), xem trước rồi tải lên máy chủ khi lưu. Ảnh được lưu trong uploads/products/, URL công khai là /uploads/products/... và hiển thị trên web lẫn Android. Thư mục này được bỏ qua bởi Git; hãy sao lưu khi chuyển máy/chuyển môi trường. Có thể đổi nơi lưu bằng biến môi trường APP_IMAGES_DIRECTORY. API Product vẫn dùng trường imgUrl để tương thích dữ liệu cũ.
 
 List dùng DTO projection, không lấy description/variants. Detail lấy Product và graph
 Variant/Size/Color bằng hai query, không đổi relationship sang EAGER. Test Hibernate statistics

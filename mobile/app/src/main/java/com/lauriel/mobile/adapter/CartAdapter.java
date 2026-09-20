@@ -21,7 +21,7 @@ public final class CartAdapter extends RecyclerView.Adapter<CartAdapter.Holder> 
         h.b.options.setText(item.size+" / "+item.color+" · "+item.sku);
         h.b.price.setText(Formatters.money(item.displayPrice));
         h.b.quantity.setText(String.valueOf(item.quantity));
-        Glide.with(h.b.image).load(item.image).placeholder(R.drawable.image_placeholder)
+        Glide.with(h.b.image).load(com.lauriel.mobile.data.api.ApiClient.imageUrl(item.image)).placeholder(R.drawable.image_placeholder)
                 .error(R.drawable.image_placeholder).centerCrop().into(h.b.image);
         h.b.decrease.setOnClickListener(v->change.set(item.variantId,item.quantity-1));
         h.b.increase.setOnClickListener(v->change.set(item.variantId,item.quantity+1));

@@ -9,6 +9,13 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.lauriel.mobile.adapter.CartAdapter;
 import com.lauriel.mobile.data.api.ApiClient;
 import com.lauriel.mobile.data.local.CartStore;
+import com.lauriel.mobile.data.model.Models;
+import com.lauriel.mobile.data.repository.ProductRepository;
+import java.util.HashSet;
+import java.util.Set;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import com.lauriel.mobile.databinding.FragmentCartBinding;
 import com.lauriel.mobile.ui.checkout.CheckoutActivity;
 import com.lauriel.mobile.util.Formatters;
@@ -30,7 +37,21 @@ public class CartFragment extends Fragment {
         b.checkout.setOnClickListener(v->startActivity(new Intent(requireContext(),CheckoutActivity.class)));
         render();
     }
-    @Override public void onResume(){super.onResume();if(b!=null&&cart!=null)render();}
+    @Override public void onResume(){super.onResume();if(b!=null&&cart!=null){render();syncImages();}}
+    private void syncImages(){
+        Set<Long> productIds=new HashSet<>();
+        for(CartStore.CartItem item:cart.items())if(item.productId>0)productIds.add(item.productId);
+        ProductRepository products=new ProductRepository(ApiClient.get(requireContext()).api());
+        for(long productId:productIds){
+            products.detail(productId,new Callback<Models.Product>(){
+                @Override public void onResponse(Call<Models.Product> call,Response<Models.Product> response){
+                    if(response.isSuccessful()&&response.body()!=null
+                            &&cart.updateImage(productId,response.body().imgUrl)&&b!=null)render();
+                }
+                @Override public void onFailure(Call<Models.Product> call,Throwable error){}
+            });
+        }
+    }
     private void render(){
         adapter.submit(cart.items());b.empty.setVisibility(cart.isEmpty()?View.VISIBLE:View.GONE);
         b.checkout.setEnabled(!cart.isEmpty());b.subtotal.setText("Tạm tính: "+Formatters.money(cart.displaySubtotal()));

@@ -43,6 +43,12 @@ public final class ApiClient {
         return new Retrofit.Builder().baseUrl(baseUrl).client(client)
                 .addConverterFactory(GsonConverterFactory.create()).build().create(StoreApi.class);
     }
+    public static String imageUrl(String path){
+        if(path==null || path.isBlank())return null;
+        okhttp3.HttpUrl base=okhttp3.HttpUrl.parse(BuildConfig.API_BASE_URL);
+        okhttp3.HttpUrl resolved=base==null?null:base.resolve(path.trim());
+        return resolved==null?null:resolved.toString();
+    }
     public StoreApi api(){return api;}
     public SessionManager session(){return session;}
     public AuthEvents events(){return events;}

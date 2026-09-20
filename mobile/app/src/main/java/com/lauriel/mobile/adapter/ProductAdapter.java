@@ -21,7 +21,7 @@ public final class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.Ho
         Models.Product p=items.get(position);
         holder.b.name.setText(p.productName);
         holder.b.price.setText(Formatters.money(p.price)); // Summary endpoint has only base price.
-        Glide.with(holder.b.image).load(p.imgUrl).placeholder(R.drawable.image_placeholder)
+        Glide.with(holder.b.image).load(com.lauriel.mobile.data.api.ApiClient.imageUrl(p.imgUrl)).placeholder(R.drawable.image_placeholder)
                 .error(R.drawable.image_placeholder).centerCrop().into(holder.b.image);
         holder.b.getRoot().setOnClickListener(v->onOpen.open(p));
     }

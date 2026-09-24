@@ -1,31 +1,25 @@
 <resources>
-    <string name="app_name">LAURIEL</string>
-    <string name="brand">LAURIEL</string>
-    <string name="login">Đăng nhập</string>
-    <string name="register">Đăng ký</string>
-    <string name="username">Tên đăng nhập</string>
-    <string name="password">Mật khẩu</string>
-    <string name="email">Email</string>
-    <string name="full_name">Họ tên</string>
-    <string name="phone">Số điện thoại</string>
-    <string name="home">Trang chủ</string>
-    <string name="shop">Cửa hàng</string>
-    <string name="cart">Giỏ hàng</string>
-    <string name="orders">Đơn hàng</string>
-    <string name="profile">Tài khoản</string>
-    <string name="search_hint">Tìm sản phẩm</string>
-    <string name="filter">Bộ lọc</string>
-    <string name="load_more">Xem thêm</string>
-    <string name="retry">Thử lại</string>
-    <string name="add_cart">Thêm vào giỏ</string>
-    <string name="checkout">Đặt hàng</string>
-    <string name="logout">Đăng xuất</string>
-    <string name="shipping_address">Địa chỉ giao hàng</string>
-    <string name="voucher_code">Mã giảm giá</string>
-    <string name="apply">Áp dụng</string>
-    <string name="empty_products">Không có sản phẩm phù hợp.</string>
-    <string name="empty_cart">Giỏ hàng đang trống.</string>
-    <string name="empty_orders">Bạn chưa có đơn hàng nào.</string>
-    <string name="network_error">Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối.</string>
-    <string name="final_price_note">Giá cuối cùng được xác nhận khi đặt hàng.</string>
-</resources>
+    <string name="app_name">LAURIEL</string><string name="brand">LAURIEL</string>
+    <string name="login">Đăng nhập</string><string name="register">Đăng ký</string><string name="username">Tên đăng nhập</string><string name="password">Mật khẩu</string>
+    <string name="email">Email</string><string name="full_name">Họ tên</string><string name="phone">Số điện thoại</string>
+    <string name="home">Trang chủ</string><string name="shop">Cửa hàng</string><string name="cart">Giỏ hàng</string><string name="orders">Đơn hàng</string><string name="profile">Tài khoản</string>
+    <string name="search_hint">Tìm sản phẩm</string><string name="filter">Bộ lọc</string><string name="load_more">Xem thêm</string><string name="retry">Thử lại</string>
+    <string name="add_cart">Thêm vào giỏ hàng</string><string name="checkout">Đặt hàng</string><string name="logout">Đăng xuất</string>
+    <string name="shipping_address">Địa chỉ giao hàng</string><string name="voucher_code">Mã giảm giá</string><string name="apply">Áp dụng</string>
+    <string name="empty_products">Không tìm thấy sản phẩm</string><string name="empty_products_hint">Thử đổi từ khóa hoặc bộ lọc để xem thêm lựa chọn.</string>
+    <string name="empty_cart">Giỏ hàng đang trống</string><string name="empty_cart_hint">Khám phá các sản phẩm mới và thêm món bạn yêu thích.</string>
+    <string name="empty_orders">Bạn chưa có đơn hàng</string><string name="empty_orders_hint">Đơn hàng sau khi đặt sẽ xuất hiện tại đây.</string>
+    <string name="network_error">Không thể kết nối máy chủ.</string><string name="network_error_hint">Kiểm tra kết nối mạng rồi thử lại.</string>
+    <string name="final_price_note">Giá cuối cùng được máy chủ xác nhận khi đặt hàng.</string>
+    <string name="continue_shopping">Tiếp tục mua sắm</string><string name="reset">Đặt lại</string><string name="product_image">Ảnh sản phẩm</string>
+    <string name="welcome_back">Chào mừng trở lại</string><string name="login_subtitle">Đăng nhập để tiếp tục mua sắm cùng LAURIEL.</string>
+    <string name="create_account">Tạo tài khoản</string><string name="register_subtitle">Bắt đầu hành trình phong cách của bạn.</string>
+    <string name="show_password">Hiện mật khẩu</string><string name="hide_password">Ẩn mật khẩu</string>
+    <string name="remove">Xóa</string><string name="decrease_quantity">Giảm số lượng</string><string name="increase_quantity">Tăng số lượng</string>
+    <string name="back">Quay lại</string><string name="product_status">Tình trạng sản phẩm</string>
+    <string name="checkout_title">Thanh toán</string><string name="delivery_address">Địa chỉ nhận hàng</string><string name="products_label">Sản phẩm</string>
+    <string name="register_prompt">Chưa có tài khoản? Đăng ký</string><string name="order_detail">Chi tiết đơn hàng</string><string name="cancel_order">Hủy đơn</string>
+    <string name="size_label">Kích cỡ</string><string name="color_label">Màu sắc</string><string name="quantity_label">Số lượng</string><string name="plus">+</string><string name="minus">−</string><string name="one">1</string>
+    <string name="checking_session">Đang kiểm tra phiên đăng nhập</string><string name="filter_products">Lọc sản phẩm</string><string name="sort_label">Sắp xếp</string><string name="sort_default">Mặc định</string><string name="sort_price_asc">Giá tăng</string><string name="sort_price_desc">Giá giảm</string>
+    <string name="proceed_checkout">Tiến hành đặt hàng</string><string name="hero_eyebrow">BỘ SƯU TẬP MỚI</string><string name="hero_title">Phong cách cho mỗi ngày</string><string name="hero_subtitle">Khám phá thiết kế tối giản và năng động từ LAURIEL.</string>
+    <string name="active_promotions">Khuyến mãi đang diễn ra</string><string name="featured_products">Sản phẩm nổi bật</string><string name="see_all">Xem tất cả</string><string name="avatar_placeholder">L</string><string name="order_detail_description">Mở chi tiết đơn hàng</string></resources>

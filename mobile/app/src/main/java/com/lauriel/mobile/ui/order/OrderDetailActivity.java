@@ -3,6 +3,8 @@ package com.lauriel.mobile.ui.order;
 import android.os.Bundle;
 import android.view.View;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
+import com.lauriel.mobile.ui.common.StatusChip;
 import com.lauriel.mobile.R;
 import com.lauriel.mobile.data.api.ApiClient;
 import com.lauriel.mobile.data.model.Models;
@@ -51,7 +53,8 @@ public class OrderDetailActivity extends BaseActivity {
         });
     }
     private void render() {
-        b.title.setText("Đơn #" + order.orderId + " · " + Formatters.status(order.status));
+        b.title.setText("Đơn #" + order.orderId);
+        StatusChip.apply(b.status, order.status);
         StringBuilder detail = new StringBuilder();
         detail.append("Ngày: ").append(Formatters.date(order.createdAt)).append("\n")
                 .append("Giao tới: ").append(order.shippingAddress).append("\n\n");
@@ -87,6 +90,7 @@ public class OrderDetailActivity extends BaseActivity {
                 b.cancel.setEnabled(true);
                 if (r.isSuccessful() && r.body() != null) {
                     order = r.body(); render();
+                    Snackbar.make(b.getRoot(), "Đã hủy đơn hàng", Snackbar.LENGTH_SHORT).show();
                     if (pendingError != null) { b.error.setText(pendingError); pendingError = null; }
                 }
                 else {

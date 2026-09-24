@@ -1,77 +1,85 @@
 package com.lauriel.mobile.ui.product;
+
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.*;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
+import com.lauriel.mobile.R;
+import com.lauriel.mobile.adapter.ProductAdapter;
 import com.lauriel.mobile.data.api.ApiClient;
 import com.lauriel.mobile.data.model.Models;
 import com.lauriel.mobile.data.repository.ProductRepository;
-import com.lauriel.mobile.adapter.ProductAdapter;
+import com.lauriel.mobile.databinding.BottomSheetProductFilterBinding;
 import com.lauriel.mobile.databinding.FragmentShopBinding;
-import java.util.*;
-import retrofit2.*;
+import com.lauriel.mobile.ui.common.GridSpacingDecoration;
+import java.util.List;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class ShopFragment extends Fragment {
-    private FragmentShopBinding b;private ShopViewModel vm;private ProductRepository products;
-    @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,@Nullable ViewGroup parent,@Nullable Bundle saved){
-        b=FragmentShopBinding.inflate(inflater,parent,false);return b.getRoot();
-    }
-    @Override public void onViewCreated(@NonNull View view,@Nullable Bundle saved){
-        products=new ProductRepository(ApiClient.get(requireContext()).api());
-        vm=new ViewModelProvider(this).get(ShopViewModel.class);
-        var adapter=new ProductAdapter(p->startActivity(new Intent(requireContext(),ProductDetailActivity.class).putExtra("productId",p.productId)));
-        b.list.setLayoutManager(new GridLayoutManager(requireContext(),2));b.list.setAdapter(adapter);
-        vm.state().observe(getViewLifecycleOwner(),state->{
-            adapter.submit(state.products);b.loading.setVisibility(state.loading?View.VISIBLE:View.GONE);
-            b.loadMore.setVisibility(state.hasMore && !state.loading && !state.products.isEmpty()?View.VISIBLE:View.GONE);
-            b.empty.setVisibility(!state.loading && state.products.isEmpty()?View.VISIBLE:View.GONE);
-            b.empty.setText(state.error==null?com.lauriel.mobile.R.string.empty_products:com.lauriel.mobile.R.string.network_error);
+    private FragmentShopBinding b; private ShopViewModel vm; private ProductRepository products;
+    @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,@Nullable ViewGroup parent,@Nullable Bundle saved) { b=FragmentShopBinding.inflate(inflater,parent,false); return b.getRoot(); }
+    @Override public void onViewCreated(@NonNull View view,@Nullable Bundle saved) {
+        products=new ProductRepository(ApiClient.get(requireContext()).api()); vm=new ViewModelProvider(this).get(ShopViewModel.class);
+        var adapter=new ProductAdapter(p -> startActivity(new Intent(requireContext(),ProductDetailActivity.class).putExtra("productId",p.productId)));
+        b.list.setLayoutManager(new GridLayoutManager(requireContext(),2)); b.list.addItemDecoration(new GridSpacingDecoration(dp(8),2)); b.list.setAdapter(adapter); b.list.setHasFixedSize(true);
+        vm.state().observe(getViewLifecycleOwner(), state -> {
+            adapter.submit(state.products); b.loading.setVisibility(state.loading?View.VISIBLE:View.GONE);
+            b.loadMore.setVisibility(state.hasMore&&!state.loading&&!state.products.isEmpty()?View.VISIBLE:View.GONE);
+            boolean noItems=!state.loading&&state.products.isEmpty(); b.empty.setVisibility(noItems?View.VISIBLE:View.GONE); b.stateIcon.setVisibility(noItems?View.VISIBLE:View.GONE);
+            b.empty.setText(state.error==null?R.string.empty_products:R.string.network_error);
             b.error.setText(state.error==null?"":state.error);
         });
-        b.search.setText(vm.keyword());b.search.setSingleLine(true);b.search.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
-        b.search.setOnEditorActionListener((text,action,event)->{
-            if(action==EditorInfo.IME_ACTION_SEARCH){vm.query(b.search.getText().toString(),vm.sizeId(),vm.colorId());return true;}
-            return false;
-        });
-        b.filter.setOnClickListener(v->showFilters());
-        b.loadMore.setOnClickListener(v->vm.loadMore());
-        b.error.setOnClickListener(v->vm.retry());b.empty.setOnClickListener(v->vm.retry());
-        vm.init(products);
+        b.search.setText(vm.keyword()); b.search.setSingleLine(true); b.search.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
+        b.search.setOnEditorActionListener((text,action,event) -> { if(action==EditorInfo.IME_ACTION_SEARCH){ vm.query(b.search.getText().toString(),vm.sizeId(),vm.colorId(),vm.sort()); return true; } return false; });
+        b.filter.setOnClickListener(v -> showFilters()); b.loadMore.setOnClickListener(v -> vm.loadMore());
+        b.error.setOnClickListener(v -> vm.retry()); b.empty.setOnClickListener(v -> vm.retry()); vm.init(products);
     }
-    private void showFilters(){
-        products.sizes(new Callback<List<Models.Size>>(){
-            @Override public void onResponse(Call<List<Models.Size>> c,Response<List<Models.Size>> r){
-                if(!isAdded()||!r.isSuccessful()||r.body()==null){showError();return;}
-                List<Models.Size> sizes=r.body();
-                products.colors(new Callback<List<Models.Color>>(){
-                    @Override public void onResponse(Call<List<Models.Color>> c2,Response<List<Models.Color>> cr){
-                        if(!isAdded()||!cr.isSuccessful()||cr.body()==null){showError();return;}
-                        showChoices(sizes,cr.body());
+    private void showFilters() {
+        products.sizes(new Callback<>() {
+            @Override public void onResponse(Call<List<Models.Size>> call,Response<List<Models.Size>> response) {
+                if(!isAdded()||!response.isSuccessful()||response.body()==null){showError();return;}
+                List<Models.Size> sizes=response.body(); products.colors(new Callback<>() {
+                    @Override public void onResponse(Call<List<Models.Color>> call,Response<List<Models.Color>> colorsResponse) {
+                        if(!isAdded()||!colorsResponse.isSuccessful()||colorsResponse.body()==null){showError();return;}
+                        showSheet(sizes,colorsResponse.body());
                     }
-                    @Override public void onFailure(Call<List<Models.Color>> c2,Throwable e){showError();}
+                    @Override public void onFailure(Call<List<Models.Color>> call,Throwable error){showError();}
                 });
             }
-            @Override public void onFailure(Call<List<Models.Size>> c,Throwable e){showError();}
+            @Override public void onFailure(Call<List<Models.Size>> call,Throwable error){showError();}
         });
     }
-    private void showChoices(List<Models.Size> sizes,List<Models.Color> colors){
-        List<String> labels=new ArrayList<>();labels.add("Tất cả size / màu");
-        for(var size:sizes)labels.add("Kích cỡ: "+size.sizeName);
-        for(var color:colors)labels.add("Màu: "+color.colorName);
-        new MaterialAlertDialogBuilder(requireContext()).setTitle("Lọc sản phẩm")
-                .setItems(labels.toArray(new String[0]),(dialog,which)->{
-                    Long size=vm.sizeId(),color=vm.colorId();
-                    if(which==0){size=null;color=null;}
-                    else if(which<=sizes.size())size=sizes.get(which-1).sizeId;
-                    else color=colors.get(which-1-sizes.size()).colorId;
-                    vm.query(b.search.getText().toString(),size,color);
-                }).setNeutralButton("Xóa lọc",(dialog,which)->vm.query(b.search.getText().toString(),null,null)).show();
+    private void showSheet(List<Models.Size> sizes,List<Models.Color> colors) {
+        BottomSheetProductFilterBinding sheet=BottomSheetProductFilterBinding.inflate(getLayoutInflater());
+        BottomSheetDialog dialog=new BottomSheetDialog(requireContext()); dialog.setContentView(sheet.getRoot());
+        for(var size:sizes) addChip(sheet.sizes,size.sizeName,size.sizeId,java.util.Objects.equals(vm.sizeId(),size.sizeId));
+        for(var color:colors) addChip(sheet.colors,color.colorName,color.colorId,java.util.Objects.equals(vm.colorId(),color.colorId));
+        if("PRICE_ASC".equals(vm.sort())) sheet.sortPriceAsc.setChecked(true); else if("PRICE_DESC".equals(vm.sort())) sheet.sortPriceDesc.setChecked(true); else sheet.sortDefault.setChecked(true);
+        sheet.reset.setOnClickListener(v -> { sheet.sizes.clearCheck(); sheet.colors.clearCheck(); sheet.sortDefault.setChecked(true); });
+        sheet.apply.setOnClickListener(v -> {
+            Long size=checkedTag(sheet.sizes),color=checkedTag(sheet.colors); String sort="DEFAULT";
+            if(sheet.sortPriceAsc.isChecked()) sort="PRICE_ASC"; else if(sheet.sortPriceDesc.isChecked()) sort="PRICE_DESC";
+            vm.query(b.search.getText().toString(),size,color,sort); dialog.dismiss();
+        });
+        dialog.show();
     }
-    private void showError(){if(b!=null)b.error.setText(com.lauriel.mobile.R.string.network_error);}
+    private void addChip(ChipGroup group,String label,long value,boolean checked) {
+        Chip chip=new Chip(requireContext()); chip.setId(View.generateViewId()); chip.setText(label); chip.setTag(value); chip.setCheckable(true); chip.setChecked(checked); chip.setMinHeight(dp(48)); group.addView(chip);
+    }
+    private Long checkedTag(ChipGroup group) { int id=group.getCheckedChipId(); if(id==View.NO_ID)return null; Object tag=group.findViewById(id).getTag(); return tag instanceof Long?(Long)tag:null; }
+    private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
+    private void showError(){if(b!=null)b.error.setText(R.string.network_error);}
     @Override public void onDestroyView(){super.onDestroyView();b=null;}
 }

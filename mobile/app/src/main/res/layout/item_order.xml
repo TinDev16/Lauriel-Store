@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/space_md" android:background="@color/surface" android:layout_marginBottom="@dimen/space_sm" android:clickable="true" android:focusable="true">
-  <TextView android:id="@+id/id" android:layout_width="match_parent" android:layout_height="wrap_content" android:textStyle="bold" android:textSize="18sp"/>
-  <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-  <TextView android:id="@+id/date" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-  <TextView android:id="@+id/amount" android:layout_width="match_parent" android:layout_height="wrap_content" android:textStyle="bold"/>
-</LinearLayout>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" style="@style/Card.Lauriel" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/space_12" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackground">
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:padding="@dimen/space_md">
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical"><TextView android:id="@+id/id" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="@style/TextAppearance.Lauriel.SectionTitle"/><com.google.android.material.chip.Chip android:id="@+id/status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm" android:clickable="false" android:textSize="12sp"/><TextView android:id="@+id/date" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm" android:textAppearance="@style/TextAppearance.Lauriel.Caption"/><TextView android:id="@+id/amount" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_xxs" android:textAppearance="@style/TextAppearance.Lauriel.Price"/></LinearLayout>
+    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:contentDescription="@string/order_detail_description" android:src="@drawable/ic_chevron"/>
+  </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

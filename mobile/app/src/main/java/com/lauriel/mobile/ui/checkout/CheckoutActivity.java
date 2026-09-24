@@ -67,7 +67,7 @@ public class CheckoutActivity extends BaseActivity {
         preview = null;
         previewRevision = -1;
         previewCode = null;
-        if (b != null) b.preview.setText("");
+        if (b != null) { b.preview.setText(""); b.previewCard.setVisibility(View.GONE); }
     }
 
     private void validateVoucher() {
@@ -93,7 +93,8 @@ public class CheckoutActivity extends BaseActivity {
                     preview = r.body();
                     previewRevision = revision;
                     previewCode = code;
-                    b.preview.setText("Tổng sau khuyến mãi: " + Formatters.money(preview.orderAmount)
+                    b.previewCard.setVisibility(View.VISIBLE);
+                    b.preview.setText("✓ Voucher đã được áp dụng\nTạm tính: " + Formatters.money(preview.orderAmount)
                             + "\nGiảm voucher: " + Formatters.money(preview.discountAmount)
                             + "\nDự kiến thanh toán: " + Formatters.money(preview.finalAmount));
                 } else {
@@ -116,7 +117,8 @@ public class CheckoutActivity extends BaseActivity {
         if (submitting || validating || cart.isEmpty()) return;
         String address = b.address.getText().toString().trim();
         String code = b.voucher.getText().toString().trim();
-        if (address.isEmpty()) { b.error.setText("Nhập địa chỉ giao hàng."); return; }
+        b.addressLayout.setError(null);
+        if (address.isEmpty()) { b.addressLayout.setError("Vui lòng nhập địa chỉ giao hàng"); b.address.requestFocus(); return; }
         if (!code.isEmpty() && (preview == null || previewRevision != cart.revision()
                 || !code.equals(previewCode))) {
             b.error.setText("Giỏ hàng hoặc mã đã thay đổi. Vui lòng áp dụng voucher lại.");
@@ -124,6 +126,7 @@ public class CheckoutActivity extends BaseActivity {
         }
         submitting = true;
         b.checkout.setEnabled(false);
+        b.checkout.setText("Đang đặt hàng…");
         b.loading.setVisibility(View.VISIBLE);
         b.error.setText("");
         new com.lauriel.mobile.data.repository.CheckoutUseCase(
@@ -137,7 +140,7 @@ public class CheckoutActivity extends BaseActivity {
                     clearPreview();
                     long id = r.body().orderId;
                     new MaterialAlertDialogBuilder(CheckoutActivity.this)
-                            .setTitle("Đặt hàng thành công").setMessage("Đơn #" + id + " đã được tạo.")
+                            .setIcon(R.drawable.ic_check).setTitle("Đặt hàng thành công").setMessage("Đơn #" + id + " đã được tạo.\nTổng thanh toán: " + Formatters.money(r.body().finalAmount))
                             .setPositiveButton("Xem đơn hàng", (dialog, which) -> {
                                 startActivity(new Intent(CheckoutActivity.this, OrderDetailActivity.class)
                                         .putExtra("orderId", id));
@@ -149,6 +152,7 @@ public class CheckoutActivity extends BaseActivity {
                             }).setCancelable(false).show();
                 } else {
                     b.checkout.setEnabled(true);
+                    b.checkout.setText(R.string.checkout);
                     clearPreview();
                     b.error.setText(ApiClient.get(CheckoutActivity.this).error(r)
                             + (r.code() == 409 ? " Kiểm tra lại tồn kho và giỏ hàng." : ""));
@@ -159,6 +163,7 @@ public class CheckoutActivity extends BaseActivity {
                 submitting = false;
                 b.loading.setVisibility(View.GONE);
                 b.checkout.setEnabled(true);
+                    b.checkout.setText(R.string.checkout);
                 clearPreview();
                 b.error.setText(R.string.network_error);
             }

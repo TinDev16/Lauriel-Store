@@ -1,7 +1,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/nav_home" android:title="@string/home" android:icon="@android:drawable/ic_menu_view"/>
-    <item android:id="@+id/nav_shop" android:title="@string/shop" android:icon="@android:drawable/ic_menu_search"/>
-    <item android:id="@+id/nav_cart" android:title="@string/cart" android:icon="@android:drawable/ic_menu_add"/>
-    <item android:id="@+id/nav_orders" android:title="@string/orders" android:icon="@android:drawable/ic_menu_agenda"/>
-    <item android:id="@+id/nav_profile" android:title="@string/profile" android:icon="@android:drawable/ic_menu_myplaces"/>
+    <item android:id="@+id/nav_home" android:title="@string/home" android:icon="@drawable/ic_nav_home"/>
+    <item android:id="@+id/nav_shop" android:title="@string/shop" android:icon="@drawable/ic_nav_shop"/>
+    <item android:id="@+id/nav_cart" android:title="@string/cart" android:icon="@drawable/ic_nav_cart"/>
+    <item android:id="@+id/nav_orders" android:title="@string/orders" android:icon="@drawable/ic_nav_orders"/>
+    <item android:id="@+id/nav_profile" android:title="@string/profile" android:icon="@drawable/ic_nav_profile"/>
 </menu>

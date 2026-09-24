@@ -88,6 +88,7 @@ public class OrdersFragment extends Fragment {
     private void update() {
         adapter.submit(orders);
         b.empty.setVisibility(orders.isEmpty() ? View.VISIBLE : View.GONE);
+        b.stateIcon.setVisibility(orders.isEmpty() ? View.VISIBLE : View.GONE);
         b.loadMore.setVisibility(hasMore && !orders.isEmpty() ? View.VISIBLE : View.GONE);
     }
     @Override public void onDestroyView() { super.onDestroyView(); b = null; }

@@ -1,10 +1,10 @@
 <resources>
-    <color name="background">#FAFAF8</color>
-    <color name="surface">#FFFFFF</color>
-    <color name="ink">#171717</color>
-    <color name="muted">#666666</color>
-    <color name="divider">#E7E7E4</color>
-    <color name="accent">#171717</color>
-    <color name="danger">#B42318</color>
-    <color name="success">#146C43</color>
+    <color name="background">#FFFFFF</color><color name="surface">#F7F7F7</color><color name="surface_strong">#EFEFED</color>
+    <color name="ink">#111111</color><color name="muted">#757575</color><color name="divider">#EAEAEA</color>
+    <color name="accent">#111111</color><color name="on_accent">#FFFFFF</color>
+    <color name="danger">#B3261E</color><color name="danger_surface">#FDECEA</color>
+    <color name="success">#287A55</color><color name="success_surface">#E7F5ED</color>
+    <color name="info">#356AA0</color><color name="info_surface">#EAF2FA</color>
+    <color name="warning">#96620B</color><color name="warning_surface">#FFF4DD</color>
+    <color name="purple">#65558F</color><color name="purple_surface">#F0ECF8</color><color name="transparent">#00000000</color>
 </resources>

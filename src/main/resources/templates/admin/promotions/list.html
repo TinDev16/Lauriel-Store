@@ -22,7 +22,7 @@
 <tr th:each="r:${page.content}">
 <td th:text="${r.promotionName}">
 </td>
-<td th:text="${r.discountPercent}">
+<td th:text="${@view.number(r.discountPercent)}">
 </td>
 <td th:text="${@view.date(r.startDate)}">
 </td>

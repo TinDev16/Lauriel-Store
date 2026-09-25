@@ -20,18 +20,20 @@ public class WebVariantController {
         m.addAttribute("product",products.getById(productId)); m.addAttribute("page",variants.listAdmin(productId,page,size)); return "admin/products/variants";
     }
     @GetMapping("/new") public String createForm(@PathVariable Long productId,Model m) {
-        m.addAttribute("form",new ProductVariantRequest(null,null,"",null,ActiveStatus.ACTIVE)); return form(productId,null,m);
+        var product=products.getById(productId);
+        m.addAttribute("form",new ProductVariantRequest(null,null,null,product.price(),ActiveStatus.ACTIVE));
+        return form(productId,null,m);
     }
     @GetMapping("/{id}/edit") public String edit(@PathVariable Long productId,@PathVariable Long id,Model m) {
         var v=variants.detail(productId,id); m.addAttribute("form",new ProductVariantRequest(v.size().sizeId(),v.color().colorId(),v.sku(),v.price(),v.status()));
-        m.addAttribute("quantity",v.quantity()); return form(productId,id,m);
+        m.addAttribute("sku",v.sku()); m.addAttribute("quantity",v.quantity()); return form(productId,id,m);
     }
     @PostMapping public String create(@PathVariable Long productId,@Valid @ModelAttribute("form") ProductVariantRequest f,BindingResult e,Model m,RedirectAttributes flash) {
         if(!WebActions.save(() -> variants.create(productId,f),e)) return form(productId,null,m);
         return WebActions.saved("/admin/products/"+productId+"/variants",flash);
     }
     @PostMapping("/{id}") public String update(@PathVariable Long productId,@PathVariable Long id,@Valid @ModelAttribute("form") ProductVariantRequest f,BindingResult e,Model m,RedirectAttributes flash) {
-        var v=variants.detail(productId,id); m.addAttribute("quantity",v.quantity());
+        var v=variants.detail(productId,id); m.addAttribute("sku",v.sku()); m.addAttribute("quantity",v.quantity());
         if(!WebActions.save(() -> variants.updateForProduct(productId,id,f),e)) return form(productId,id,m);
         return WebActions.saved("/admin/products/"+productId+"/variants",flash);
     }

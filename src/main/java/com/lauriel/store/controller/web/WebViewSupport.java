@@ -10,8 +10,16 @@ import org.springframework.stereotype.Component;
 @Component("view")
 public class WebViewSupport {
     public String money(BigDecimal amount) {
-        return amount == null ? "—"
-                : NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN")).format(amount) + " ₫";
+        return amount == null ? "—" : number(amount) + " ₫";
+    }
+
+    public String number(Number value) {
+        if (value == null) return "—";
+        NumberFormat format = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+        format.setMinimumFractionDigits(0);
+        format.setMaximumFractionDigits(2);
+        format.setGroupingUsed(true);
+        return format.format(value);
     }
 
     public String date(LocalDateTime value) {

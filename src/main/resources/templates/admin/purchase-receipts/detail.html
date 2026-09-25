@@ -43,8 +43,8 @@
 </td>
 <td th:if="${receipt.status.name() == 'DRAFT'}">
 <form class="d-flex gap-1 mb-1" method="post" th:action="@{/admin/purchase-receipts/{id}/items/{v}(id=${receipt.receiptId},v=${r.variantId})}">
-<input class="form-control form-control-sm item-input" name="quantity" type="number" min="1" step="1" required th:value="${r.quantity}" aria-label="Số lượng">
-<input class="form-control form-control-sm item-input" name="unitPrice" type="number" min="0.01" step="0.01" required th:value="${r.unitPrice}" aria-label="Đơn giá">
+<input class="form-control form-control-sm item-input number-input" name="quantity" type="text" inputmode="numeric" data-number-scale="0" required th:value="${r.quantity}" aria-label="Số lượng">
+<input class="form-control form-control-sm item-input number-input" name="unitPrice" type="text" inputmode="decimal" data-number-scale="2" required th:value="${r.unitPrice}" aria-label="Đơn giá">
 <button class="btn btn-outline-primary btn-sm">Lưu</button>
 </form>
 <form method="post" th:action="@{/admin/purchase-receipts/{id}/items/{v}/remove(id=${receipt.receiptId},v=${r.variantId})}" data-confirm="Bỏ mặt hàng khỏi phiếu?">
@@ -60,13 +60,19 @@
 <div class="card mb-3">
 <div class="card-body">
 <h3 class="h5">Thêm mặt hàng</h3>
-<p>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/inventory}">Tra cứu mã biến thể / mã SKU</a>
-</p>
+<p class="text-muted">Chọn sản phẩm theo tên, Size và màu; không cần nhớ mã biến thể hoặc SKU.</p>
 <form method="post" th:action="@{/admin/purchase-receipts/{id}/items(id=${receipt.receiptId})}" th:object="${form}">
 <div th:replace="~{fragments/fields :: errors}">
 </div>
-<div th:replace="~{fragments/fields :: input('variantId','Mã biến thể','number')}">
+<div class="mb-3">
+<label class="form-label" for="variantId">Sản phẩm / biến thể</label>
+<select id="variantId" class="form-select" th:field="*{variantId}" required>
+<option value="">Chọn sản phẩm, Size và màu</option>
+<option th:each="v:${variants}" th:value="${v.variantId}"
+        th:text="|${v.productName} · Size ${v.size.sizeName} · ${v.color.colorName} · ${v.sku}|">
+</option>
+</select>
+<div class="text-danger small" th:errors="*{variantId}"></div>
 </div>
 <div th:replace="~{fragments/fields :: input('quantity','Số lượng','number')}">
 </div>

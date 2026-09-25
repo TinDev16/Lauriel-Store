@@ -308,19 +308,27 @@ class WebAdminTest {
     }
     @Test void variantMetadataCannotChangeQuantity() throws Exception {
         var result=mvc.perform(staff(get(productPath()+"/variants/"+variant.getVariantId()+"/edit"))).andExpect(status().isOk()).andReturn();
-        assertThat(result.getResponse().getContentAsString()).contains("Số lượng: 5").doesNotContain("name=\"quantity\"");
+        assertThat(result.getResponse().getContentAsString()).contains("Số lượng: 5").doesNotContain("name=\"quantity\"", "name=\"sku\"");
         mvc.perform(staff(post(productPath()+"/variants/"+variant.getVariantId()).with(csrf()).param("sku","NEW-WEB-SKU")
                 .param("sizeId",variant.getSize().getSizeId().toString()).param("colorId",variant.getColor().getColorId().toString())
                 .param("price","350000").param("status","ACTIVE").param("quantity","999")))
                 .andExpect(redirectedUrl(productPath()+"/variants"));
-        assertThat(variants.findById(variant.getVariantId()).orElseThrow().getQuantity()).isEqualTo(5);
+        var updated=variants.findById(variant.getVariantId()).orElseThrow();
+        assertThat(updated.getQuantity()).isEqualTo(5);
+        assertThat(updated.getSku()).isEqualTo("WEB-SKU");
     }
     @Test void variantCreateStartsWithZeroStockAndDuplicateRendersForm() throws Exception {
         var size=tx.execute(s->{var z=new Size();z.setSizeName("L");return sizes.saveAndFlush(z);});
         var request=staff(post(productPath()+"/variants").with(csrf()).param("sku","NEW-VARIANT").param("sizeId",size.getSizeId().toString())
                 .param("colorId",variant.getColor().getColorId().toString()).param("price","100").param("status","ACTIVE").param("quantity","900"));
+        var newForm=mvc.perform(staff(get(productPath()+"/variants/new"))).andExpect(status().isOk()).andReturn();
+        var defaults=(ProductVariantRequest)newForm.getModelAndView().getModel().get("form");
+        assertThat(defaults.price()).isEqualByComparingTo(product.getPrice());
+        assertThat(newForm.getResponse().getContentAsString()).doesNotContain("name=\"sku\"");
         mvc.perform(request).andExpect(redirectedUrl(productPath()+"/variants"));
-        assertThat(variants.findAll().stream().filter(v->v.getSku().equals("NEW-VARIANT")).findFirst().orElseThrow().getQuantity()).isZero();
+        var created=variants.findAll().stream().filter(v->v.getSize().getSizeId().equals(size.getSizeId())).findFirst().orElseThrow();
+        assertThat(created.getQuantity()).isZero();
+        assertThat(created.getSku()).isEqualTo("SP-"+product.getProductId()+"-S"+size.getSizeId()+"-C"+variant.getColor().getColorId());
         mvc.perform(request).andExpect(status().isOk()).andExpect(view().name("admin/products/variant-form")).andExpect(model().attributeHasErrors("form"));
     }
     @Test void variantCannotBeEditedUnderDifferentProduct() throws Exception {
@@ -442,7 +450,6 @@ class WebAdminTest {
         var result=mvc.perform(staff(get("/admin"))).andExpect(status().isOk()).andReturn();
         var summary=(DashboardService.Summary)result.getModelAndView().getModel().get("summary");
         assertThat(summary.activeProducts()).isEqualTo(1);
-        assertThat(summary.variants()).isEqualTo(1);
         assertThat(summary.pendingOrders()).isEqualTo(1);
         assertThat(summary.todayOrders()).isEqualTo(1);
         assertThat(summary.customers()).isEqualTo(2);
@@ -563,6 +570,31 @@ class WebAdminTest {
         assertThat(products.existsById(product.getProductId())).isTrue();
     }
 
+    @Test
+    void adminCanOptionallyAssignAnUploadedImageToASize() throws Exception {
+        byte[] png = new byte[] {(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10, 1, 2, 3};
+        Size medium = sizes.findAll().stream()
+                .filter(item -> "M".equals(item.getSizeName()))
+                .findFirst()
+                .orElseThrow();
+        MockMultipartFile shared = new MockMultipartFile("imageFiles", "shared.png", "image/png", png);
+        MockMultipartFile image = new MockMultipartFile("imageFiles", "medium.png", "image/png", png);
+
+        mvc.perform(admin(multipart(productPath() + "/images")
+                        .file(shared)
+                        .file(image)
+                        .param("imageSizeIds", "", medium.getSizeId().toString())
+                        .with(csrf())))
+                .andExpect(redirectedUrl(productPath() + "/edit"));
+
+        var gallery = productImages
+                .findByProduct_ProductIdOrderByDisplayOrderAscProductImageIdAsc(product.getProductId());
+        assertThat(gallery.getFirst().getSize()).isNull();
+        var saved = gallery.get(1);
+        assertThat(saved.getSize()).isNotNull();
+        assertThat(saved.getSize().getSizeId()).isEqualTo(medium.getSizeId());
+        assertThat(saved.getSize().getSizeName()).isEqualTo("M");
+    }
     @Test
     void galleryRejectsMoreThanEightImages() throws Exception {
         byte[] png = new byte[] {(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10, 1};

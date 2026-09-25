@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DashboardService {
-    public record Summary(long activeProducts, long variants, long pendingOrders, long todayOrders,
+    public record Summary(long activeProducts, long pendingOrders, long todayOrders,
                           long customers, long draftReceipts, long lowStock) {}
     private final ProductRepository products;
     private final ProductVariantRepository variants;
@@ -23,7 +23,7 @@ public class DashboardService {
     @Transactional(readOnly=true)
     public Summary summary() {
         var today = LocalDate.now(clock).atStartOfDay();
-        return new Summary(products.countByStatus(ActiveStatus.ACTIVE), variants.count(),
+        return new Summary(products.countByStatus(ActiveStatus.ACTIVE),
                 orders.countByStatus(OrderStatus.PENDING), orders.countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(today, today.plusDays(1)),
                 customers.count(), receipts.countByStatus(PurchaseReceiptStatus.DRAFT),
                 variants.countByQuantityLessThanEqual(5));

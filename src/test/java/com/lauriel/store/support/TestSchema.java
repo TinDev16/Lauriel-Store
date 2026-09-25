@@ -46,16 +46,18 @@ public final class TestSchema {
         definitions.put("product_images", """
                   `product_image_id` bigint NOT NULL AUTO_INCREMENT,
                   `product_id` bigint NOT NULL,
+                  `size_id` bigint NULL,
                   `image_url` text NOT NULL,
                   `is_primary` boolean NOT NULL DEFAULT false,
                   `display_order` int NOT NULL DEFAULT 0,
                   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                   PRIMARY KEY (`product_image_id`),
                   KEY `idx_product_images_product_order` (`product_id`,`display_order`,`product_image_id`),
+                  KEY `idx_product_images_size` (`size_id`),
                   CONSTRAINT `fk_product_images_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,
+                  CONSTRAINT `fk_product_images_size` FOREIGN KEY (`size_id`) REFERENCES `sizes` (`size_id`) ON DELETE SET NULL,
                   CONSTRAINT `chk_product_images_order` CHECK ((`display_order` >= 0))
-                """);
-        return definitions;
+                """);        return definitions;
     }
 
     public static String createIsolatedDatabase() throws Exception {

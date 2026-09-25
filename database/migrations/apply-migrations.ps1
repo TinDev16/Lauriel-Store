@@ -29,26 +29,42 @@ try {
         '--default-character-set=utf8mb4'
     )
 
-    $state = & $mysql @commonArguments --batch --skip-column-names --execute="SELECT CONCAT((SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='categories'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='products' AND COLUMN_NAME='category_id'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='orders' AND COLUMN_NAME='shipping_fee'), ':', (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='product_images'));"
+    $stateQuery = "SELECT CONCAT((SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='categories'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='products' AND COLUMN_NAME='category_id'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='orders' AND COLUMN_NAME='shipping_fee'), ':', (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='product_images'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='product_images' AND COLUMN_NAME='size_id'));"
+    $state = & $mysql @commonArguments --batch --skip-column-names --execute=$stateQuery
     if ($LASTEXITCODE -ne 0) { throw 'Could not connect to MySQL with the supplied administrator account.' }
-    if ($state -eq '1:1:1:1') {
-        Write-Host 'V2-V4 are already fully applied. No changes were made.' -ForegroundColor Green
+
+    if ($state -eq '1:1:1:1:1') {
+        Write-Host 'V2-V5 are already fully applied. No changes were made.' -ForegroundColor Green
         exit 0
     }
-    if ($state -ne '0:0:0:0') {
+
+    if ($state -eq '1:1:1:1:0') {
+        $pendingMigrations = @('V5__add_product_image_size.sql')
+    }
+    elseif ($state -eq '0:0:0:0:0') {
+        $pendingMigrations = @(
+            'V2__add_product_categories.sql',
+            'V3__add_shipping_fee.sql',
+            'V4__add_product_images.sql',
+            'V5__add_product_image_size.sql'
+        )
+    }
+    else {
         throw "Schema is partially migrated ($state). Inspect it manually before continuing."
     }
 
-    foreach ($name in @('V2__add_product_categories.sql', 'V3__add_shipping_fee.sql', 'V4__add_product_images.sql')) {
+    foreach ($name in $pendingMigrations) {
         $path = Join-Path $PSScriptRoot $name
         Write-Host "Applying $name..."
         Get-Content -Raw -Encoding UTF8 -LiteralPath $path | & $mysql @commonArguments
         if ($LASTEXITCODE -ne 0) { throw "Migration failed: $name" }
     }
 
-    $verified = & $mysql @commonArguments --batch --skip-column-names --execute="SELECT CONCAT((SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='categories'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='products' AND COLUMN_NAME='category_id'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='orders' AND COLUMN_NAME='shipping_fee'), ':', (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='product_images'));"
-    if ($LASTEXITCODE -ne 0 -or $verified -ne '1:1:1:1') { throw "Could not verify schema after migration: $verified" }
-    Write-Host 'V2, V3 and V4 were applied successfully.' -ForegroundColor Green
+    $verified = & $mysql @commonArguments --batch --skip-column-names --execute=$stateQuery
+    if ($LASTEXITCODE -ne 0 -or $verified -ne '1:1:1:1:1') {
+        throw "Could not verify schema after migration: $verified"
+    }
+    Write-Host 'V2-V5 are fully applied.' -ForegroundColor Green
 }
 finally {
     Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue

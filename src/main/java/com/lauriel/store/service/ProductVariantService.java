@@ -91,28 +91,30 @@ public class ProductVariantService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy size"));
         var color = colors.findById(request.colorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy màu"));
-        String sku = request.sku().strip();
-        boolean duplicateSku;
+        boolean creating = variant.getVariantId() == null;
         boolean duplicateAttributes;
-        if (variant.getVariantId() == null) {
-            duplicateSku = variants.existsBySkuIgnoreCase(sku);
+        if (creating) {
             duplicateAttributes = variants.existsByProduct_ProductIdAndSize_SizeIdAndColor_ColorId(
                     variant.getProduct().getProductId(), request.sizeId(), request.colorId());
         } else {
-            duplicateSku = variants.existsBySkuIgnoreCaseAndVariantIdNot(sku, variant.getVariantId());
             duplicateAttributes = variants.existsByProduct_ProductIdAndSize_SizeIdAndColor_ColorIdAndVariantIdNot(
                     variant.getProduct().getProductId(), request.sizeId(), request.colorId(), variant.getVariantId());
-        }
-        if (duplicateSku) {
-            throw new DuplicateResourceException("SKU đã tồn tại");
         }
         if (duplicateAttributes) {
             throw new DuplicateResourceException("Biến thể với size và màu này đã tồn tại.");
         }
         variant.setSize(size);
         variant.setColor(color);
-        variant.setSku(sku);
+        if (creating) variant.setSku(nextSku(variant.getProduct().getProductId(), request.sizeId(), request.colorId()));
         variant.setPrice(request.price());
         variant.setStatus(request.status());
+    }
+
+    private String nextSku(Long productId, Long sizeId, Long colorId) {
+        String base = "SP-%d-S%d-C%d".formatted(productId, sizeId, colorId);
+        String candidate = base;
+        int suffix = 2;
+        while (variants.existsBySkuIgnoreCase(candidate)) candidate = base + "-" + suffix++;
+        return candidate;
     }
 }

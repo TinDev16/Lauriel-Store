@@ -12,8 +12,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/admin/purchase-receipts")
 public class WebPurchaseReceiptController {
-    private final PurchaseReceiptService receipts; private final SupplierService suppliers;
-    public WebPurchaseReceiptController(PurchaseReceiptService receipts,SupplierService suppliers) {this.receipts=receipts;this.suppliers=suppliers;}
+    private final PurchaseReceiptService receipts; private final SupplierService suppliers; private final InventoryService inventory;
+    public WebPurchaseReceiptController(PurchaseReceiptService receipts,SupplierService suppliers,InventoryService inventory) {
+        this.receipts=receipts;this.suppliers=suppliers;this.inventory=inventory;
+    }
     @GetMapping public String list(@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="12") int size,Model m) {
         m.addAttribute("page",receipts.list(page,size)); return "admin/purchase-receipts/list";
     }
@@ -52,6 +54,10 @@ public class WebPurchaseReceiptController {
     @PostMapping("/{id}/cancel") public String cancel(@PathVariable Long id,RedirectAttributes flash) {
         return WebActions.action(() -> receipts.cancel(id),"/admin/purchase-receipts/"+id,flash);
     }
-    private String detailModel(Long id,Model m) { m.addAttribute("receipt",receipts.detail(id));return "admin/purchase-receipts/detail"; }
+    private String detailModel(Long id,Model m) {
+        m.addAttribute("receipt",receipts.detail(id));
+        m.addAttribute("variants",inventory.selectableVariants());
+        return "admin/purchase-receipts/detail";
+    }
     private String form(int page,int size,Model m) {m.addAttribute("page",suppliers.list(page,size));return "admin/purchase-receipts/form";}
 }

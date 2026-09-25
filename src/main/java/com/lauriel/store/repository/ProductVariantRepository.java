@@ -38,6 +38,10 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     @EntityGraph(attributePaths = {"product", "size", "color"})
     List<ProductVariant> findByVariantIdIn(java.util.Collection<Long> variantIds);
 
+    @Query("select v from ProductVariant v join fetch v.product join fetch v.size join fetch v.color "
+            + "order by v.product.productName, v.size.sizeName, v.color.colorName, v.variantId")
+    List<ProductVariant> findAllForSelection();
+
     @Query("select v as variant, p as promotion from ProductVariant v "
             + "join fetch v.product join fetch v.size join fetch v.color "
             + "left join PromotionProduct pp on pp.product = v.product "

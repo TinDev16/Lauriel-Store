@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 public record ProductVariantRequest(@NotNull @Positive Long sizeId,
                                     @NotNull @Positive Long colorId,
-                                    @NotBlank @Size(max = 100) String sku,
+                                    @Size(max = 100) String sku,
                                     @NotNull @PositiveOrZero @Digits(integer = 10, fraction = 2) BigDecimal price,
                                     @NotNull ActiveStatus status) {
 

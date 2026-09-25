@@ -18,6 +18,7 @@ public class WebInventoryController {
             @RequestParam(required=false) Long variantId,@RequestParam(required=false) InventoryTransactionType type,
             @RequestParam(required=false) LocalDateTime from,@RequestParam(required=false) LocalDateTime to,Model m) {
         m.addAttribute("page",inventory.history(page,size,variantId,type,from,to)); m.addAttribute("variantId",variantId);
+        m.addAttribute("variants",inventory.selectableVariants());
         m.addAttribute("type",type); m.addAttribute("from",from); m.addAttribute("to",to); return "admin/inventory/transactions";
     }
 }

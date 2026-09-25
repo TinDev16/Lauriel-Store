@@ -34,7 +34,7 @@ public final class Models {
     public static final class Promotion { public long promotionId; public String promotionName,description,startDate,endDate,status; public BigDecimal discountPercent; }
     public static final class PromotionInfo { public long promotionId; public String promotionName,startDate,endDate; public BigDecimal discountPercent; }
     public static final class ProductImage {
-        public long id; public String url; public boolean primary; public int order;
+        public long id; public String url,sizeName; public Long sizeId; public boolean primary; public int order;
     }
     public static final class Product {
         public long productId; public String productName,description,imgUrl,status;

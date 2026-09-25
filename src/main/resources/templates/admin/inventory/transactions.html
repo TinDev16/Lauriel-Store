@@ -11,9 +11,14 @@
 </option>
 </select>
 </div>
-<div class="col-md-2">
-<label class="form-label">Mã biến thể</label>
-<input class="form-control" name="variantId" type="number" min="1" step="1" th:value="${variantId}">
+<div class="col-md-4">
+<label class="form-label" for="variantId">Sản phẩm / biến thể</label>
+<select id="variantId" class="form-select" name="variantId">
+<option value="">Tất cả sản phẩm</option>
+<option th:each="v:${variants}" th:value="${v.variantId}" th:selected="${v.variantId == variantId}"
+        th:text="|${v.productName} · Size ${v.size.sizeName} · ${v.color.colorName}|">
+</option>
+</select>
 </div>
 <div class="col-md-3">
 <label class="form-label">Từ</label>

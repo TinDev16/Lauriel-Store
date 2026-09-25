@@ -26,9 +26,7 @@ import com.lauriel.mobile.util.Formatters;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -138,44 +136,86 @@ public class ProductDetailActivity extends BaseActivity {
         sheet.name.setText(product.productName);
         Glide.with(sheet.image).load(ApiClient.imageUrl(product.imgUrl)).placeholder(R.drawable.image_placeholder)
                 .error(R.drawable.image_placeholder).centerCrop().into(sheet.image);
+
+        VariantAvailability availability=new VariantAvailability(product.variants);
         final Models.Variant[] selected={null};
         final Long[] sizeId={null};
+        final Long[] colorId={null};
         final int[] quantity={1};
+        final int[] lastChoice={0};
+        List<Chip> sizeChips=new ArrayList<>();
+        List<Chip> colorChips=new ArrayList<>();
+
         Runnable update=()->{
-            Models.Variant v=selected[0];
-            BigDecimal price=v==null?product.basePrice:(v.effectivePrice==null?v.price:v.effectivePrice);
+            Models.Variant variant=selected[0];
+            BigDecimal price=variant==null?product.basePrice:
+                    (variant.effectivePrice==null?variant.price:variant.effectivePrice);
             sheet.price.setText(Formatters.money(price));
-            sheet.stock.setText(v==null?"Chọn kích thước và màu":(v.quantity==0?"Hết hàng":"Còn "+v.quantity+" sản phẩm"));
+            Glide.with(sheet.image).load(ApiClient.imageUrl(imageForSize(sizeId[0])))
+                    .placeholder(R.drawable.image_placeholder).error(R.drawable.image_placeholder)
+                    .centerCrop().into(sheet.image);
+            sheet.stock.setText(variant==null?"Ch\u1ECDn k\u00EDch th\u01B0\u1EDBc v\u00E0 m\u00E0u":
+                    "C\u00F2n "+variant.quantity+" s\u1EA3n ph\u1EA9m");
             sheet.quantity.setText(String.valueOf(quantity[0]));
             sheet.decrease.setEnabled(quantity[0]>1);
-            sheet.increase.setEnabled(v!=null&&quantity[0]<v.quantity);
-            sheet.confirm.setEnabled(v!=null&&v.quantity>0);
+            sheet.increase.setEnabled(variant!=null&&quantity[0]<variant.quantity);
+            sheet.confirm.setEnabled(variant!=null);
         };
-        Runnable colors=()->{
-            sheet.colors.removeAllViews();selected[0]=null;quantity[0]=1;Chip first=null;
-            for(var variant:product.variants){
-                if(!"ACTIVE".equals(variant.status)||variant.size==null||variant.color==null
-                        ||sizeId[0]==null||variant.size.sizeId!=sizeId[0])continue;
-                Chip chip=chip(variant.color.colorName);chip.setEnabled(variant.quantity>0);
-                chip.setOnClickListener(v->{selected[0]=variant;quantity[0]=1;update.run();});
-                sheet.colors.addView(chip);
-                if(first==null&&variant.quantity>0){first=chip;selected[0]=variant;}
+
+        final Runnable[] refresh={null};
+        refresh[0]=()->{
+            if(lastChoice[0]==1&&colorId[0]!=null
+                    &&availability.findInStock(sizeId[0],colorId[0])==null){
+                colorId[0]=null;
+                sheet.colors.clearCheck();
+            }else if(lastChoice[0]==2&&sizeId[0]!=null
+                    &&availability.findInStock(sizeId[0],colorId[0])==null){
+                sizeId[0]=null;
+                sheet.sizes.clearCheck();
             }
-            if(first!=null)first.setChecked(true);update.run();
+
+            for(Chip chip:sizeChips){
+                long id=(Long)chip.getTag();
+                Long colorConstraint=lastChoice[0]==2?colorId[0]:null;
+                chip.setEnabled(availability.sizeAvailable(id,colorConstraint));
+            }
+            for(Chip chip:colorChips){
+                long id=(Long)chip.getTag();
+                Long sizeConstraint=lastChoice[0]==1?sizeId[0]:null;
+                chip.setEnabled(availability.colorAvailable(id,sizeConstraint));
+            }
+            selected[0]=availability.findInStock(sizeId[0],colorId[0]);
+            quantity[0]=1;
+            update.run();
         };
-        Set<Long> seen=new LinkedHashSet<>();Chip firstSize=null;
-        for(var variant:product.variants){
-            if(!"ACTIVE".equals(variant.status)||variant.size==null||!seen.add(variant.size.sizeId))continue;
-            boolean available=product.variants.stream().anyMatch(v->"ACTIVE".equals(v.status)&&v.size!=null
-                    &&v.size.sizeId==variant.size.sizeId&&v.quantity>0);
-            Chip chip=chip(variant.size.sizeName);chip.setEnabled(available);long id=variant.size.sizeId;
-            chip.setOnClickListener(v->{sizeId[0]=id;colors.run();});sheet.sizes.addView(chip);
-            if(firstSize==null&&available){firstSize=chip;sizeId[0]=id;}
+
+        for(Models.Size size:availability.sizes()){
+            Chip chip=chip(size.sizeName);
+            chip.setTag(size.sizeId);
+            chip.setOnClickListener(v->{
+                sizeId[0]=chip.isChecked()?(Long)chip.getTag():null;
+                lastChoice[0]=1;
+                refresh[0].run();
+            });
+            sizeChips.add(chip);
+            sheet.sizes.addView(chip);
         }
-        if(firstSize!=null)firstSize.setChecked(true);colors.run();
+        for(Models.Color color:availability.colors()){
+            Chip chip=chip(color.colorName);
+            chip.setTag(color.colorId);
+            chip.setOnClickListener(v->{
+                colorId[0]=chip.isChecked()?(Long)chip.getTag():null;
+                lastChoice[0]=2;
+                refresh[0].run();
+            });
+            colorChips.add(chip);
+            sheet.colors.addView(chip);
+        }
+        refresh[0].run();
+
         sheet.decrease.setOnClickListener(v->{if(quantity[0]>1){quantity[0]--;update.run();}});
         sheet.increase.setOnClickListener(v->{if(selected[0]!=null&&quantity[0]<selected[0].quantity){quantity[0]++;update.run();}});
-        sheet.confirm.setText(buyNow?"Mua ngay":"Thêm vào giỏ hàng");
+        sheet.confirm.setText(buyNow?"Mua ngay":"Th\u00EAm v\u00E0o gi\u1ECF h\u00E0ng");
         sheet.confirm.setOnClickListener(v->{
             if(selected[0]==null||selected[0].quantity<quantity[0])return;
             if(buyNow)buyNow(selected[0],quantity[0]);else addToCart(selected[0],quantity[0]);
@@ -183,7 +223,6 @@ public class ProductDetailActivity extends BaseActivity {
         });
         dialog.show();
     }
-
     private Chip chip(String text){Chip chip=new Chip(this);chip.setText(text);chip.setCheckable(true);chip.setMinHeight(dp(48));return chip;}
 
     private void addToCart(Models.Variant selected,int quantity){
@@ -212,6 +251,17 @@ public class ProductDetailActivity extends BaseActivity {
                 .putExtra(CheckoutActivity.EXTRA_PRICE,price.toPlainString())
                 .putExtra(CheckoutActivity.EXTRA_QUANTITY,quantity)
                 .putExtra(CheckoutActivity.EXTRA_STOCK,selected.quantity));
+    }
+    private String imageForSize(Long sizeId){
+        if(product!=null&&product.images!=null){
+            if(sizeId!=null)for(var image:product.images)
+                if(image.sizeId!=null&&image.sizeId.equals(sizeId)&&image.url!=null&&!image.url.isBlank())return image.url;
+            for(var image:product.images)
+                if(image.primary&&image.url!=null&&!image.url.isBlank())return image.url;
+            for(var image:product.images)
+                if(image.sizeId==null&&image.url!=null&&!image.url.isBlank())return image.url;
+        }
+        return product==null?null:product.imgUrl;
     }
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
 }

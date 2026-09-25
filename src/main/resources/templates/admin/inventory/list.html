@@ -4,7 +4,7 @@
 <section>
 <form class="row g-2 mb-3" method="get" th:action="@{/admin/inventory}">
 <div class="col-md-4">
-<input class="form-control" type="number" min="0" step="1" name="threshold" placeholder="Tồn kho thấp ≤ (để trống để xem tất cả)" th:value="${threshold}">
+<input class="form-control number-input" type="text" inputmode="numeric" data-number-scale="0" name="threshold" placeholder="Tồn kho thấp ≤ (để trống để xem tất cả)" th:value="${threshold}">
 </div>
 <div class="col-auto">
 <button class="btn btn-primary">Lọc</button>

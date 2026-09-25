@@ -12,7 +12,10 @@
 <div class="alert alert-info">Số lượng chỉ xem. Nhập kho bằng phiếu nhập kho.</div>
 <p th:if="${quantity != null}" th:text="|Số lượng: ${quantity}|">
 </p>
-<div th:replace="~{fragments/fields :: input('sku','SKU','text')}">
+<div class="mb-3">
+<label class="form-label">Mã SKU</label>
+<input th:if="${id != null}" class="form-control" th:value="${sku}" readonly>
+<div th:if="${id == null}" class="form-text border rounded p-2 bg-light">Hệ thống sẽ tự tạo SKU sau khi lưu biến thể.</div>
 </div>
 <div class="mb-3">
 <label class="form-label" for="sizeId">Kích cỡ</label>
@@ -36,6 +39,7 @@
 </div>
 <div th:replace="~{fragments/fields :: input('price','Giá','number')}">
 </div>
+<div class="form-text mb-3" th:if="${id == null}">Giá mặc định lấy từ giá cơ bản của sản phẩm; bạn có thể chỉnh lại.</div>
 <div th:replace="~{fragments/fields :: status}">
 </div>
 <button class="btn btn-primary">Lưu</button>

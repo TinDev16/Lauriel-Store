@@ -40,6 +40,11 @@ public class InventoryService {
     }
 
     @Transactional(readOnly = true)
+    public List<InventoryResponse> selectableVariants() {
+        return variants.findAllForSelection().stream().map(InventoryMapper::inventory).toList();
+    }
+
+    @Transactional(readOnly = true)
     public InventoryResponse detail(Long id) {
         return InventoryMapper.inventory(variants.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy biến thể")));

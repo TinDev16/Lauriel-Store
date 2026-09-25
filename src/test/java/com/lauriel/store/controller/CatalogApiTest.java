@@ -405,7 +405,8 @@ class CatalogApiTest {
                         .header("Authorization", token("STAFF")).contentType(MediaType.APPLICATION_JSON)
                         .content(variantJson(large.getSizeId(), white.getColorId(), "NEW-L-WHITE", "155")))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.quantity").value(0))
-                .andExpect(jsonPath("$.sku").value("NEW-L-WHITE"));
+                .andExpect(jsonPath("$.sku").value("SP-" + shirt.getProductId()
+                        + "-S" + large.getSizeId() + "-C" + white.getColorId()));
     }
 
     @ParameterizedTest
@@ -421,7 +422,7 @@ class CatalogApiTest {
     }
 
     @Test
-    void duplicateVariantAttributesAndSkuAre409() throws Exception {
+    void duplicateAttributesAreRejectedAndClientSkuIsIgnored() throws Exception {
         mvc.perform(post("/api/admin/products/" + shirt.getProductId() + "/variants")
                         .header("Authorization", token("ADMIN")).contentType(MediaType.APPLICATION_JSON)
                         .content(variantJson(small.getSizeId(), black.getColorId(), "OTHER-SKU", "150")))
@@ -429,19 +430,24 @@ class CatalogApiTest {
         mvc.perform(post("/api/admin/products/" + shirt.getProductId() + "/variants")
                         .header("Authorization", token("ADMIN")).contentType(MediaType.APPLICATION_JSON)
                         .content(variantJson(large.getSizeId(), white.getColorId(), "shirt-s-black", "150")))
-                .andExpect(status().isConflict());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.sku").value("SP-" + shirt.getProductId()
+                        + "-S" + large.getSizeId() + "-C" + white.getColorId()));
     }
 
     @Test
     void databaseUniqueConstraintStillProtectsAgainstRacesAndReturnsSanitized409() throws Exception {
-        // Simulate a race after the application precheck; the original DB constraint is the final guard.
+        // Simulate a collision created after the generated-SKU precheck.
+        String generated = "SP-" + shirt.getProductId() + "-S" + large.getSizeId() + "-C" + white.getColorId();
+        editableVariant.setSku(generated);
+        variants.saveAndFlush(editableVariant);
         doReturn(false).when(variants).existsBySkuIgnoreCase(anyString());
         var result = mvc.perform(post("/api/admin/products/" + shirt.getProductId() + "/variants")
                         .header("Authorization", token("ADMIN")).contentType(MediaType.APPLICATION_JSON)
-                        .content(variantJson(large.getSizeId(), white.getColorId(), "SHIRT-S-BLACK", "150")))
+                        .content(variantJson(large.getSizeId(), white.getColorId(), "CLIENT-SKU", "150")))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.status").value(409)).andReturn();
         assertThat(result.getResponse().getContentAsString())
-                .doesNotContain("INSERT", "insert into", "constraint", "trace", "SHIRT-S-BLACK");
+                .doesNotContain("INSERT", "insert into", "constraint", "trace", generated);
     }
 
     @Test
@@ -450,7 +456,7 @@ class CatalogApiTest {
                         .header("Authorization", token("STAFF")).contentType(MediaType.APPLICATION_JSON)
                         .content(variantJson(small.getSizeId(), black.getColorId(), "UPDATED-SKU", "170")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.quantity").value(5))
-                .andExpect(jsonPath("$.sku").value("UPDATED-SKU"));
+                .andExpect(jsonPath("$.sku").value("SHIRT-S-BLACK"));
         assertThat(products.findById(shirt.getProductId()).orElseThrow().getPrice()).isEqualByComparingTo("100");
     }
 
@@ -484,7 +490,8 @@ class CatalogApiTest {
         mvc.perform(put("/api/admin/product-variants/" + editableVariant.getVariantId())
                         .header("Authorization", token("ADMIN")).contentType(MediaType.APPLICATION_JSON)
                         .content(variantJson(small.getSizeId(), black.getColorId(), "PANTS-M-BLACK", "170")))
-                .andExpect(status().isConflict());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sku").value("SHIRT-S-BLACK"));
         mvc.perform(put("/api/admin/product-variants/999999")
                         .header("Authorization", token("ADMIN")).contentType(MediaType.APPLICATION_JSON)
                         .content(variantJson(small.getSizeId(), black.getColorId(), "NEW-SKU", "170")))

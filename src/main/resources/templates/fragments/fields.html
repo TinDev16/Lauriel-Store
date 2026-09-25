@@ -2,7 +2,9 @@
 <div th:fragment="input(name,label,type)" class="mb-3">
 <label class="form-label" th:for="${name}" th:text="${label}">
 </label>
-<input class="form-control" th:type="${type}" th:field="*{__${name}__}" th:attr="step=${type == 'number' ? (name == 'quantity' or name == 'variantId' ? '1' : '0.01') : null}">
+<input class="form-control" th:type="${type == 'number' ? 'text' : type}" th:field="*{__${name}__}"
+       th:classappend="${type == 'number'} ? ' number-input' : ''"
+       th:attr="inputmode=${type == 'number' ? 'decimal' : null},data-number-scale=${type == 'number' ? (name == 'quantity' or name == 'variantId' ? '0' : '2') : null}">
 <div class="text-danger small" th:errors="*{__${name}__}">
 </div>
 </div>

@@ -8,7 +8,11 @@ public final class Formatters {
     private Formatters(){}
     public static String money(BigDecimal value){
         if(value==null)return "—";
-        return NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN")).format(value)+" ₫";
+        NumberFormat format=NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+        format.setMinimumFractionDigits(0);
+        format.setMaximumFractionDigits(2);
+        format.setGroupingUsed(true);
+        return format.format(value)+" ₫";
     }
     public static String date(String iso){
         if(iso==null || iso.isEmpty())return "—";

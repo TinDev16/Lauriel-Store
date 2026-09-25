@@ -20,4 +20,10 @@ class CommerceMigrationTest {
                 "INSERT INTO product_images", "p.img_url", "NOT EXISTS");
         assertThat(sql.toUpperCase()).doesNotContain("DROP TABLE", "TRUNCATE", "DROP COLUMN");
     }
+    @Test
+    void productImageSizeMigrationIsOptionalAndAdditive() throws Exception {
+        String sql=Files.readString(Path.of("database/migrations/V5__add_product_image_size.sql"));
+        assertThat(sql).contains("ADD COLUMN size_id", "REFERENCES sizes", "ON DELETE SET NULL");
+        assertThat(sql.toUpperCase()).doesNotContain("DROP TABLE", "TRUNCATE", "DROP COLUMN");
+    }
 }

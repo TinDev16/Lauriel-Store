@@ -67,7 +67,9 @@ public class ProductService {
         var variants = pricing.publicVariants(productId);
         var images = productImages.findByProduct_ProductIdOrderByDisplayOrderAscProductImageIdAsc(productId)
                 .stream().map(i -> new ProductImageResponse(i.getProductImageId(), i.getImageUrl(),
-                        i.isPrimary(), i.getDisplayOrder())).toList();
+                        i.isPrimary(), i.getDisplayOrder(),
+                        i.getSize() == null ? null : i.getSize().getSizeId(),
+                        i.getSize() == null ? null : i.getSize().getSizeName())).toList();
         return new ProductDetailResponse(product.getProductId(), product.getProductName(),
                 CatalogMapper.category(product.getCategory()), product.getDescription(), product.getPrice(),
                 product.getImgUrl(), product.getStatus(), variants, images);

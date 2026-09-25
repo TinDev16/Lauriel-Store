@@ -21,7 +21,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '3b6d01a6-4b56-11f1-bebb-d03957e471cc:1-351';
+-- SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '3b6d01a6-4b56-11f1-bebb-d03957e471cc:1-351';
 
 --
 -- Table structure for table `colors`

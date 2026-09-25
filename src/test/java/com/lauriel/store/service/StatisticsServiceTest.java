@@ -50,7 +50,7 @@ class StatisticsServiceTest {
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
         today = LocalDate.now(ZoneId.systemDefault());
         for (String table : new String[] {"purchase_receipt_details", "purchase_receipts",
-                "order_details", "orders", "product_variants", "products", "sizes", "colors",
+                "order_details", "orders", "product_variants", "products", "categories", "sizes", "colors",
                 "customers", "vouchers", "suppliers", "users"}) {
             jdbc.execute("DELETE FROM " + table);
         }
@@ -64,8 +64,9 @@ class StatisticsServiceTest {
         LocalDate yesterday = today.minusDays(1);
         jdbc.update("INSERT INTO customers(customer_id,customer_name,created_at) VALUES(101,'An',?)", at(yesterday));
         jdbc.update("INSERT INTO customers(customer_id,customer_name,created_at) VALUES(102,'Binh',?)", at(today));
-        jdbc.update("INSERT INTO products(product_id,product_name,price,status) VALUES(101,'Ao',50,'ACTIVE')");
-        jdbc.update("INSERT INTO products(product_id,product_name,price,status) VALUES(102,'Quan',60,'ACTIVE')");
+        jdbc.update("INSERT INTO categories(category_id,category_name,status) VALUES(101,'Clothing','ACTIVE')");
+        jdbc.update("INSERT INTO products(product_id,category_id,product_name,price,status) VALUES(101,101,'Ao',50,'ACTIVE')");
+        jdbc.update("INSERT INTO products(product_id,category_id,product_name,price,status) VALUES(102,101,'Quan',60,'ACTIVE')");
         jdbc.update("INSERT INTO sizes(size_id,size_name) VALUES(101,'M')");
         jdbc.update("INSERT INTO sizes(size_id,size_name) VALUES(102,'L')");
         jdbc.update("INSERT INTO colors(color_id,color_name) VALUES(101,'Den')");

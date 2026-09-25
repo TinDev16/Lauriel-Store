@@ -10,13 +10,14 @@ public final class OrderMapper {
 
     public static OrderSummaryResponse summary(Order order) {
         return new OrderSummaryResponse(order.getOrderId(), order.getCustomer().getCustomerId(), order.getStatus(),
-                order.getCreatedAt(), order.getTotalAmount(), order.getDiscountAmount(), order.getFinalAmount());
+                order.getCreatedAt(), order.getTotalAmount(), order.getDiscountAmount(), order.getShippingFee(), order.getFinalAmount());
     }
 
     public static OrderResponse order(Order order, List<OrderDetail> items) {
         return new OrderResponse(order.getOrderId(), order.getCustomer().getCustomerId(), order.getStatus(),
                 order.getCreatedAt(), order.getUpdatedAt(), order.getShippingAddress(), order.getTotalAmount(),
-                order.getDiscountAmount(), order.getFinalAmount(), items.stream().map(OrderMapper::item).toList(),
+                order.getDiscountAmount(), order.getShippingFee(), order.getFinalAmount(),
+                items.stream().map(OrderMapper::item).toList(),
                 order.getVoucher() == null ? null : order.getVoucher().getCode());
     }
 
@@ -24,6 +25,6 @@ public final class OrderMapper {
         var variant = item.getProductVariant();
         return new OrderDetailResponse(variant.getVariantId(), variant.getSku(), variant.getProduct().getProductName(),
                 CatalogMapper.size(variant.getSize()), CatalogMapper.color(variant.getColor()), item.getQuantity(),
-                item.getUnitPrice(), item.getDiscountAmount(), item.getSubtotal());
+                item.getUnitPrice(), item.getDiscountAmount(), item.getSubtotal(), variant.getProduct().getImgUrl());
     }
 }

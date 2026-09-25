@@ -26,6 +26,15 @@ Dump chứa `DROP TABLE`, `GTID_PURGED` và `SQL_LOG_BIN`. Chỉ import vào sch
 đã xác định phù hợp; các statement GTID/binlog có thể yêu cầu quyền bổ sung.
 Giữ dump gốc; nếu cần điều chỉnh cách import, dùng bản sao đã kiểm tra.
 
+## Migration Product Category
+
+Giữ nguyên dump lịch sử `database/lauriel.sql`. Với database `lauriel` đã có dữ liệu, hãy sao lưu rồi chạy một lần file:
+
+```powershell
+mysql --default-character-set=utf8mb4 -u <user> -p lauriel < database/migrations/V2__add_product_categories.sql
+```
+
+Migration tạo `categories`, thêm `products.category_id` ở trạng thái nullable, seed các danh mục tiếng Việt, gán toàn bộ Product cũ vào **Chưa phân loại**, rồi mới chuyển cột sang `NOT NULL` và thêm foreign key. Migration không drop/reset Product hoặc Variant. Sau khi chạy, giữ `spring.jpa.hibernate.ddl-auto=validate` và khởi động backend để Hibernate xác nhận schema.
 ## Cấu hình và chạy
 
 Cài JDK 21 và đặt `JAVA_HOME` trỏ tới JDK. Wrapper tự tải Maven lần đầu nên cần Internet.
@@ -104,7 +113,7 @@ Remove-Item Env:LAURIEL_DB_VALIDATION
 
 ## Mapping quan trọng
 
-- 17 Entity map 17 bảng; tiền dùng `BigDecimal`, DATETIME dùng `LocalDateTime`.
+- 18 Entity map 18 bảng; tiền dùng `BigDecimal`, DATETIME dùng `LocalDateTime`.
 - OrderDetail, PurchaseReceiptDetail và PromotionProduct dùng `EmbeddedId/MapsId`.
 - Customer → User là one-to-one nullable; Payment → Order là many-to-one.
 - Relationship ưu tiên LAZY, không cascade remove; không dùng Lombok `@Data` trên Entity.
@@ -519,3 +528,16 @@ Báo cáo chi tiết: [docs/phase8-result.md](docs/phase8-result.md).
 Android `clean testDebugUnitTest assembleDebug` thành công với 41/41 unit test; APK debug trong
 `mobile/app/build/outputs/apk/debug/`. Chưa kiểm chứng end-to-end MySQL do chưa có credential/JWT secret.
 Không triển khai Payment Gateway hay các chức năng ngoài Phase 8.
+
+## Commerce upgrade — migration V3/V4
+
+Trước khi chạy source mới trên MySQL hiện có, sao lưu database và chạy lần lượt:
+
+```powershell
+mysql -u root -p lauriel_store < database/migrations/V3__add_shipping_fee.sql
+mysql -u root -p lauriel_store < database/migrations/V4__add_product_images.sql
+```
+
+V3 thêm `orders.shipping_fee` với giá trị mặc định 20.000 VNĐ, nên các đơn cũ cũng nhận giá trị này. V4 tạo `product_images` và sao chép `products.img_url` hiện có thành ảnh chính; cột `img_url` được giữ lại để tương thích ngược. Sau migration, Hibernate `ddl-auto=validate` sẽ kiểm tra schema khi khởi động.
+
+Phí giao hàng được cấu hình tập trung bằng `store.shipping-fee=20000.00`. Backend tính lại Promotion, Voucher, phí giao hàng và tổng thanh toán; Android chỉ hiển thị preview.

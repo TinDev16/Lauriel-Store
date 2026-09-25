@@ -1,6 +1,7 @@
 package com.lauriel.store.service;
 
 import com.lauriel.store.dto.request.*;
+import com.lauriel.store.config.StoreCommerceProperties;
 import com.lauriel.store.dto.response.*;
 import com.lauriel.store.entity.Order;
 import com.lauriel.store.entity.OrderDetail;
@@ -29,9 +30,11 @@ public class OrderService {
     private final InventoryService inventory;
     private final PricingService pricing;
     private final VoucherService vouchers;
+    private final StoreCommerceProperties commerce;
 
     public OrderService(OrderRepository orders, OrderDetailRepository details, CustomerRepository customers,
-            UserRepository users, InventoryService inventory, PricingService pricing, VoucherService vouchers) {
+            UserRepository users, InventoryService inventory, PricingService pricing, VoucherService vouchers,
+            StoreCommerceProperties commerce) {
         this.orders = orders;
         this.details = details;
         this.customers = customers;
@@ -39,6 +42,7 @@ public class OrderService {
         this.inventory = inventory;
         this.pricing = pricing;
         this.vouchers = vouchers;
+        this.commerce = commerce;
     }
 
     @Transactional
@@ -73,7 +77,8 @@ public class OrderService {
         order.setVoucher(applied.voucher());
         order.setTotalAmount(total);
         order.setDiscountAmount(applied.discount());
-        order.setFinalAmount(total.subtract(applied.discount()));
+        order.setShippingFee(pricing.checkedAmount(commerce.getShippingFee()));
+        order.setFinalAmount(pricing.checkedAmount(total.subtract(applied.discount()).add(order.getShippingFee())));
         orders.saveAndFlush(order);
         for (var item : lines) {
             item.setId(new OrderDetailId(order.getOrderId(), item.getProductVariant().getVariantId()));
@@ -84,11 +89,18 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<OrderSummaryResponse> myOrders(Long actorId, int page, int size) {
+    public PageResponse<OrderSummaryResponse> myOrders(Long actorId, int page, int size, OrderStatus status) {
         var customer = requireCustomer(actorId);
-        return InventoryPagination.response(orders.findByCustomer_CustomerId(customer.getCustomerId(),
-                InventoryPagination.page(page, size, Sort.by(Sort.Direction.DESC, "createdAt", "orderId"))),
-                OrderMapper::summary);
+        var pageable = InventoryPagination.page(page, size,
+                Sort.by(Sort.Direction.DESC, "createdAt", "orderId"));
+        var result = status == null
+                ? orders.findByCustomer_CustomerId(customer.getCustomerId(), pageable)
+                : orders.findByCustomer_CustomerIdAndStatus(customer.getCustomerId(), status, pageable);
+        return InventoryPagination.response(result, OrderMapper::summary);
+    }
+
+    public PageResponse<OrderSummaryResponse> myOrders(Long actorId, int page, int size) {
+        return myOrders(actorId, page, size, null);
     }
 
     @Transactional(readOnly = true)

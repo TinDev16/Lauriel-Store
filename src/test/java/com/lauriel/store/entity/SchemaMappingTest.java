@@ -2,6 +2,8 @@ package com.lauriel.store.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.lauriel.store.support.TestSchema;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
 import java.nio.file.Files;
@@ -22,13 +24,8 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 class SchemaMappingTest {
     @Test
     void mappingsMatchAllTablesColumnsKeysAndEnumsInOriginalDump() throws Exception {
-        String sql = Files.readString(Path.of("database/lauriel.sql"));
-        Map<String, String> tableDefinitions = new LinkedHashMap<>();
-        var tables = Pattern.compile("CREATE TABLE `(\\w+)` \\((.*?)\\) ENGINE=", Pattern.DOTALL).matcher(sql);
-        while (tables.find()) {
-            tableDefinitions.put(tables.group(1), tables.group(2));
-        }
-        assertThat(tableDefinitions).hasSize(17);
+        Map<String, String> tableDefinitions = TestSchema.migratedTableDefinitions();
+        assertThat(tableDefinitions).hasSize(19);
 
         var registry = new StandardServiceRegistryBuilder()
                 .applySetting("hibernate.dialect", "org.hibernate.dialect.MySQLDialect")

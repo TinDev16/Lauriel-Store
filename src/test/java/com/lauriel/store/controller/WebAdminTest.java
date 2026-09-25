@@ -43,6 +43,8 @@ class WebAdminTest {
     private static final String HASH=new BCryptPasswordEncoder().encode(PASSWORD);
     @Autowired WebApplicationContext context;
     @Autowired ProductRepository products;
+    @Autowired ProductImageRepository productImages;
+    @Autowired CategoryRepository categories;
     @Autowired ProductVariantRepository variants;
     @Autowired SizeRepository sizes;
     @Autowired ColorRepository colors;
@@ -64,6 +66,7 @@ class WebAdminTest {
     private MockMvc mvc;
     private TransactionTemplate tx;
     private final Map<String,User> accounts=new HashMap<>();
+    private Category category;
     private Product product;
     private ProductVariant variant;
     private Supplier supplier;
@@ -86,7 +89,7 @@ class WebAdminTest {
             history.deleteAllInBatch();orderItems.deleteAllInBatch();orders.deleteAllInBatch();
             receiptItems.deleteAllInBatch();receipts.deleteAllInBatch();suppliers.deleteAllInBatch();
             associations.deleteAllInBatch();promotions.deleteAllInBatch();vouchers.deleteAllInBatch();
-            variants.deleteAllInBatch();products.deleteAllInBatch();sizes.deleteAllInBatch();colors.deleteAllInBatch();
+            variants.deleteAllInBatch();products.deleteAllInBatch();categories.deleteAllInBatch();sizes.deleteAllInBatch();colors.deleteAllInBatch();
             customers.deleteAllInBatch();users.deleteAllInBatch();
             for(String role:List.of("ADMIN","STAFF","CUSTOMER")) {
                 var u=new User();u.setUsername("web-"+role);u.setFullName("Fixture "+role);u.setPasswordHash(HASH);
@@ -98,7 +101,8 @@ class WebAdminTest {
                 }
             }
             var walkIn=new Customer();walkIn.setCustomerName("Walk-in customer");customers.saveAndFlush(walkIn);
-            product=new Product();product.setProductName("Web shirt");product.setPrice(new BigDecimal("250000"));
+            category=new Category();category.setCategoryName("Clothing");category.setStatus(ActiveStatus.ACTIVE);category=categories.saveAndFlush(category);
+            product=new Product();product.setCategory(category);product.setProductName("Web shirt");product.setPrice(new BigDecimal("250000"));
             product.setStatus(ActiveStatus.INACTIVE);products.saveAndFlush(product);
             var size=new Size();size.setSizeName("M");sizes.saveAndFlush(size);
             var color=new Color();color.setColorName("Green");colors.saveAndFlush(color);
@@ -142,6 +146,7 @@ class WebAdminTest {
     private MockHttpServletRequestBuilder productForm(String path,String name) { return productForm(path,name,"300000"); }
     private MockHttpServletRequestBuilder productForm(String path,String name,String price) {
         return admin(post(path).with(csrf()).param("productName",name).param("description","Web description")
+                .param("categoryId",category.getCategoryId().toString())
                 .param("price",price).param("imgUrl","").param("status","ACTIVE"));
     }
     private MockHttpServletRequestBuilder voucherForm(String path,String code) { return voucherForm(path,code,"15","2027-01-01T00:00"); }
@@ -159,7 +164,7 @@ class WebAdminTest {
         byte[] png = new byte[] {(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10, 1, 2, 3};
         MockMultipartFile first = new MockMultipartFile("imageFile", "first.png", "image/png", png);
         mvc.perform(admin(multipart("/admin/products").file(first).with(csrf())
-                .param("productName", "Image product").param("price", "300000").param("status", "ACTIVE")))
+                .param("productName", "Image product").param("categoryId", category.getCategoryId().toString()).param("price", "300000").param("status", "ACTIVE")))
                 .andExpect(redirectedUrl("/admin/products"));
         var created = products.findAll().stream().filter(p -> p.getProductName().equals("Image product")).findFirst().orElseThrow();
         String firstUrl = created.getImgUrl();
@@ -171,13 +176,13 @@ class WebAdminTest {
                 .andExpect(status().isOk()).andExpect(content().string(containsString(firstUrl)));
 
         String editUrl = "/admin/products/" + created.getProductId();
-        mvc.perform(admin(multipart(editUrl).with(csrf()).param("productName", "Image product")
+        mvc.perform(admin(multipart(editUrl).with(csrf()).param("productName", "Image product").param("categoryId", category.getCategoryId().toString())
                 .param("price", "300000").param("status", "ACTIVE")))
                 .andExpect(redirectedUrl("/admin/products"));
         assertThat(products.findById(created.getProductId()).orElseThrow().getImgUrl()).isEqualTo(firstUrl);
 
         MockMultipartFile replacement = new MockMultipartFile("imageFile", "second.png", "image/png", png);
-        mvc.perform(admin(multipart(editUrl).file(replacement).with(csrf()).param("productName", "Image product")
+        mvc.perform(admin(multipart(editUrl).file(replacement).with(csrf()).param("productName", "Image product").param("categoryId", category.getCategoryId().toString())
                 .param("price", "300000").param("status", "ACTIVE")))
                 .andExpect(redirectedUrl("/admin/products"));
         String secondUrl = products.findById(created.getProductId()).orElseThrow().getImgUrl();
@@ -189,7 +194,7 @@ class WebAdminTest {
     @Test void invalidProductImageShowsFormWithoutCreatingProduct() throws Exception {
         MockMultipartFile invalid = new MockMultipartFile("imageFile", "fake.png", "image/png", new byte[] {1, 2, 3});
         mvc.perform(admin(multipart("/admin/products").file(invalid).with(csrf())
-                .param("productName", "Invalid image product").param("price", "300000").param("status", "ACTIVE")))
+                .param("productName", "Invalid image product").param("categoryId", category.getCategoryId().toString()).param("price", "300000").param("status", "ACTIVE")))
                 .andExpect(status().isOk()).andExpect(model().attributeHasErrors("form"));
         assertThat(products.findAll()).noneMatch(p -> p.getProductName().equals("Invalid image product"));
     }
@@ -272,7 +277,7 @@ class WebAdminTest {
         mvc.perform(staff(get("/admin/products").param("keyword","Web").param("status","INACTIVE").param("size","1")))
                 .andExpect(status().isOk()).andExpect(content().string(containsString("Web shirt")))
                 .andExpect(content().string(containsString("INACTIVE")));
-        tx.executeWithoutResult(s -> {var p=new Product();p.setProductName("Web second");p.setPrice(BigDecimal.TEN);p.setStatus(ActiveStatus.INACTIVE);products.saveAndFlush(p);});
+        tx.executeWithoutResult(s -> {var p=new Product();p.setCategory(category);p.setProductName("Web second");p.setPrice(BigDecimal.TEN);p.setStatus(ActiveStatus.INACTIVE);products.saveAndFlush(p);});
         var result=mvc.perform(admin(get("/admin/products").param("keyword","Web").param("status","INACTIVE").param("size","1")))
                 .andExpect(status().isOk()).andReturn();
         assertThat(result.getResponse().getContentAsString()).contains("keyword=Web","status=INACTIVE","size=1","page=1");
@@ -497,7 +502,7 @@ class WebAdminTest {
     @Test void paginationEncodesUnicodeAndSpecialCharactersOnce() throws Exception {
         tx.executeWithoutResult(s -> {
             for(String name:List.of("Áo & đẹp + sale","Áo & đẹp + sale 2")) {
-                var p=new Product();p.setProductName(name);p.setPrice(BigDecimal.ONE);p.setStatus(ActiveStatus.ACTIVE);products.saveAndFlush(p);
+                var p=new Product();p.setCategory(category);p.setProductName(name);p.setPrice(BigDecimal.ONE);p.setStatus(ActiveStatus.ACTIVE);products.saveAndFlush(p);
             }
         });
         String keyword="Áo & đẹp + sale";
@@ -508,4 +513,64 @@ class WebAdminTest {
         assertThat(java.net.URLDecoder.decode(query.getFirst("keyword"),java.nio.charset.StandardCharsets.UTF_8)).isEqualTo(keyword);
         assertThat(next).contains("%26").doesNotContain("%2526");
     }
+
+    @Test void categoryPagesCreateEditStatusAndProductFilterWork() throws Exception {
+        mvc.perform(staff(get("/admin/categories"))).andExpect(status().isOk())
+                .andExpect(view().name("admin/categories/list")).andExpect(content().string(containsString("Clothing")));
+        mvc.perform(staff(get("/admin/categories/new"))).andExpect(status().isOk())
+                .andExpect(view().name("admin/categories/form"));
+        mvc.perform(staff(post("/admin/categories").with(csrf()).param("categoryName", "Accessories").param("status", "ACTIVE")))
+                .andExpect(redirectedUrl("/admin/categories"));
+        var created=categories.findByCategoryNameIgnoreCase("Accessories").orElseThrow();
+        mvc.perform(staff(get("/admin/categories/"+created.getCategoryId()+"/edit")))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Accessories")));
+        mvc.perform(staff(post("/admin/categories/"+created.getCategoryId()).with(csrf())
+                        .param("categoryName", "Phụ kiện").param("status", "ACTIVE")))
+                .andExpect(redirectedUrl("/admin/categories"));
+        mvc.perform(staff(post("/admin/categories/"+created.getCategoryId()+"/status").with(csrf()).param("status", "INACTIVE")))
+                .andExpect(redirectedUrl("/admin/categories"));
+        assertThat(categories.findById(created.getCategoryId()).orElseThrow().getStatus()).isEqualTo(ActiveStatus.INACTIVE);
+        mvc.perform(staff(get("/admin/products/new"))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Clothing")));
+        mvc.perform(staff(get("/admin/products").param("categoryId",category.getCategoryId().toString())))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Web shirt")));
+    }
+    @Test
+    void adminCanUploadMultipleImagesSetPrimaryAndDeleteWithoutDeletingProduct() throws Exception {
+        byte[] png = new byte[] {(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10, 1, 2, 3};
+        MockMultipartFile one = new MockMultipartFile("imageFiles", "one.png", "image/png", png);
+        MockMultipartFile two = new MockMultipartFile("imageFiles", "two.png", "image/png", png);
+        MockMultipartFile three = new MockMultipartFile("imageFiles", "three.png", "image/png", png);
+        mvc.perform(admin(multipart(productPath() + "/images").file(one).file(two).file(three).with(csrf())))
+                .andExpect(redirectedUrl(productPath() + "/edit"));
+        var gallery = productImages.findByProduct_ProductIdOrderByDisplayOrderAscProductImageIdAsc(product.getProductId());
+        assertThat(gallery).hasSize(3);
+        assertThat(gallery).filteredOn(ProductImage::isPrimary).hasSize(1);
+        assertThat(products.findById(product.getProductId()).orElseThrow().getImgUrl())
+                .isEqualTo(gallery.getFirst().getImageUrl());
+
+        Long secondId = gallery.get(1).getProductImageId();
+        mvc.perform(admin(post(productPath() + "/images/" + secondId + "/primary").with(csrf())))
+                .andExpect(redirectedUrl(productPath() + "/edit"));
+        gallery = productImages.findByProduct_ProductIdOrderByDisplayOrderAscProductImageIdAsc(product.getProductId());
+        assertThat(gallery).filteredOn(ProductImage::isPrimary)
+                .singleElement().extracting(ProductImage::getProductImageId).isEqualTo(secondId);
+
+        mvc.perform(admin(post(productPath() + "/images/" + secondId + "/delete").with(csrf())))
+                .andExpect(redirectedUrl(productPath() + "/edit"));
+        gallery = productImages.findByProduct_ProductIdOrderByDisplayOrderAscProductImageIdAsc(product.getProductId());
+        assertThat(gallery).hasSize(2).filteredOn(ProductImage::isPrimary).hasSize(1);
+        assertThat(products.existsById(product.getProductId())).isTrue();
+    }
+
+    @Test
+    void galleryRejectsMoreThanEightImages() throws Exception {
+        byte[] png = new byte[] {(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10, 1};
+        var request = multipart(productPath() + "/images").with(csrf());
+        for (int i=0;i<9;i++) request.file(new MockMultipartFile("imageFiles", i+".png", "image/png", png));
+        mvc.perform(admin(request)).andExpect(redirectedUrl(productPath() + "/edit"))
+                .andExpect(flash().attributeExists("errorMessage"));
+        assertThat(productImages.countByProduct_ProductId(product.getProductId())).isZero();
+    }
+
 }

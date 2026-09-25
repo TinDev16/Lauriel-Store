@@ -7,5 +7,6 @@ import java.util.List;
 
 public record OrderResponse(Long orderId, Long customerId, OrderStatus status, LocalDateTime createdAt,
                             LocalDateTime updatedAt, String shippingAddress, BigDecimal totalAmount,
-                            BigDecimal discountAmount, BigDecimal finalAmount, List<OrderDetailResponse> items, String voucherCode) {
+                            BigDecimal discountAmount, BigDecimal shippingFee, BigDecimal finalAmount,
+                            List<OrderDetailResponse> items, String voucherCode) {
 }

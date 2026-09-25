@@ -42,36 +42,43 @@ public class ShopFragment extends Fragment {
             b.error.setText(state.error==null?"":state.error);
         });
         b.search.setText(vm.keyword()); b.search.setSingleLine(true); b.search.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
-        b.search.setOnEditorActionListener((text,action,event) -> { if(action==EditorInfo.IME_ACTION_SEARCH){ vm.query(b.search.getText().toString(),vm.sizeId(),vm.colorId(),vm.sort()); return true; } return false; });
+        b.search.setOnEditorActionListener((text,action,event) -> { if(action==EditorInfo.IME_ACTION_SEARCH){ vm.query(b.search.getText().toString(),vm.categoryId(),vm.sizeId(),vm.colorId(),vm.sort()); return true; } return false; });
         b.filter.setOnClickListener(v -> showFilters()); b.loadMore.setOnClickListener(v -> vm.loadMore());
         b.error.setOnClickListener(v -> vm.retry()); b.empty.setOnClickListener(v -> vm.retry()); vm.init(products);
     }
     private void showFilters() {
-        products.sizes(new Callback<>() {
-            @Override public void onResponse(Call<List<Models.Size>> call,Response<List<Models.Size>> response) {
-                if(!isAdded()||!response.isSuccessful()||response.body()==null){showError();return;}
-                List<Models.Size> sizes=response.body(); products.colors(new Callback<>() {
-                    @Override public void onResponse(Call<List<Models.Color>> call,Response<List<Models.Color>> colorsResponse) {
-                        if(!isAdded()||!colorsResponse.isSuccessful()||colorsResponse.body()==null){showError();return;}
-                        showSheet(sizes,colorsResponse.body());
+        products.categories(new Callback<>() {
+            @Override public void onResponse(Call<List<Models.Category>> call,Response<List<Models.Category>> response) {
+                if(!valid(response)){showError();return;} List<Models.Category> categories=response.body();
+                products.sizes(new Callback<>() {
+                    @Override public void onResponse(Call<List<Models.Size>> call,Response<List<Models.Size>> sizeResponse) {
+                        if(!valid(sizeResponse)){showError();return;} List<Models.Size> sizes=sizeResponse.body();
+                        products.colors(new Callback<>() {
+                            @Override public void onResponse(Call<List<Models.Color>> call,Response<List<Models.Color>> colorResponse) {
+                                if(!valid(colorResponse)){showError();return;} showSheet(categories,sizes,colorResponse.body());
+                            }
+                            @Override public void onFailure(Call<List<Models.Color>> call,Throwable error){showError();}
+                        });
                     }
-                    @Override public void onFailure(Call<List<Models.Color>> call,Throwable error){showError();}
+                    @Override public void onFailure(Call<List<Models.Size>> call,Throwable error){showError();}
                 });
             }
-            @Override public void onFailure(Call<List<Models.Size>> call,Throwable error){showError();}
+            @Override public void onFailure(Call<List<Models.Category>> call,Throwable error){showError();}
         });
     }
-    private void showSheet(List<Models.Size> sizes,List<Models.Color> colors) {
+    private boolean valid(Response<?> response){return isAdded()&&response.isSuccessful()&&response.body()!=null;}
+    private void showSheet(List<Models.Category> categories,List<Models.Size> sizes,List<Models.Color> colors) {
         BottomSheetProductFilterBinding sheet=BottomSheetProductFilterBinding.inflate(getLayoutInflater());
         BottomSheetDialog dialog=new BottomSheetDialog(requireContext()); dialog.setContentView(sheet.getRoot());
+        for(var category:categories) addChip(sheet.categories,category.categoryName,category.categoryId,java.util.Objects.equals(vm.categoryId(),category.categoryId));
         for(var size:sizes) addChip(sheet.sizes,size.sizeName,size.sizeId,java.util.Objects.equals(vm.sizeId(),size.sizeId));
         for(var color:colors) addChip(sheet.colors,color.colorName,color.colorId,java.util.Objects.equals(vm.colorId(),color.colorId));
         if("PRICE_ASC".equals(vm.sort())) sheet.sortPriceAsc.setChecked(true); else if("PRICE_DESC".equals(vm.sort())) sheet.sortPriceDesc.setChecked(true); else sheet.sortDefault.setChecked(true);
-        sheet.reset.setOnClickListener(v -> { sheet.sizes.clearCheck(); sheet.colors.clearCheck(); sheet.sortDefault.setChecked(true); });
+        sheet.reset.setOnClickListener(v -> { sheet.categories.clearCheck(); sheet.sizes.clearCheck(); sheet.colors.clearCheck(); sheet.sortDefault.setChecked(true); });
         sheet.apply.setOnClickListener(v -> {
-            Long size=checkedTag(sheet.sizes),color=checkedTag(sheet.colors); String sort="DEFAULT";
+            Long category=checkedTag(sheet.categories),size=checkedTag(sheet.sizes),color=checkedTag(sheet.colors); String sort="DEFAULT";
             if(sheet.sortPriceAsc.isChecked()) sort="PRICE_ASC"; else if(sheet.sortPriceDesc.isChecked()) sort="PRICE_DESC";
-            vm.query(b.search.getText().toString(),size,color,sort); dialog.dismiss();
+            vm.query(b.search.getText().toString(),category,size,color,sort); dialog.dismiss();
         });
         dialog.show();
     }

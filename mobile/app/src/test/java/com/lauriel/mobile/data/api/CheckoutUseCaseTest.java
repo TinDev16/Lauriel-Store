@@ -67,4 +67,16 @@ public class CheckoutUseCaseTest {
         server.enqueue(new MockResponse().setResponseCode(400).setBody("{\"status\":400,\"message\":\"Voucher invalid\"}"));
         assertFalse(place().isSuccessful());assertFalse(cart.isEmpty());
     }
+    @Test public void buyNowUsesTemporaryItemAndNeverMutatesPersistentCart() throws Exception {
+        checkout=new CheckoutUseCase(new OrderRepository(ApiClient.createApi(server.url("/").toString(),
+                ()->"jwt",()->{})),java.util.Collections.singletonList(new Models.Item(99,3)));
+        server.enqueue(new MockResponse().setResponseCode(201).setBody("{\"orderId\":9,\"items\":[]}"));
+        assertTrue(place().isSuccessful());
+        assertFalse(cart.isEmpty());
+        assertEquals(2,cart.payload().get(0).quantity);
+        String body=server.takeRequest().getBody().readUtf8();
+        assertTrue(body.contains("\"variantId\":99"));
+        assertTrue(body.contains("\"quantity\":3"));
+    }
+
 }

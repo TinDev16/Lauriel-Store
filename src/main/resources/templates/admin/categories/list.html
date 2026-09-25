@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Danh mục','categories')}">
+<body><section>
+<div class="mb-3"><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/categories/new}">Thêm danh mục</a></div>
+<div class="card"><div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead><tr><th>ID</th><th>Tên danh mục</th><th>Số sản phẩm</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+<tbody>
+<tr th:each="r:${items}">
+<td th:text="${r.categoryId}"></td><td th:text="${r.categoryName}"></td>
+<td th:text="${r.productCount}"></td><td th:text="${@view.label(r.status)}"></td>
+<td class="text-nowrap">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/categories/{id}/edit(id=${r.categoryId})}">Sửa</a>
+<form class="d-inline" method="post" th:action="@{/admin/categories/{id}/status(id=${r.categoryId})}" data-confirm="Thay đổi trạng thái danh mục?">
+<input type="hidden" name="status" th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
+<button class="btn btn-outline-secondary btn-sm" th:text="${r.status.name() == 'ACTIVE' ? 'Ngừng hoạt động' : 'Kích hoạt'}"></button>
+</form>
+</td></tr>
+<tr th:if="${#lists.isEmpty(items)}"><td colspan="5" class="text-muted text-center p-4">Chưa có danh mục.</td></tr>
+</tbody></table>
+</div></div>
+</section></body>
+</html>

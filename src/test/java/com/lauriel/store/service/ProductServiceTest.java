@@ -5,9 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.lauriel.store.entity.Category;
 import com.lauriel.store.entity.Product;
 import com.lauriel.store.exception.ResourceNotFoundException;
 import com.lauriel.store.repository.ProductRepository;
+import com.lauriel.store.repository.ProductImageRepository;
 import com.lauriel.store.repository.ProductVariantRepository;
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -15,12 +17,13 @@ import org.junit.jupiter.api.Test;
 
 class ProductServiceTest {
     private final ProductRepository repository = mock(ProductRepository.class);
-    private final ProductService service = new ProductService(repository, mock(PricingService.class));
+    private final ProductService service = new ProductService(repository, mock(CategoryService.class), mock(PricingService.class), mock(ProductImageRepository.class));
 
     @Test
     void returnsProductDtoWithoutTraversingLazyVariants() {
         Product product = new Product();
         product.setProductId(1L);
+        var category = new Category(); category.setCategoryId(2L); category.setCategoryName("Áo"); product.setCategory(category);
         product.setProductName("Áo Lauriel");
         product.setPrice(new BigDecimal("250000.00"));
         product.setVariants(null);

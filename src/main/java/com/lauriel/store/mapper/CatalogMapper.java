@@ -1,6 +1,7 @@
 package com.lauriel.store.mapper;
 
 import com.lauriel.store.dto.response.*;
+import com.lauriel.store.entity.Category;
 import com.lauriel.store.entity.Color;
 import com.lauriel.store.entity.Product;
 import com.lauriel.store.entity.ProductVariant;
@@ -10,9 +11,18 @@ public final class CatalogMapper {
     private CatalogMapper() {
     }
 
+    public static CategorySummaryResponse category(Category category) {
+        return new CategorySummaryResponse(category.getCategoryId(), category.getCategoryName());
+    }
+
     public static ProductResponse product(Product product) {
-        return new ProductResponse(product.getProductId(), product.getProductName(),
+        return new ProductResponse(product.getProductId(), product.getProductName(), category(product.getCategory()),
                 product.getDescription(), product.getPrice(), product.getImgUrl(), product.getStatus());
+    }
+
+    public static ProductSummaryResponse productSummary(Product product) {
+        return new ProductSummaryResponse(product.getProductId(), product.getProductName(), category(product.getCategory()),
+                product.getPrice(), product.getImgUrl(), product.getStatus());
     }
 
     public static SizeResponse size(Size size) {

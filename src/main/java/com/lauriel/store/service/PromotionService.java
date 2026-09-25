@@ -69,8 +69,7 @@ public class PromotionService {
         return InventoryPagination.response(associations.findById_PromotionId(id,
                 InventoryPagination.page(page, size, Sort.by("id.productId"))), association -> {
             var product = association.getProduct();
-            return new ProductSummaryResponse(product.getProductId(), product.getProductName(), product.getPrice(),
-                    product.getImgUrl(), product.getStatus());
+            return CatalogMapper.productSummary(product);
         });
     }
 
@@ -86,8 +85,7 @@ public class PromotionService {
         association.setPromotion(promotion);
         association.setProduct(product);
         associations.saveAndFlush(association);
-        return new ProductSummaryResponse(productId, product.getProductName(), product.getPrice(),
-                product.getImgUrl(), product.getStatus());
+        return CatalogMapper.productSummary(product);
     }
 
     @Transactional

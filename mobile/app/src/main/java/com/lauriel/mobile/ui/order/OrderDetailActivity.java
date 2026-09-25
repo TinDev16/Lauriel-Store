@@ -2,49 +2,65 @@ package com.lauriel.mobile.ui.order;
 
 import android.os.Bundle;
 import android.view.View;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
-import com.lauriel.mobile.ui.common.StatusChip;
 import com.lauriel.mobile.R;
+import com.lauriel.mobile.adapter.OrderLineAdapter;
 import com.lauriel.mobile.data.api.ApiClient;
 import com.lauriel.mobile.data.model.Models;
 import com.lauriel.mobile.data.repository.OrderRepository;
 import com.lauriel.mobile.databinding.ActivityOrderDetailBinding;
 import com.lauriel.mobile.ui.BaseActivity;
+import com.lauriel.mobile.ui.common.StatusChip;
 import com.lauriel.mobile.util.Formatters;
-import retrofit2.*;
+import java.math.BigDecimal;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class OrderDetailActivity extends BaseActivity {
     private ActivityOrderDetailBinding b;
+    private OrderLineAdapter itemAdapter;
     private long id;
     private Models.Order order;
     private String pendingError;
+
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         b = ActivityOrderDetailBinding.inflate(getLayoutInflater());
-        setContentView(b.getRoot());com.lauriel.mobile.ui.SystemBars.apply(b.getRoot());
+        setContentView(b.getRoot());
+        com.lauriel.mobile.ui.SystemBars.apply(b.getRoot());
         id = getIntent().getLongExtra("orderId", -1);
         if (id <= 0) { finish(); return; }
+
+        itemAdapter = new OrderLineAdapter();
+        b.items.setLayoutManager(new LinearLayoutManager(this));
+        b.items.setAdapter(itemAdapter);
         b.back.setOnClickListener(v -> finish());
         b.error.setOnClickListener(v -> load());
         b.cancel.setOnClickListener(v -> confirmCancel());
         load();
     }
+
     private void load() {
         b.loading.setVisibility(View.VISIBLE);
         if (pendingError == null) b.error.setText("");
         b.cancel.setVisibility(View.GONE);
         new OrderRepository(ApiClient.get(this).api()).detail(id, new Callback<Models.Order>() {
-            @Override public void onResponse(Call<Models.Order> c, Response<Models.Order> r) {
+            @Override public void onResponse(Call<Models.Order> call, Response<Models.Order> response) {
                 if (isFinishing()) return;
                 b.loading.setVisibility(View.GONE);
-                if (r.isSuccessful() && r.body() != null) {
-                    order = r.body(); render();
+                if (response.isSuccessful() && response.body() != null) {
+                    order = response.body();
+                    render();
                     if (pendingError != null) { b.error.setText(pendingError); pendingError = null; }
+                } else {
+                    b.error.setText(ApiClient.get(OrderDetailActivity.this).error(response));
                 }
-                else b.error.setText(ApiClient.get(OrderDetailActivity.this).error(r));
             }
-            @Override public void onFailure(Call<Models.Order> c, Throwable error) {
+
+            @Override public void onFailure(Call<Models.Order> call, Throwable error) {
                 if (!isFinishing()) {
                     b.loading.setVisibility(View.GONE);
                     b.error.setText(R.string.network_error);
@@ -52,53 +68,56 @@ public class OrderDetailActivity extends BaseActivity {
             }
         });
     }
+
     private void render() {
-        b.title.setText("Đơn #" + order.orderId);
+        b.title.setText(getString(R.string.order_number, order.orderId));
+        b.date.setText(getString(R.string.ordered_at, Formatters.date(order.createdAt)));
         StatusChip.apply(b.status, order.status);
-        StringBuilder detail = new StringBuilder();
-        detail.append("Ngày: ").append(Formatters.date(order.createdAt)).append("\n")
-                .append("Giao tới: ").append(order.shippingAddress).append("\n\n");
-        if (order.items != null) for (var item : order.items) {
-            detail.append(item.productName).append(" · ").append(item.sku).append("\n")
-                    .append(item.size == null ? "" : item.size.sizeName).append(" / ")
-                    .append(item.color == null ? "" : item.color.colorName).append(" × ")
-                    .append(item.quantity).append("\n")
-                    .append("Giá tại lúc đặt: ").append(Formatters.money(item.unitPrice)).append("\n")
-                    .append("Giảm khuyến mãi / đơn vị: ").append(Formatters.money(item.discountAmount)).append("\n")
-                    .append("Thành tiền: ").append(Formatters.money(item.subtotal)).append("\n\n");
-        }
-        detail.append("Tổng sau khuyến mãi: ").append(Formatters.money(order.totalAmount)).append("\n")
-                .append("Mã giảm giá: ").append(order.voucherCode == null ? "—" : order.voucherCode).append("\n")
-                .append("Giảm voucher: ").append(Formatters.money(order.discountAmount)).append("\n")
-                .append("Thanh toán: ").append(Formatters.money(order.finalAmount));
-        b.details.setText(detail.toString());
+        b.address.setText(order.shippingAddress == null || order.shippingAddress.isBlank()
+                ? getString(R.string.no_shipping_address) : order.shippingAddress);
+
+        int lines = order.items == null ? 0 : order.items.size();
+        b.productCount.setText(getString(R.string.product_count, lines));
+        itemAdapter.submit(order.items);
+
+        b.subtotal.setText(Formatters.money(order.totalAmount));
+        b.voucher.setText(order.voucherCode == null || order.voucherCode.isBlank() ? getString(R.string.no_voucher) : order.voucherCode);
+        BigDecimal discount = order.discountAmount == null ? BigDecimal.ZERO : order.discountAmount;
+        b.discount.setText(discount.signum() == 0 ? "0 ₫" : "−" + Formatters.money(discount));
+        b.shipping.setText(Formatters.money(order.shippingFee));
+        b.finalAmount.setText(Formatters.money(order.finalAmount));
         b.cancel.setVisibility(Formatters.canCancel(order.status) ? View.VISIBLE : View.GONE);
     }
+
     private void confirmCancel() {
-        new MaterialAlertDialogBuilder(this).setTitle("Hủy đơn #" + id + "?")
-                .setMessage("Đơn sẽ được hủy nếu trạng thái hiện tại cho phép.")
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Hủy đơn hàng #" + id + "?")
+                .setMessage("Tồn kho và lượt sử dụng voucher sẽ được hoàn lại sau khi đơn được hủy thành công.")
                 .setNegativeButton("Giữ đơn", null)
-                .setPositiveButton("Hủy đơn", (dialog, which) -> cancel()).show();
+                .setPositiveButton("Xác nhận hủy", (dialog, which) -> cancel())
+                .show();
     }
+
     private void cancel() {
         b.cancel.setEnabled(false);
         b.loading.setVisibility(View.VISIBLE);
         new OrderRepository(ApiClient.get(this).api()).cancel(id, new Callback<Models.Order>() {
-            @Override public void onResponse(Call<Models.Order> c, Response<Models.Order> r) {
+            @Override public void onResponse(Call<Models.Order> call, Response<Models.Order> response) {
                 if (isFinishing()) return;
                 b.loading.setVisibility(View.GONE);
                 b.cancel.setEnabled(true);
-                if (r.isSuccessful() && r.body() != null) {
-                    order = r.body(); render();
+                if (response.isSuccessful() && response.body() != null) {
+                    order = response.body();
+                    render();
                     Snackbar.make(b.getRoot(), "Đã hủy đơn hàng", Snackbar.LENGTH_SHORT).show();
                     if (pendingError != null) { b.error.setText(pendingError); pendingError = null; }
-                }
-                else {
-                    pendingError = ApiClient.get(OrderDetailActivity.this).error(r);
+                } else {
+                    pendingError = ApiClient.get(OrderDetailActivity.this).error(response);
                     load();
                 }
             }
-            @Override public void onFailure(Call<Models.Order> c, Throwable error) {
+
+            @Override public void onFailure(Call<Models.Order> call, Throwable error) {
                 if (isFinishing()) return;
                 b.loading.setVisibility(View.GONE);
                 b.cancel.setEnabled(true);

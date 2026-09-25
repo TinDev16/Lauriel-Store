@@ -18,14 +18,28 @@ public final class Models {
     public static final class LoginResponse { public String token,tokenType,username,role; public long expiresIn,userId; }
     public static final class RegisterResponse { public long userId; public String username,email,role,message; }
     public static final class Me { public long userId; public String username,role; }
+    public static final class Profile {
+        public long customerId,userId; public String username,fullName,email,phone,address;
+    }
+    public static final class ProfileUpdate {
+        public String fullName,email,phone,address;
+        public ProfileUpdate(String fullName,String email,String phone,String address){
+            this.fullName=fullName;this.email=email;this.phone=phone;this.address=address;
+        }
+    }
     public static final class Page<T> { public List<T> content; public int page,size,totalPages; public long totalElements; }
+    public static final class Category { public long categoryId; public String categoryName; }
     public static final class Size { public long sizeId; public String sizeName; }
     public static final class Color { public long colorId; public String colorName; }
     public static final class Promotion { public long promotionId; public String promotionName,description,startDate,endDate,status; public BigDecimal discountPercent; }
     public static final class PromotionInfo { public long promotionId; public String promotionName,startDate,endDate; public BigDecimal discountPercent; }
+    public static final class ProductImage {
+        public long id; public String url; public boolean primary; public int order;
+    }
     public static final class Product {
         public long productId; public String productName,description,imgUrl,status;
-        public BigDecimal price,basePrice; public List<Variant> variants;
+        public BigDecimal price,basePrice; public Category category; public List<Variant> variants;
+        public List<ProductImage> images;
     }
     public static final class Variant {
         public long variantId,productId; public String sku,status;
@@ -41,7 +55,8 @@ public final class Models {
         public VoucherRequest(String code,List<Item> items){this.code=code;this.items=items;}
     }
     public static final class VoucherPreview {
-        public boolean valid; public String code; public BigDecimal orderAmount,discountAmount,finalAmount;
+        public boolean valid; public String code;
+        public BigDecimal orderAmount,discountAmount,shippingFee,finalAmount;
     }
     public static final class CheckoutRequest {
         public List<Item> items; public String shippingAddress,voucherCode;
@@ -51,16 +66,16 @@ public final class Models {
     }
     public static final class OrderSummary {
         public long orderId,customerId; public String status,createdAt;
-        public BigDecimal totalAmount,discountAmount,finalAmount;
+        public BigDecimal totalAmount,discountAmount,shippingFee,finalAmount;
     }
     public static final class OrderLine {
-        public long variantId; public String sku,productName;
+        public long variantId; public String sku,productName,imageUrl;
         public Size size; public Color color; public int quantity;
         public BigDecimal unitPrice,discountAmount,subtotal;
     }
     public static final class Order {
         public long orderId,customerId; public String status,createdAt,updatedAt,shippingAddress,voucherCode;
-        public BigDecimal totalAmount,discountAmount,finalAmount; public List<OrderLine> items;
+        public BigDecimal totalAmount,discountAmount,shippingFee,finalAmount; public List<OrderLine> items;
     }
     public static final class ApiError { public int status; public String error,message; }
 }

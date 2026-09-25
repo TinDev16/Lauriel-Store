@@ -5,5 +5,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record OrderSummaryResponse(Long orderId, Long customerId, OrderStatus status, LocalDateTime createdAt,
-                                   BigDecimal totalAmount, BigDecimal discountAmount, BigDecimal finalAmount) {
+                                   BigDecimal totalAmount, BigDecimal discountAmount,
+                                   BigDecimal shippingFee, BigDecimal finalAmount) {
 }

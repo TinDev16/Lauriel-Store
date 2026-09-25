@@ -45,7 +45,7 @@ public class HomeFragment extends Fragment {
     }
     private void loadProducts(ProductRepository repository,ProductAdapter adapter){
         if(b==null)return; b.loading.setVisibility(View.VISIBLE);b.loadMore.setVisibility(View.GONE);b.error.setText("");b.empty.setVisibility(View.GONE);b.stateIcon.setVisibility(View.GONE);
-        repository.list(0,null,null,null,new Callback<Models.Page<Models.Product>>(){
+        repository.list(0,null,null,null,null,new Callback<Models.Page<Models.Product>>(){
             @Override public void onResponse(Call<Models.Page<Models.Product>> c,Response<Models.Page<Models.Product>> r){
                 if(b==null)return;b.loading.setVisibility(View.GONE);if(r.isSuccessful()&&r.body()!=null){adapter.submit(r.body().content);boolean empty=adapter.getItemCount()==0;b.empty.setVisibility(empty?View.VISIBLE:View.GONE);b.stateIcon.setVisibility(empty?View.VISIBLE:View.GONE);b.loadMore.setVisibility(r.body().totalPages>1?View.VISIBLE:View.GONE);}
                 else{b.error.setText("Không thể tải sản phẩm. Chạm để thử lại.");b.stateIcon.setVisibility(View.VISIBLE);}

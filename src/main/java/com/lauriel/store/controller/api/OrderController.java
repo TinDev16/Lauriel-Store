@@ -2,6 +2,7 @@ package com.lauriel.store.controller.api;
 
 import com.lauriel.store.dto.request.CheckoutRequest;
 import com.lauriel.store.dto.response.*;
+import com.lauriel.store.entity.enums.OrderStatus;
 import com.lauriel.store.security.StoreUserDetails;
 import com.lauriel.store.service.OrderService;
 import jakarta.validation.Valid;
@@ -29,8 +30,9 @@ public class OrderController {
     @GetMapping("/my-orders")
     public PageResponse<OrderSummaryResponse> myOrders(@AuthenticationPrincipal StoreUserDetails user,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size) {
-        return orders.myOrders(user.getUserId(), page, size);
+            @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) OrderStatus status) {
+        return orders.myOrders(user.getUserId(), page, size, status);
     }
 
     @GetMapping("/{id}")

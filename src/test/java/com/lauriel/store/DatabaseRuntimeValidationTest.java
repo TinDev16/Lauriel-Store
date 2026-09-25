@@ -19,6 +19,6 @@ class DatabaseRuntimeValidationTest {
     @Test
     void startsApplicationAndValidatesExistingMysqlSchema() {
         assertThat(entityManagerFactory.isOpen()).isTrue();
-        assertThat(entityManagerFactory.getMetamodel().getEntities()).hasSize(17);
+        assertThat(entityManagerFactory.getMetamodel().getEntities()).hasSize(18);
     }
 }

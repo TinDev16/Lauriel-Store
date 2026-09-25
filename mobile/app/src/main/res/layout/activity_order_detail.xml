@@ -1,8 +1,217 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
-  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:paddingHorizontal="@dimen/space_12" android:paddingTop="@dimen/space_sm"><com.google.android.material.button.MaterialButton android:id="@+id/back" style="@style/Widget.MaterialComponents.Button.TextButton.Icon" android:layout_width="48dp" android:layout_height="48dp" android:contentDescription="@string/back" app:icon="@drawable/ic_back" app:iconGravity="textStart" app:iconPadding="0dp"/><TextView android:id="@+id/title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/order_detail" android:textAppearance="@style/TextAppearance.Lauriel.ScreenTitle"/></LinearLayout>
-  <com.google.android.material.progressindicator.CircularProgressIndicator android:id="@+id/loading" android:layout_width="32dp" android:layout_height="32dp" android:layout_gravity="center" android:visibility="gone" app:indicatorColor="@color/ink" app:trackThickness="3dp"/>
-  <TextView android:id="@+id/error" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="@dimen/space_sm" android:textColor="@color/danger" android:textSize="14sp"/>
-  <androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="@dimen/screen_padding" android:paddingBottom="@dimen/space_xl"><com.google.android.material.chip.Chip android:id="@+id/status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md" android:clickable="false"/><com.google.android.material.card.MaterialCardView style="@style/Card.Lauriel" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_12"><TextView android:id="@+id/details" android:layout_width="match_parent" android:layout_height="wrap_content" android:lineSpacingExtra="5dp" android:padding="@dimen/space_md" android:textAppearance="@style/TextAppearance.Lauriel.Body"/></com.google.android.material.card.MaterialCardView></LinearLayout></androidx.core.widget.NestedScrollView>
-  <com.google.android.material.button.MaterialButton android:id="@+id/cancel" style="@style/DestructiveButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="@dimen/screen_padding" android:layout_marginVertical="@dimen/space_12" android:text="@string/cancel_order"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="8dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/back"
+            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/back"
+            app:icon="@drawable/ic_back"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/order_detail"
+                android:textAppearance="@style/TextAppearance.Lauriel.ScreenTitle"
+                android:textSize="22sp" />
+
+            <TextView
+                android:id="@+id/date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textAppearance="@style/TextAppearance.Lauriel.Caption" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/loading"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:visibility="gone"
+        app:indicatorColor="@color/ink"
+        app:trackColor="@color/surface_strong" />
+
+    <TextView
+        android:id="@+id/error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="8dp"
+        android:textColor="@color/danger"
+        android:textSize="14sp" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/screen_padding"
+            android:paddingBottom="28dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/order_status_title"
+                    android:textAppearance="@style/TextAppearance.Lauriel.Product" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:textSize="12sp"
+                    app:chipMinHeight="34dp" />
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Card.Lauriel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@color/background">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/delivery_address"
+                        android:textAppearance="@style/TextAppearance.Lauriel.Product" />
+
+                    <TextView
+                        android:id="@+id/address"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="3dp"
+                        android:textAppearance="@style/TextAppearance.Lauriel.Body"
+                        android:textColor="@color/muted" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:id="@+id/product_count"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="@string/products_label"
+                android:textAppearance="@style/TextAppearance.Lauriel.SectionTitle"
+                android:textSize="18sp" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Card.Lauriel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:cardBackgroundColor="@color/background">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/items"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:paddingHorizontal="16dp" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="@string/payment_detail"
+                android:textAppearance="@style/TextAppearance.Lauriel.SectionTitle"
+                android:textSize="18sp" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Card.Lauriel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:cardBackgroundColor="@color/background">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/subtotal_label" android:textAppearance="@style/TextAppearance.Lauriel.Body" android:textColor="@color/muted" />
+                        <TextView android:id="@+id/subtotal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textAppearance="@style/TextAppearance.Lauriel.Body" />
+                    </LinearLayout>
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/voucher_label" android:textAppearance="@style/TextAppearance.Lauriel.Body" android:textColor="@color/muted" />
+                        <TextView android:id="@+id/voucher" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textAppearance="@style/TextAppearance.Lauriel.Body" />
+                    </LinearLayout>
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/voucher_discount_label" android:textAppearance="@style/TextAppearance.Lauriel.Body" android:textColor="@color/muted" />
+                        <TextView android:id="@+id/discount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/success" android:textAppearance="@style/TextAppearance.Lauriel.Body" />
+                    </LinearLayout>
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/shipping_fee_label" android:textAppearance="@style/TextAppearance.Lauriel.Body" android:textColor="@color/muted" />
+                        <TextView android:id="@+id/shipping" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textAppearance="@style/TextAppearance.Lauriel.Body" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginVertical="16dp" android:background="@color/divider" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/payment_total" android:textAppearance="@style/TextAppearance.Lauriel.Product" />
+                        <TextView android:id="@+id/final_amount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textAppearance="@style/TextAppearance.Lauriel.Price" android:textSize="20sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/cancel"
+        style="@style/DestructiveButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_padding"
+        android:layout_marginVertical="12dp"
+        android:text="@string/cancel_order" />
 </LinearLayout>

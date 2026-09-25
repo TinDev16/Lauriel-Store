@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
+import com.lauriel.mobile.R;
 import com.lauriel.mobile.data.model.Models;
 import com.lauriel.mobile.databinding.ItemOrderBinding;
 import com.lauriel.mobile.ui.common.StatusChip;
@@ -21,8 +22,9 @@ public final class OrderAdapter extends ListAdapter<Models.OrderSummary, OrderAd
     public void submit(List<Models.OrderSummary> items) { submitList(items == null ? List.of() : new ArrayList<>(items)); }
     @NonNull @Override public Holder onCreateViewHolder(@NonNull ViewGroup p, int type) { return new Holder(ItemOrderBinding.inflate(LayoutInflater.from(p.getContext()), p, false)); }
     @Override public void onBindViewHolder(@NonNull Holder h, int pos) {
-        var o = getItem(pos); h.b.id.setText("Đơn #" + o.orderId); StatusChip.apply(h.b.status, o.status);
-        h.b.date.setText(Formatters.date(o.createdAt)); h.b.amount.setText(Formatters.money(o.finalAmount));
+        var o = getItem(pos); h.b.id.setText(h.b.getRoot().getContext().getString(R.string.order_number, o.orderId)); StatusChip.apply(h.b.status, o.status);
+        h.b.date.setText(h.b.getRoot().getContext().getString(R.string.ordered_at, Formatters.date(o.createdAt)));
+        h.b.amount.setText(Formatters.money(o.finalAmount));
         h.b.getRoot().setOnClickListener(v -> open.open(o.orderId));
     }
     static final class Holder extends RecyclerView.ViewHolder { final ItemOrderBinding b; Holder(ItemOrderBinding b) { super(b.getRoot()); this.b = b; } }

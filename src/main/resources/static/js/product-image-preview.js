@@ -1,59 +1,48 @@
 (() => {
-  const input = document.getElementById("imageFile");
+  const input = document.getElementById("imageFiles");
   const selectedName = document.getElementById("selectedImageName");
-  const currentPreview = document.getElementById("existingImagePreview");
-  const newPreview = document.getElementById("newImagePreview");
+  const previews = document.getElementById("newImagePreviews");
   const error = document.getElementById("imageError");
-  if (!input || !selectedName || !newPreview || !error) return;
+  if (!input || !selectedName || !previews || !error) return;
 
-  const maxBytes = 20 * 1024 * 1024;
-  let objectUrl = null;
+  const maxBytes = 5 * 1024 * 1024;
+  const maxImages = 8;
+  const allowed = new Set(["image/png", "image/jpeg", "image/webp"]);
+  let urls = [];
 
-  function showCurrentImage() {
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    objectUrl = null;
-    newPreview.hidden = true;
-    newPreview.removeAttribute("src");
-    if (currentPreview) currentPreview.hidden = false;
+  function clearPreviews() {
+    urls.forEach(URL.revokeObjectURL);
+    urls = [];
+    previews.replaceChildren();
   }
 
   input.addEventListener("change", () => {
+    clearPreviews();
     error.hidden = true;
     error.textContent = "";
-    showCurrentImage();
-    const file = input.files && input.files[0];
-    if (!file) {
-      selectedName.textContent = "Chưa chọn ảnh mới";
-      return;
-    }
-    if (file.size > maxBytes) {
-      selectedName.textContent = "Chưa chọn ảnh mới";
-      error.textContent = "Ảnh vượt quá 20 MB. Vui lòng chọn ảnh nhỏ hơn.";
+    const files = Array.from(input.files || []);
+    const invalid = files.find(file => !allowed.has(file.type) || file.size === 0 || file.size > maxBytes);
+    if (files.length > maxImages || invalid) {
+      error.textContent = files.length > maxImages
+        ? "Chỉ được chọn tối đa 8 hình ảnh."
+        : "Mỗi ảnh phải là PNG, JPEG hoặc WebP hợp lệ và không vượt quá 5 MB.";
       error.hidden = false;
       input.value = "";
-      return;
-    }
-    if (file.size === 0) {
       selectedName.textContent = "Chưa chọn ảnh mới";
-      error.textContent = "Ảnh được chọn đang trống. Vui lòng chọn ảnh khác.";
-      error.hidden = false;
-      input.value = "";
       return;
     }
-    selectedName.textContent = file.name;
-    objectUrl = URL.createObjectURL(file);
-    newPreview.src = objectUrl;
-    newPreview.hidden = false;
-    if (currentPreview) currentPreview.hidden = true;
+    selectedName.textContent = files.length ? files.length + " ảnh đã chọn" : "Chưa chọn ảnh mới";
+    files.forEach(file => {
+      const url = URL.createObjectURL(file);
+      urls.push(url);
+      const image = document.createElement("img");
+      image.src = url;
+      image.alt = file.name;
+      image.className = "img-thumbnail";
+      image.style.cssText = "width:120px;height:120px;object-fit:cover";
+      previews.appendChild(image);
+    });
   });
 
-  input.form.addEventListener("submit", (event) => {
-    const file = input.files && input.files[0];
-    if (file && (file.size > maxBytes || file.size === 0)) {
-      event.preventDefault();
-      input.dispatchEvent(new Event("change"));
-    }
-  });
-
-  window.addEventListener("pagehide", showCurrentImage, { once: true });
+  window.addEventListener("pagehide", clearPreviews, { once: true });
 })();

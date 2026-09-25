@@ -2,5 +2,5 @@
     <dimen name="space_xxs">4dp</dimen><dimen name="space_sm">8dp</dimen><dimen name="space_12">12dp</dimen>
     <dimen name="space_md">16dp</dimen><dimen name="space_20">20dp</dimen><dimen name="space_lg">24dp</dimen><dimen name="space_xl">32dp</dimen>
     <dimen name="radius_sm">8dp</dimen><dimen name="radius_md">12dp</dimen><dimen name="radius_lg">20dp</dimen>
-    <dimen name="touch_min">48dp</dimen><dimen name="screen_padding">20dp</dimen><dimen name="bottom_nav_height">64dp</dimen><dimen name="product_image_height">190dp</dimen>
+    <dimen name="touch_min">48dp</dimen><dimen name="screen_padding">20dp</dimen><dimen name="bottom_nav_height">76dp</dimen><dimen name="product_image_height">190dp</dimen>
 </resources>

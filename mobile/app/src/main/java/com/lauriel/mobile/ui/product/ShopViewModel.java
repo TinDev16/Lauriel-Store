@@ -25,24 +25,25 @@ public final class ShopViewModel extends ViewModel {
     private final List<Models.Product> products = new ArrayList<>();
     private ProductRepository repository; private Call<Models.Page<Models.Product>> active;
     private int page, generation; private boolean loading, hasMore = true;
-    private String keyword, sort = "DEFAULT"; private Long sizeId, colorId;
+    private String keyword, sort = "DEFAULT"; private Long categoryId, sizeId, colorId;
     public LiveData<State> state() { return state; }
     public void init(ProductRepository repository) { this.repository = repository; if (products.isEmpty()) loadMore(); }
-    public void query(String keyword, Long sizeId, Long colorId, String sort) {
+    public void query(String keyword, Long categoryId, Long sizeId, Long colorId, String sort) {
         String nextKeyword = keyword == null ? null : keyword.trim();
         String nextSort = sort == null ? "DEFAULT" : sort;
         boolean serverFilterChanged = !java.util.Objects.equals(this.keyword,nextKeyword)
+                || !java.util.Objects.equals(this.categoryId,categoryId)
                 || !java.util.Objects.equals(this.sizeId,sizeId) || !java.util.Objects.equals(this.colorId,colorId);
-        this.keyword=nextKeyword; this.sizeId=sizeId; this.colorId=colorId; this.sort=nextSort;
+        this.keyword=nextKeyword; this.categoryId=categoryId; this.sizeId=sizeId; this.colorId=colorId; this.sort=nextSort;
         if (!serverFilterChanged) { publish(null); return; }
         generation++; if (active != null) active.cancel(); products.clear(); page=0; hasMore=true; loading=false; publish(null); loadMore();
     }
-    public String keyword() { return keyword; } public Long sizeId() { return sizeId; } public Long colorId() { return colorId; } public String sort() { return sort; }
+    public String keyword() { return keyword; } public Long categoryId() { return categoryId; } public Long sizeId() { return sizeId; } public Long colorId() { return colorId; } public String sort() { return sort; }
     public void retry() { if (!loading) loadMore(); }
     public void loadMore() {
         if (repository == null || loading || !hasMore) return;
         loading=true; publish(null); int requestGeneration=generation;
-        active=repository.list(page,keyword,sizeId,colorId,new Callback<Models.Page<Models.Product>>() {
+        active=repository.list(page,keyword,categoryId,sizeId,colorId,new Callback<Models.Page<Models.Product>>() {
             @Override public void onResponse(Call<Models.Page<Models.Product>> call, Response<Models.Page<Models.Product>> response) {
                 if (requestGeneration != generation) return; loading=false; var result=response.body();
                 if (!response.isSuccessful() || result == null) { publish("Không thể tải sản phẩm. Vui lòng thử lại."); return; }

@@ -28,8 +28,18 @@ public class ApiClientTest {
     }
     @Test public void publicCatalogDoesNotNeedToken() throws Exception {
         server.enqueue(new MockResponse().setBody("{\"content\":[],\"page\":0,\"size\":12,\"totalPages\":0}"));
-        assertTrue(api(null,new AtomicInteger()).products(0,12,null,null,null,"createdAt","desc").execute().isSuccessful());
+        assertTrue(api(null,new AtomicInteger()).products(0,12,null,null,null,null,"createdAt","desc").execute().isSuccessful());
         assertNull(server.takeRequest().getHeader("Authorization"));
+    }
+    @Test public void categoriesAndProductCategoryAreParsed() throws Exception {
+        server.enqueue(new MockResponse().setBody("[{\"categoryId\":7,\"categoryName\":\"Ão\"}]"));
+        var categories=api(null,new AtomicInteger()).categories().execute().body();
+        assertEquals(7,categories.get(0).categoryId);assertEquals("Ão",categories.get(0).categoryName);
+        assertEquals("/api/categories",server.takeRequest().getPath());
+        server.enqueue(new MockResponse().setBody("{\"content\":[{\"productId\":1,\"category\":{\"categoryId\":7,\"categoryName\":\"Ão\"}}],\"page\":0,\"totalPages\":1}"));
+        var products=api(null,new AtomicInteger()).products(0,12,null,7L,null,null,"createdAt","desc").execute().body();
+        assertEquals("Ão",products.content.get(0).category.categoryName);
+        assertTrue(server.takeRequest().getPath().contains("categoryId=7"));
     }
     @Test public void unauthorizedCallsCentralHandler() throws Exception {
         AtomicInteger expired=new AtomicInteger();server.enqueue(new MockResponse().setResponseCode(401));
@@ -46,10 +56,11 @@ public class ApiClientTest {
         api(null,expired).me().execute();assertEquals(0,expired.get());
     }
     @Test public void voucherPreviewIsServerCallWithItemsOnly() throws Exception {
-        server.enqueue(new MockResponse().setBody("{\"valid\":true,\"code\":\"WEB10\",\"orderAmount\":\"250000\",\"discountAmount\":\"25000\",\"finalAmount\":\"225000\"}"));
+        server.enqueue(new MockResponse().setBody("{\"valid\":true,\"code\":\"WEB10\",\"orderAmount\":\"250000\",\"discountAmount\":\"25000\",\"shippingFee\":\"20000\",\"finalAmount\":\"245000\"}"));
         var r=api("jwt",new AtomicInteger()).preview(new Models.VoucherRequest("WEB10",
                 java.util.Collections.singletonList(new Models.Item(15,2)))).execute();
-        assertEquals(new BigDecimal("225000"),r.body().finalAmount);
+        assertEquals(new BigDecimal("20000"),r.body().shippingFee);
+        assertEquals(new BigDecimal("245000"),r.body().finalAmount);
         var request=server.takeRequest();assertEquals("/api/vouchers/validate",request.getPath());
         assertEquals("{\"code\":\"WEB10\",\"items\":[{\"variantId\":15,\"quantity\":2}]}",request.getBody().readUtf8());
     }
@@ -64,7 +75,7 @@ public class ApiClientTest {
     }
     @Test public void orderListParsesIsoAndAmounts() throws Exception {
         server.enqueue(new MockResponse().setBody("{\"content\":[{\"orderId\":5,\"status\":\"PENDING\",\"createdAt\":\"2026-09-18T10:30:00\",\"finalAmount\":\"1000.50\"}],\"page\":0,\"totalPages\":1}"));
-        var r=api("jwt",new AtomicInteger()).myOrders(0,12).execute();
+        var r=api("jwt",new AtomicInteger()).myOrders(0,12,null).execute();
         assertEquals("2026-09-18T10:30:00",r.body().content.get(0).createdAt);
         assertEquals(new BigDecimal("1000.50"),r.body().content.get(0).finalAmount);
     }
@@ -95,4 +106,23 @@ public class ApiClientTest {
         assertEquals(new BigDecimal("250000"),variant.price);
         assertEquals(new BigDecimal("200000"),variant.effectivePrice);
     }
+    @Test public void productGalleryRelatedProfileAndOrderStatusContracts() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"productId\":1,\"imgUrl\":\"/p.jpg\",\"images\":[{\"id\":9,\"url\":\"/p.jpg\",\"primary\":true,\"order\":0}]}"));
+        var product=api(null,new AtomicInteger()).product(1).execute().body();
+        assertTrue(product.images.get(0).primary);assertEquals(9,product.images.get(0).id);
+        assertEquals("/api/products/1",server.takeRequest().getPath());
+
+        server.enqueue(new MockResponse().setBody("[]"));
+        api(null,new AtomicInteger()).related(1,8).execute();
+        assertEquals("/api/products/1/related?limit=8",server.takeRequest().getPath());
+
+        server.enqueue(new MockResponse().setBody("{\"customerId\":2,\"userId\":3,\"username\":\"an\",\"fullName\":\"Nguyen An\",\"address\":\"Hue\"}"));
+        var profile=api("jwt",new AtomicInteger()).profile().execute().body();
+        assertEquals("Hue",profile.address);assertEquals("/api/customers/me",server.takeRequest().getPath());
+
+        server.enqueue(new MockResponse().setBody("{\"content\":[],\"page\":0,\"totalPages\":0}"));
+        api("jwt",new AtomicInteger()).myOrders(0,12,"SHIPPING").execute();
+        assertTrue(server.takeRequest().getPath().contains("status=SHIPPING"));
+    }
+
 }

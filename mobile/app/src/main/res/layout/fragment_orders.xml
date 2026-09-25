@@ -1,10 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingHorizontal="@dimen/screen_padding">
-  <TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_md" android:paddingBottom="@dimen/space_12" android:text="@string/orders" android:textAppearance="@style/TextAppearance.Lauriel.ScreenTitle"/>
-  <com.google.android.material.progressindicator.CircularProgressIndicator android:id="@+id/loading" android:layout_width="32dp" android:layout_height="32dp" android:layout_gravity="center" android:visibility="gone" app:indicatorColor="@color/ink" app:trackThickness="3dp"/>
-  <ImageView android:id="@+id/state_icon" android:contentDescription="@null" android:layout_width="64dp" android:layout_height="64dp" android:layout_gravity="center" android:layout_marginTop="@dimen/space_xl" android:src="@drawable/ic_nav_orders" android:visibility="gone"/>
-  <TextView android:id="@+id/empty" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="@dimen/space_12" android:text="@string/empty_orders" android:textAppearance="@style/TextAppearance.Lauriel.SectionTitle" android:visibility="gone"/>
-  <TextView android:id="@+id/error" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="@dimen/space_sm" android:textColor="@color/danger" android:textSize="14sp"/>
-  <androidx.recyclerview.widget.RecyclerView android:id="@+id/list" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:clipToPadding="false" android:paddingBottom="@dimen/space_md"/>
-  <com.google.android.material.button.MaterialButton android:id="@+id/load_more" style="@style/SecondaryButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/space_sm" android:text="@string/load_more"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/screen_padding"
+        android:paddingTop="16dp">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/my_orders_title"
+            android:textAppearance="@style/TextAppearance.Lauriel.ScreenTitle" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/my_orders_subtitle"
+            android:textAppearance="@style/TextAppearance.Lauriel.Caption"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:clipToPadding="false"
+        android:fillViewport="false"
+        android:paddingHorizontal="@dimen/screen_padding"
+        android:scrollbars="none">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/statuses"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="0dp"
+            android:paddingEnd="20dp"
+            app:chipSpacingHorizontal="8dp"
+            app:selectionRequired="true"
+            app:singleSelection="true" />
+    </HorizontalScrollView>
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/loading"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        app:indicatorColor="@color/ink"
+        app:trackColor="@color/surface_strong" />
+
+    <TextView
+        android:id="@+id/error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingHorizontal="@dimen/screen_padding"
+        android:paddingVertical="8dp"
+        android:textColor="@color/danger"
+        android:textSize="14sp" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingHorizontal="@dimen/screen_padding"
+            android:paddingTop="8dp"
+            android:paddingBottom="24dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp">
+
+            <ImageView
+                android:id="@+id/state_icon"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:alpha="0.55"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_nav_orders"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:padding="12dp"
+                android:text="@string/empty_orders_filtered"
+                android:textAppearance="@style/TextAppearance.Lauriel.Body"
+                android:textColor="@color/muted"
+                android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/load_more"
+        style="@style/SecondaryButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_padding"
+        android:layout_marginBottom="12dp"
+        android:text="@string/load_more_orders"
+        android:visibility="gone" />
 </LinearLayout>

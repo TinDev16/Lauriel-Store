@@ -35,6 +35,9 @@ public class Order {
     @Column(name = "discount_amount", precision = 14, scale = 2, nullable = false)
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
+    @Column(name = "shipping_fee", precision = 14, scale = 2, nullable = false)
+    private BigDecimal shippingFee = BigDecimal.ZERO;
+
     @Column(name = "final_amount", precision = 14, scale = 2, nullable = false)
     private BigDecimal finalAmount = BigDecimal.ZERO;
 

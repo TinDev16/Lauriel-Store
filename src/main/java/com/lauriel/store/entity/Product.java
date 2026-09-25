@@ -21,6 +21,10 @@ public class Product {
     @Column(name = "product_id")
     private Long productId;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
     @Column(name = "product_name", length = 200, nullable = false)
     private String productName;
 
@@ -37,12 +41,10 @@ public class Product {
     @Column(name = "status", nullable = false)
     private ActiveStatus status = ActiveStatus.ACTIVE;
 
-    // MySQL owns this timestamp; Hibernate reads the generated value back.
     @Generated(event = EventType.INSERT)
     @Column(name = "created_at", columnDefinition = "datetime", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // MySQL owns this timestamp; Hibernate reads the generated value back.
     @Generated(event = {EventType.INSERT, EventType.UPDATE})
     @Column(name = "updated_at", columnDefinition = "datetime", nullable = false, insertable = false, updatable = false)
     private LocalDateTime updatedAt;
@@ -50,4 +52,7 @@ public class Product {
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     private List<ProductVariant> variants = new ArrayList<>();
 
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("displayOrder ASC, productImageId ASC")
+    private List<ProductImage> images = new ArrayList<>();
 }

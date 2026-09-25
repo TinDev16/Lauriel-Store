@@ -2,13 +2,16 @@ package com.lauriel.store.service;
 
 import com.lauriel.store.dto.request.ProductRequest;
 import com.lauriel.store.dto.response.*;
+import com.lauriel.store.entity.Category;
 import com.lauriel.store.entity.Product;
 import com.lauriel.store.entity.enums.ActiveStatus;
 import com.lauriel.store.exception.BadRequestException;
 import com.lauriel.store.exception.ResourceNotFoundException;
 import com.lauriel.store.mapper.CatalogMapper;
 import com.lauriel.store.repository.ProductRepository;
+import com.lauriel.store.repository.ProductImageRepository;
 import com.lauriel.store.repository.ProductSpecifications;
+import com.lauriel.store.repository.ProductSummaryView;
 import java.util.Set;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -19,14 +22,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductService {
     private static final Set<String> SORT_FIELDS = Set.of("price", "productName", "createdAt");
     private final ProductRepository productRepository;
+    private final CategoryService categories;
     private final PricingService pricing;
+    private final ProductImageRepository productImages;
 
-    public ProductService(ProductRepository productRepository, PricingService pricing) {
+    public ProductService(ProductRepository productRepository, CategoryService categories, PricingService pricing,
+            ProductImageRepository productImages) {
         this.productRepository = productRepository;
+        this.categories = categories;
         this.pricing = pricing;
+        this.productImages = productImages;
     }
 
-    // Preserve the foundation read method; public endpoints use getPublicDetail.
     @Transactional(readOnly = true)
     public ProductResponse getById(Long productId) {
         return CatalogMapper.product(requireProduct(productId));
@@ -34,16 +41,8 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public PageResponse<ProductSummaryResponse> listPublic(int page, int size, String keyword,
-            Long sizeId, Long colorId, String sortBy, String direction) {
-        if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) {
-            throw new BadRequestException("Phân trang không hợp lệ; size phải từ 1 đến 100");
-        }
-        if ((sizeId != null && sizeId <= 0) || (colorId != null && colorId <= 0)) {
-            throw new BadRequestException("sizeId/colorId phải là số dương");
-        }
-        if (!SORT_FIELDS.contains(sortBy)) {
-            throw new BadRequestException("sortBy chỉ hỗ trợ price, productName, createdAt");
-        }
+            Long categoryId, Long sizeId, Long colorId, String sortBy, String direction) {
+        validateList(page, size, categoryId, sizeId, colorId, sortBy);
         Sort.Direction sortDirection;
         try {
             sortDirection = Sort.Direction.fromString(direction);
@@ -52,33 +51,57 @@ public class ProductService {
         }
         var pageable = PageRequest.of(page, size,
                 Sort.by(sortDirection, sortBy).and(Sort.by("productId")));
-        // DTO projection selects summary columns only, without description or variant collections.
-        var products = productRepository.findBy(ProductSpecifications.activeCatalog(keyword, sizeId, colorId),
-                query -> query.as(ProductSummaryResponse.class).page(pageable));
-        return new PageResponse<>(products.getContent(), products.getNumber(), products.getSize(),
-                products.getTotalElements(), products.getTotalPages());
+        var result = productRepository.findBy(
+                ProductSpecifications.activeCatalog(keyword, categoryId, sizeId, colorId),
+                query -> query.as(ProductSummaryView.class).page(pageable));
+        var content = result.getContent().stream().map(this::summary).toList();
+        return new PageResponse<>(content, result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages());
     }
 
     @Transactional(readOnly = true)
     public ProductDetailResponse getPublicDetail(Long productId) {
-        var product = productRepository.findByProductIdAndStatus(productId, ActiveStatus.ACTIVE)
+        var product = productRepository.findByProductIdAndStatusAndCategory_Status(
+                        productId, ActiveStatus.ACTIVE, ActiveStatus.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
         var variants = pricing.publicVariants(productId);
+        var images = productImages.findByProduct_ProductIdOrderByDisplayOrderAscProductImageIdAsc(productId)
+                .stream().map(i -> new ProductImageResponse(i.getProductImageId(), i.getImageUrl(),
+                        i.isPrimary(), i.getDisplayOrder())).toList();
         return new ProductDetailResponse(product.getProductId(), product.getProductName(),
-                product.getDescription(), product.getPrice(), product.getImgUrl(), product.getStatus(), variants);
+                CatalogMapper.category(product.getCategory()), product.getDescription(), product.getPrice(),
+                product.getImgUrl(), product.getStatus(), variants, images);
+    }
+
+
+    @Transactional(readOnly = true)
+    public java.util.List<ProductSummaryResponse> related(Long productId, int limit) {
+        if (limit < 1 || limit > 10) throw new BadRequestException("limit phải từ 1 đến 10");
+        var current = productRepository.findByProductIdAndStatusAndCategory_Status(
+                        productId, ActiveStatus.ACTIVE, ActiveStatus.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+        return productRepository.findRelated(productId, current.getCategory().getCategoryId(), ActiveStatus.ACTIVE,
+                        PageRequest.of(0, limit))
+                .stream().map(CatalogMapper::productSummary).toList();
     }
 
     @Transactional
     public ProductResponse create(ProductRequest request) {
         Product product = new Product();
-        apply(product, request);
+        apply(product, request, categories.requireAssignable(request.categoryId()));
         return CatalogMapper.product(productRepository.saveAndFlush(product));
     }
 
     @Transactional
     public ProductResponse update(Long productId, ProductRequest request) {
-        var product = requireProduct(productId);
-        apply(product, request);
+        Product product = requireProduct(productId);
+        Category category;
+        if (product.getCategory().getCategoryId().equals(request.categoryId())) {
+            category = product.getCategory();
+        } else {
+            category = categories.requireAssignable(request.categoryId());
+        }
+        apply(product, request, category);
         return CatalogMapper.product(productRepository.saveAndFlush(product));
     }
 
@@ -90,10 +113,12 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<ProductSummaryResponse> listAdmin(int page, int size, String keyword, ActiveStatus status) {
+    public PageResponse<ProductSummaryResponse> listAdmin(int page, int size, String keyword,
+            Long categoryId, ActiveStatus status) {
         org.springframework.data.jpa.domain.Specification<Product> filter = (root, query, cb) -> {
             var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
             if (status != null) predicates.add(cb.equal(root.get("status"), status));
+            if (categoryId != null) predicates.add(cb.equal(root.get("category").get("categoryId"), categoryId));
             if (keyword != null && !keyword.isBlank()) {
                 String escaped = keyword.strip().toLowerCase(java.util.Locale.ROOT)
                         .replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
@@ -101,9 +126,31 @@ public class ProductService {
             }
             return cb.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
         };
-        var result = productRepository.findBy(filter, query -> query.as(ProductSummaryResponse.class)
-                .page(InventoryPagination.page(page,size,Sort.by(Sort.Direction.DESC,"productId"))));
-        return new PageResponse<>(result.getContent(),result.getNumber(),result.getSize(),result.getTotalElements(),result.getTotalPages());
+        var pageable = InventoryPagination.page(page, size, Sort.by(Sort.Direction.DESC, "productId"));
+        var result = productRepository.findBy(filter,
+                query -> query.as(ProductSummaryView.class).page(pageable));
+        var content = result.getContent().stream().map(this::summary).toList();
+        return new PageResponse<>(content, result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages());
+    }
+
+    private ProductSummaryResponse summary(ProductSummaryView product) {
+        var category = product.getCategory();
+        return new ProductSummaryResponse(product.getProductId(), product.getProductName(),
+                new CategorySummaryResponse(category.getCategoryId(), category.getCategoryName()),
+                product.getPrice(), product.getImgUrl(), product.getStatus());
+    }
+    private void validateList(int page, int size, Long categoryId, Long sizeId, Long colorId, String sortBy) {
+        if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) {
+            throw new BadRequestException("Phân trang không hợp lệ; size phải từ 1 đến 100");
+        }
+        if ((categoryId != null && categoryId <= 0) || (sizeId != null && sizeId <= 0)
+                || (colorId != null && colorId <= 0)) {
+            throw new BadRequestException("categoryId/sizeId/colorId phải là số dương");
+        }
+        if (!SORT_FIELDS.contains(sortBy)) {
+            throw new BadRequestException("sortBy chỉ hỗ trợ price, productName, createdAt");
+        }
     }
 
     private Product requireProduct(Long productId) {
@@ -111,7 +158,8 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
     }
 
-    private void apply(Product product, ProductRequest request) {
+    private void apply(Product product, ProductRequest request, Category category) {
+        product.setCategory(category);
         product.setProductName(request.productName().strip());
         product.setDescription(request.description());
         product.setPrice(request.price());

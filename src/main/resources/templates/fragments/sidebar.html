@@ -33,6 +33,11 @@
 </a>
 </li>
 <li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'categories'} ? 'active'" th:href="@{/admin/categories}">
+<i class="bi bi-tags"></i>
+<span>Danh mục</span>
+</a>
+</li><li class="sidebar-menu-item">
 <a class="sidebar-menu-link" th:classappend="${menu == 'sizes'} ? 'active'" th:href="@{/admin/sizes}">
 <i class="bi bi-rulers">
 </i>

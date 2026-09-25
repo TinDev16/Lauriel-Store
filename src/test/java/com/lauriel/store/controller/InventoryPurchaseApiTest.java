@@ -50,6 +50,7 @@ class InventoryPurchaseApiTest {
     @MockitoSpyBean private ProductVariantRepository variants;
     @MockitoSpyBean private InventoryTransactionRepository history;
     @Autowired private ProductRepository products;
+    @Autowired private CategoryRepository categories;
     @Autowired private SizeRepository sizes;
     @Autowired private ColorRepository colors;
     @Autowired private UserRepository users;
@@ -95,6 +96,7 @@ class InventoryPurchaseApiTest {
             receipts.deleteAllInBatch();
             variants.deleteAllInBatch();
             products.deleteAllInBatch();
+            categories.deleteAllInBatch();
             sizes.deleteAllInBatch();
             colors.deleteAllInBatch();
             suppliers.deleteAllInBatch();
@@ -114,7 +116,10 @@ class InventoryPurchaseApiTest {
             var color = new Color();
             color.setColorName("Black");
             colors.saveAndFlush(color);
+            var category = new Category();
+            category.setCategoryName("Clothing"); category.setStatus(ActiveStatus.ACTIVE); categories.saveAndFlush(category);
             var product = new Product();
+            product.setCategory(category);
             product.setProductName("Stock Shirt");
             product.setPrice(new BigDecimal("100"));
             product.setStatus(ActiveStatus.ACTIVE);

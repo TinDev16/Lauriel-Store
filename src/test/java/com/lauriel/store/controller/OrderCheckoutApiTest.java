@@ -52,6 +52,7 @@ class OrderCheckoutApiTest {
     @Autowired private CustomerRepository customers;
     @Autowired private PaymentRepository payments;
     @Autowired private ProductRepository products;
+    @Autowired private CategoryRepository categories;
     @Autowired private SizeRepository sizes;
     @Autowired private ColorRepository colors;
     @Autowired private UserRepository users;
@@ -97,6 +98,7 @@ class OrderCheckoutApiTest {
             orders.deleteAllInBatch();
             variants.deleteAllInBatch();
             products.deleteAllInBatch();
+            categories.deleteAllInBatch();
             sizes.deleteAllInBatch();
             colors.deleteAllInBatch();
             customers.deleteAllInBatch();
@@ -125,7 +127,10 @@ class OrderCheckoutApiTest {
             var color = new Color();
             color.setColorName("Black");
             colors.saveAndFlush(color);
+            var category = new Category();
+            category.setCategoryName("Clothing"); category.setStatus(ActiveStatus.ACTIVE); categories.saveAndFlush(category);
             var product = new Product();
+            product.setCategory(category);
             product.setProductName("Checkout Shirt");
             product.setPrice(new BigDecimal("50")); // Intentionally differs from the real variant sale price.
             product.setStatus(ActiveStatus.ACTIVE);
@@ -197,8 +202,8 @@ class OrderCheckoutApiTest {
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.status").value("PENDING"))
                 .andExpect(jsonPath("$.customerId").value(profiles.get("A").getCustomerId()))
                 .andExpect(jsonPath("$.shippingAddress").value("Shipping Snapshot"))
-                .andExpect(jsonPath("$.totalAmount").value(841)).andExpect(jsonPath("$.finalAmount").value(841))
-                .andExpect(jsonPath("$.discountAmount").value(0))
+                .andExpect(jsonPath("$.totalAmount").value(841)).andExpect(jsonPath("$.shippingFee").value(20000))
+                .andExpect(jsonPath("$.finalAmount").value(20841)).andExpect(jsonPath("$.discountAmount").value(0))
                 .andExpect(jsonPath("$.items[0].unitPrice").value(120.5))
                 .andExpect(jsonPath("$.items[0].subtotal").value(241))
                 .andExpect(jsonPath("$.items[0].size.sizeName").value("S"))
@@ -266,7 +271,7 @@ class OrderCheckoutApiTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"customerId", "userId", "unitPrice", "subtotal", "totalAmount", "discountAmount",
-            "finalAmount", "voucherCode", "voucherId", "phone", "note", "status"})
+            "shippingFee", "finalAmount", "voucherCode", "voucherId", "phone", "note", "status"})
     void clientCannotSupplyOwnerPricesDiscountsOrUnsupportedOrderFields(String field) throws Exception {
         var body = new HashMap<String, Object>();
         body.put("items", List.of(item(first, 1)));
@@ -331,14 +336,16 @@ class OrderCheckoutApiTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].unitPrice").value(120.5))
                 .andExpect(jsonPath("$.items[0].subtotal").value(241))
                 .andExpect(jsonPath("$.shippingAddress").value("Shipping Snapshot"))
-                .andExpect(jsonPath("$.finalAmount").value(241));
+                .andExpect(jsonPath("$.shippingFee").value(20000))
+                .andExpect(jsonPath("$.finalAmount").value(20241));
     }
 
     @Test
     void zeroVariantPriceIsAllowedAndFinalStockCannotBeSoldAgain() throws Exception {
         tx.executeWithoutResult(status -> variants.findByIdForUpdate(first.getVariantId()).orElseThrow().setPrice(BigDecimal.ZERO));
         checkout(json(request(item(first, 5))), "A").andExpect(status().isCreated())
-                .andExpect(jsonPath("$.finalAmount").value(0));
+                .andExpect(jsonPath("$.shippingFee").value(20000))
+                .andExpect(jsonPath("$.finalAmount").value(20000));
         checkout(json(request(item(first, 1))), "B").andExpect(status().isConflict());
         assertThat(quantity(first)).isZero();
         assertThat(orders.count()).isEqualTo(1);
@@ -754,4 +761,62 @@ class OrderCheckoutApiTest {
         assertThat(service.myDetail(id, actor("A")).items()).hasSize(2);
         assertThat(statistics.getPrepareStatementCount()).isEqualTo(3); // Profile + order + graph items.
     }
+    @Test
+    void customerOrderHistoryFiltersByStatusOnServer() throws Exception {
+        Long pending = buy("A", item(first, 1));
+        Long confirmed = buy("A", item(second, 1));
+        changeStatus(confirmed, "CONFIRMED", "STAFF").andExpect(status().isOk());
+        mvc.perform(get("/api/orders/my-orders").param("status", "PENDING")
+                        .header("Authorization", token("A")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].orderId").value(pending));
+        mvc.perform(get("/api/orders/my-orders").param("status", "CONFIRMED")
+                        .header("Authorization", token("A")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].orderId").value(confirmed));
+        mvc.perform(get("/api/orders/my-orders").header("Authorization", token("A")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void customerCanReadAndTransactionallyUpdateOwnProfile() throws Exception {
+        mvc.perform(get("/api/customers/me").header("Authorization", token("A")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.username").value("checkout-A"))
+                .andExpect(jsonPath("$.fullName").value("A"));
+        mvc.perform(put("/api/customers/me").header("Authorization", token("A"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("fullName", "Nguyễn An", "email", "an@example.com",
+                                "phone", "0911222333", "address", "12 Nguyễn Huệ"))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.fullName").value("Nguyễn An"))
+                .andExpect(jsonPath("$.phone").value("0911222333"))
+                .andExpect(jsonPath("$.address").value("12 Nguyễn Huệ"));
+        tx.executeWithoutResult(status -> {
+            var customer = customers.findByUser_UserId(actor("A")).orElseThrow();
+            assertThat(customer.getCustomerName()).isEqualTo("Nguyễn An");
+            assertThat(customer.getUser().getFullName()).isEqualTo("Nguyễn An");
+            assertThat(customer.getUser().getEmail()).isEqualTo("an@example.com");
+        });
+    }
+
+    @Test
+    void profileRejectsDuplicateEmailProtectedFieldsAndUnauthorizedAccess() throws Exception {
+        tx.executeWithoutResult(status -> {
+            var other = users.findById(actor("B")).orElseThrow();
+            other.setEmail("used@example.com");
+            users.saveAndFlush(other);
+        });
+        mvc.perform(put("/api/customers/me").header("Authorization", token("A"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("fullName", "A", "email", "used@example.com",
+                                "phone", "0901", "address", "City"))))
+                .andExpect(status().isConflict());
+        mvc.perform(put("/api/customers/me").header("Authorization", token("A"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fullName\":\"A\",\"role\":\"ADMIN\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/customers/me")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/customers/me").header("Authorization", token("ADMIN")))
+                .andExpect(status().isForbidden());
+    }
+
 }

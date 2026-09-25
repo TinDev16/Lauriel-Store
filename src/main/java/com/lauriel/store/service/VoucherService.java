@@ -1,6 +1,7 @@
 package com.lauriel.store.service;
 
 import com.lauriel.store.dto.request.*;
+import com.lauriel.store.config.StoreCommerceProperties;
 import com.lauriel.store.dto.response.*;
 import com.lauriel.store.entity.*;
 import com.lauriel.store.entity.enums.ActiveStatus;
@@ -20,11 +21,14 @@ public class VoucherService {
     private final VoucherRepository vouchers;
     private final ProductVariantRepository variants;
     private final PricingService pricing;
+    private final StoreCommerceProperties commerce;
 
-    public VoucherService(VoucherRepository vouchers, ProductVariantRepository variants, PricingService pricing) {
+    public VoucherService(VoucherRepository vouchers, ProductVariantRepository variants, PricingService pricing,
+            StoreCommerceProperties commerce) {
         this.vouchers = vouchers;
         this.variants = variants;
         this.pricing = pricing;
+        this.commerce = commerce;
     }
 
     public static String normalizeCode(String code) {
@@ -86,7 +90,9 @@ public class VoucherService {
         var voucher = vouchers.findByCodeIgnoreCase(code)
                 .orElseThrow(() -> new BadRequestException("Voucher không hợp lệ hoặc không đủ điều kiện sử dụng"));
         var discount = pricing.voucherDiscount(voucher, amount, now);
-        return new VoucherValidationResponse(true, voucher.getCode(), amount, discount, amount.subtract(discount));
+        var shipping = pricing.checkedAmount(commerce.getShippingFee());
+        return new VoucherValidationResponse(true, voucher.getCode(), amount, discount, shipping,
+                pricing.checkedAmount(amount.subtract(discount).add(shipping)));
     }
 
     @Transactional(propagation = Propagation.MANDATORY)

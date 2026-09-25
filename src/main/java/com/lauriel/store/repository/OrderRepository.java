@@ -20,6 +20,10 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     @EntityGraph(attributePaths = {"customer"})
     Page<Order> findByCustomer_CustomerId(Long customerId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"customer"})
+    Page<Order> findByCustomer_CustomerIdAndStatus(Long customerId,
+            com.lauriel.store.entity.enums.OrderStatus status, Pageable pageable);
+
     @Override
     @EntityGraph(attributePaths = {"customer"})
     Page<Order> findAll(Specification<Order> filter, Pageable pageable);

@@ -52,6 +52,7 @@ class MarketingApiTest {
     @MockitoSpyBean private OrderDetailRepository details;
     @MockitoSpyBean private InventoryTransactionRepository history;
     @Autowired private ProductRepository products;
+    @Autowired private CategoryRepository categories;
     @Autowired private SizeRepository sizes;
     @Autowired private ColorRepository colors;
     @Autowired private CustomerRepository customers;
@@ -102,6 +103,7 @@ class MarketingApiTest {
             vouchers.deleteAllInBatch();
             variants.deleteAllInBatch();
             products.deleteAllInBatch();
+            categories.deleteAllInBatch();
             sizes.deleteAllInBatch();
             colors.deleteAllInBatch();
             customers.deleteAllInBatch();
@@ -121,7 +123,10 @@ class MarketingApiTest {
                     customers.saveAndFlush(customer);
                 }
             }
+            var category = new Category();
+            category.setCategoryName("Clothing"); category.setStatus(ActiveStatus.ACTIVE); categories.saveAndFlush(category);
             product = new Product();
+            product.setCategory(category);
             product.setProductName("Marketing Shirt");
             product.setPrice(new BigDecimal("50"));
             product.setStatus(ActiveStatus.ACTIVE);
@@ -277,7 +282,9 @@ class MarketingApiTest {
         var voucher = voucher("SAVE10", DiscountType.PERCENT, "10", 1);
         preview(" save10 ").andExpect(status().isOk()).andExpect(jsonPath("$.valid").value(true))
                 .andExpect(jsonPath("$.code").value("SAVE10")).andExpect(jsonPath("$.orderAmount").value(540))
-                .andExpect(jsonPath("$.discountAmount").value(54)).andExpect(jsonPath("$.finalAmount").value(486));
+                .andExpect(jsonPath("$.discountAmount").value(54))
+                .andExpect(jsonPath("$.shippingFee").value(20000))
+                .andExpect(jsonPath("$.finalAmount").value(20486));
         assertThat(remaining(voucher)).isEqualTo(1);
         verify(variants, never()).findByIdForUpdate(anyLong());
         verify(vouchers, never()).findByCodeForUpdate(anyString());
@@ -331,7 +338,7 @@ class MarketingApiTest {
         });
         checkout(checkoutRequest("MIN", first, 2)).andExpect(status().isCreated())
                 .andExpect(jsonPath("$.totalAmount").value(300)).andExpect(jsonPath("$.discountAmount").value(30))
-                .andExpect(jsonPath("$.finalAmount").value(270));
+                .andExpect(jsonPath("$.finalAmount").value(20270));
     }
 
     @Test
@@ -339,7 +346,7 @@ class MarketingApiTest {
         voucher("FIXED", DiscountType.FIXED, "5000", 1);
         checkout(checkoutRequest("FIXED", first, 1)).andExpect(status().isCreated())
                 .andExpect(jsonPath("$.totalAmount").value(300)).andExpect(jsonPath("$.discountAmount").value(300))
-                .andExpect(jsonPath("$.finalAmount").value(0));
+                .andExpect(jsonPath("$.finalAmount").value(20000));
     }
 
     @Test
@@ -349,7 +356,8 @@ class MarketingApiTest {
         var result = orderService.checkout(checkoutRequest("save10", first, 2), actor("A"));
         assertThat(result.totalAmount()).isEqualByComparingTo("540");
         assertThat(result.discountAmount()).isEqualByComparingTo("54");
-        assertThat(result.finalAmount()).isEqualByComparingTo("486");
+        assertThat(result.shippingFee()).isEqualByComparingTo("20000");
+        assertThat(result.finalAmount()).isEqualByComparingTo("20486");
         assertThat(result.voucherCode()).isEqualTo("SAVE10");
         assertThat(result.items().getFirst().unitPrice()).isEqualByComparingTo("270");
         assertThat(result.items().getFirst().discountAmount()).isEqualByComparingTo("30"); // Per unit.
@@ -364,7 +372,9 @@ class MarketingApiTest {
         });
         mvc.perform(get("/api/orders/" + result.orderId()).header("Authorization", token("A")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].unitPrice").value(270))
-                .andExpect(jsonPath("$.items[0].discountAmount").value(30)).andExpect(jsonPath("$.finalAmount").value(486));
+                .andExpect(jsonPath("$.items[0].discountAmount").value(30))
+                .andExpect(jsonPath("$.shippingFee").value(20000))
+                .andExpect(jsonPath("$.finalAmount").value(20486));
     }
 
     @ParameterizedTest
@@ -627,7 +637,7 @@ class MarketingApiTest {
         var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         statistics.clear();
         assertThat(catalog.getPublicDetail(product.getProductId()).variants()).hasSize(2);
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(2);
+        assertThat(statistics.getPrepareStatementCount()).isEqualTo(3);
         statistics.clear();
         assertThat(orderService.staffDetail(result.orderId()).items()).hasSize(2);
         assertThat(statistics.getPrepareStatementCount()).isEqualTo(2);

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="12dp">
+
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="76dp"
+        android:layout_height="92dp"
+        android:background="@color/surface_strong"
+        android:contentDescription="@string/product_image"
+        android:scaleType="centerCrop"
+        android:src="@drawable/image_placeholder" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="2"
+            android:textAppearance="@style/TextAppearance.Lauriel.Product" />
+
+        <TextView
+            android:id="@+id/variant"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="@style/TextAppearance.Lauriel.Caption" />
+
+        <TextView
+            android:id="@+id/unit_price"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textAppearance="@style/TextAppearance.Lauriel.Body" />
+
+        <TextView
+            android:id="@+id/discount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/success"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/line_total"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="8dp"
+        android:gravity="end"
+        android:textAppearance="@style/TextAppearance.Lauriel.Price"
+        android:textSize="15sp" />
+</LinearLayout>

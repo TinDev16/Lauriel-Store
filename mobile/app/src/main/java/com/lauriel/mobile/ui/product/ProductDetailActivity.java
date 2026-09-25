@@ -1,66 +1,217 @@
 package com.lauriel.mobile.ui.product;
 
+import android.content.Intent;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.viewpager2.widget.ViewPager2;
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.snackbar.Snackbar;
 import com.lauriel.mobile.R;
+import com.lauriel.mobile.adapter.ProductImageAdapter;
+import com.lauriel.mobile.adapter.RelatedProductAdapter;
 import com.lauriel.mobile.data.api.ApiClient;
 import com.lauriel.mobile.data.local.CartStore;
 import com.lauriel.mobile.data.model.Models;
+import com.lauriel.mobile.data.repository.ProductRepository;
 import com.lauriel.mobile.databinding.ActivityProductDetailBinding;
+import com.lauriel.mobile.databinding.BottomSheetVariantSelectionBinding;
 import com.lauriel.mobile.ui.BaseActivity;
+import com.lauriel.mobile.ui.checkout.CheckoutActivity;
 import com.lauriel.mobile.util.Formatters;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class ProductDetailActivity extends BaseActivity {
-    private ActivityProductDetailBinding b; private Models.Product product; private Models.Variant selected; private Long sizeId; private int quantity=1;
-    @Override protected void onCreate(Bundle state){
-        super.onCreate(state);b=ActivityProductDetailBinding.inflate(getLayoutInflater());setContentView(b.getRoot());com.lauriel.mobile.ui.SystemBars.apply(b.getRoot());
-        b.back.setOnClickListener(v->finish());b.decrease.setOnClickListener(v->{if(quantity>1){quantity--;updateQuantity();}});b.increase.setOnClickListener(v->{if(selected!=null&&quantity<selected.quantity){quantity++;updateQuantity();}});
-        b.addCart.setOnClickListener(v->add());b.addCart.setEnabled(false);long id=getIntent().getLongExtra("productId",-1);if(id<=0){finish();return;}b.error.setOnClickListener(v->load(id));load(id);
+    private ActivityProductDetailBinding b;
+    private Models.Product product;
+    private ProductRepository repository;
+    private ProductImageAdapter imageAdapter;
+    private RelatedProductAdapter relatedAdapter;
+
+    @Override protected void onCreate(Bundle state) {
+        super.onCreate(state);
+        b=ActivityProductDetailBinding.inflate(getLayoutInflater());
+        setContentView(b.getRoot());
+        com.lauriel.mobile.ui.SystemBars.apply(b.getRoot());
+        repository=new ProductRepository(ApiClient.get(this).api());
+        imageAdapter=new ProductImageAdapter();
+        b.gallery.setAdapter(imageAdapter);
+        b.gallery.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback(){
+            @Override public void onPageSelected(int position){updateIndicator(position);}
+        });
+        relatedAdapter=new RelatedProductAdapter(id->startActivity(new Intent(this,ProductDetailActivity.class).putExtra("productId",id)));
+        b.related.setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false));
+        b.related.setAdapter(relatedAdapter);
+        b.back.setOnClickListener(v->finish());
+        b.error.setOnClickListener(v->load(getIntent().getLongExtra("productId",-1)));
+        b.addCart.setOnClickListener(v->showVariantSheet(false));
+        b.buyNow.setOnClickListener(v->showVariantSheet(true));
+        b.addCart.setEnabled(false);b.buyNow.setEnabled(false);
+        long id=getIntent().getLongExtra("productId",-1);
+        if(id<=0){finish();return;}
+        load(id);
     }
-    private void load(long id){b.loading.setVisibility(View.VISIBLE);b.error.setText("");new com.lauriel.mobile.data.repository.ProductRepository(ApiClient.get(this).api()).detail(id,new Callback<Models.Product>(){
-        @Override public void onResponse(Call<Models.Product> c,Response<Models.Product> r){if(isFinishing())return;b.loading.setVisibility(View.GONE);if(!r.isSuccessful()||r.body()==null){b.error.setText(ApiClient.get(ProductDetailActivity.this).error(r)+" Chạm để thử lại.");return;}product=r.body();render();}
-        @Override public void onFailure(Call<Models.Product> c,Throwable e){if(!isFinishing()){b.loading.setVisibility(View.GONE);b.error.setText("Không thể kết nối máy chủ. Chạm để thử lại.");}}
-    });}
+
+    private void load(long id){
+        b.loading.setVisibility(View.VISIBLE);b.error.setText("");
+        repository.detail(id,new Callback<Models.Product>(){
+            @Override public void onResponse(Call<Models.Product> c,Response<Models.Product> r){
+                if(isFinishing())return;b.loading.setVisibility(View.GONE);
+                if(!r.isSuccessful()||r.body()==null){b.error.setText(ApiClient.get(ProductDetailActivity.this).error(r)+" Chạm để thử lại.");return;}
+                product=r.body();render();loadRelated(id);
+            }
+            @Override public void onFailure(Call<Models.Product> c,Throwable e){
+                if(!isFinishing()){b.loading.setVisibility(View.GONE);b.error.setText("Không thể kết nối máy chủ. Chạm để thử lại.");}
+            }
+        });
+    }
+
     private void render(){
-        b.name.setText(product.productName);b.description.setText(product.description);b.effectivePrice.setText(Formatters.money(product.basePrice));b.price.setVisibility(View.GONE);b.promotion.setVisibility(View.GONE);
-        Glide.with(b.image).load(ApiClient.imageUrl(product.imgUrl)).placeholder(R.drawable.image_placeholder).error(R.drawable.image_placeholder).centerCrop().transition(DrawableTransitionOptions.withCrossFade(180)).into(b.image);b.image.setContentDescription(product.productName);
-        b.sizes.removeAllViews();b.colors.removeAllViews();if(product.variants==null||product.variants.isEmpty()){b.stock.setText("Không có biến thể khả dụng.");b.addCart.setText("Hết hàng");return;}
-        Set<Long> sizes=new LinkedHashSet<>();Chip firstAvailable=null;
-        for(var variant:product.variants)if("ACTIVE".equals(variant.status)&&variant.size!=null&&sizes.add(variant.size.sizeId)){
-            boolean available=hasStock(variant.size.sizeId);Chip chip=chip(variant.size.sizeName);chip.setEnabled(available);long id=variant.size.sizeId;chip.setOnClickListener(w->{sizeId=id;showColors();});b.sizes.addView(chip);if(available&&firstAvailable==null){firstAvailable=chip;sizeId=id;}
+        b.name.setText(product.productName);
+        b.description.setText(product.description==null||product.description.isBlank()?"Chưa có mô tả sản phẩm.":product.description);
+        List<String> urls=new ArrayList<>();
+        if(product.images!=null)for(var image:product.images)if(image.url!=null&&!image.url.isBlank())urls.add(image.url);
+        if(urls.isEmpty()&&product.imgUrl!=null)urls.add(product.imgUrl);
+        imageAdapter.submit(urls);updateIndicator(0);
+        Models.Variant best=product.variants==null?null:product.variants.stream()
+                .filter(v->"ACTIVE".equals(v.status)&&v.quantity>0)
+                .min(Comparator.comparing(v->v.effectivePrice==null?v.price:v.effectivePrice)).orElse(null);
+        if(best==null){
+            b.effectivePrice.setText(Formatters.money(product.basePrice));
+            b.addCart.setEnabled(false);b.buyNow.setEnabled(false);
+            b.addCart.setText("Hết hàng");b.buyNow.setText("Hết hàng");
+            return;
         }
-        if(firstAvailable!=null)firstAvailable.setChecked(true);showColors();
+        showPrice(best);
+        b.addCart.setEnabled(true);b.buyNow.setEnabled(true);
     }
-    private boolean hasStock(long id){for(var v:product.variants)if("ACTIVE".equals(v.status)&&v.size!=null&&v.size.sizeId==id&&v.quantity>0)return true;return false;}
+
+    private void showPrice(Models.Variant variant){
+        BigDecimal effective=variant.effectivePrice==null?variant.price:variant.effectivePrice;
+        boolean sale=variant.promotion!=null&&effective!=null&&variant.price!=null&&effective.compareTo(variant.price)<0;
+        b.effectivePrice.setText(Formatters.money(effective));
+        if(sale){
+            b.price.setVisibility(View.VISIBLE);b.price.setText(Formatters.money(variant.price));
+            b.price.setPaintFlags(b.price.getPaintFlags()|Paint.STRIKE_THRU_TEXT_FLAG);
+            b.promotion.setText("-"+variant.promotion.discountPercent.stripTrailingZeros().toPlainString()+"%");
+            b.promotion.setVisibility(View.VISIBLE);
+        }else{b.price.setVisibility(View.GONE);b.promotion.setVisibility(View.GONE);}
+    }
+
+    private void updateIndicator(int position){
+        int count=imageAdapter==null?0:imageAdapter.getItemCount();
+        b.indicator.setVisibility(count>1?View.VISIBLE:View.GONE);
+        b.indicator.setText(count==0?"":(position+1)+" / "+count);
+    }
+
+    private void loadRelated(long id){
+        repository.related(id,new Callback<List<Models.Product>>(){
+            @Override public void onResponse(Call<List<Models.Product>> c,Response<List<Models.Product>> r){
+                if(isFinishing())return;
+                List<Models.Product> data=r.isSuccessful()&&r.body()!=null?r.body():List.of();
+                relatedAdapter.submit(data);b.relatedTitle.setVisibility(data.isEmpty()?View.GONE:View.VISIBLE);
+                b.related.setVisibility(data.isEmpty()?View.GONE:View.VISIBLE);
+            }
+            @Override public void onFailure(Call<List<Models.Product>> c,Throwable e){
+                if(!isFinishing()){b.relatedTitle.setVisibility(View.GONE);b.related.setVisibility(View.GONE);}
+            }
+        });
+    }
+
+    private void showVariantSheet(boolean buyNow){
+        if(product==null||product.variants==null)return;
+        BottomSheetDialog dialog=new BottomSheetDialog(this);
+        BottomSheetVariantSelectionBinding sheet=BottomSheetVariantSelectionBinding.inflate(getLayoutInflater());
+        dialog.setContentView(sheet.getRoot());
+        sheet.name.setText(product.productName);
+        Glide.with(sheet.image).load(ApiClient.imageUrl(product.imgUrl)).placeholder(R.drawable.image_placeholder)
+                .error(R.drawable.image_placeholder).centerCrop().into(sheet.image);
+        final Models.Variant[] selected={null};
+        final Long[] sizeId={null};
+        final int[] quantity={1};
+        Runnable update=()->{
+            Models.Variant v=selected[0];
+            BigDecimal price=v==null?product.basePrice:(v.effectivePrice==null?v.price:v.effectivePrice);
+            sheet.price.setText(Formatters.money(price));
+            sheet.stock.setText(v==null?"Chọn kích thước và màu":(v.quantity==0?"Hết hàng":"Còn "+v.quantity+" sản phẩm"));
+            sheet.quantity.setText(String.valueOf(quantity[0]));
+            sheet.decrease.setEnabled(quantity[0]>1);
+            sheet.increase.setEnabled(v!=null&&quantity[0]<v.quantity);
+            sheet.confirm.setEnabled(v!=null&&v.quantity>0);
+        };
+        Runnable colors=()->{
+            sheet.colors.removeAllViews();selected[0]=null;quantity[0]=1;Chip first=null;
+            for(var variant:product.variants){
+                if(!"ACTIVE".equals(variant.status)||variant.size==null||variant.color==null
+                        ||sizeId[0]==null||variant.size.sizeId!=sizeId[0])continue;
+                Chip chip=chip(variant.color.colorName);chip.setEnabled(variant.quantity>0);
+                chip.setOnClickListener(v->{selected[0]=variant;quantity[0]=1;update.run();});
+                sheet.colors.addView(chip);
+                if(first==null&&variant.quantity>0){first=chip;selected[0]=variant;}
+            }
+            if(first!=null)first.setChecked(true);update.run();
+        };
+        Set<Long> seen=new LinkedHashSet<>();Chip firstSize=null;
+        for(var variant:product.variants){
+            if(!"ACTIVE".equals(variant.status)||variant.size==null||!seen.add(variant.size.sizeId))continue;
+            boolean available=product.variants.stream().anyMatch(v->"ACTIVE".equals(v.status)&&v.size!=null
+                    &&v.size.sizeId==variant.size.sizeId&&v.quantity>0);
+            Chip chip=chip(variant.size.sizeName);chip.setEnabled(available);long id=variant.size.sizeId;
+            chip.setOnClickListener(v->{sizeId[0]=id;colors.run();});sheet.sizes.addView(chip);
+            if(firstSize==null&&available){firstSize=chip;sizeId[0]=id;}
+        }
+        if(firstSize!=null)firstSize.setChecked(true);colors.run();
+        sheet.decrease.setOnClickListener(v->{if(quantity[0]>1){quantity[0]--;update.run();}});
+        sheet.increase.setOnClickListener(v->{if(selected[0]!=null&&quantity[0]<selected[0].quantity){quantity[0]++;update.run();}});
+        sheet.confirm.setText(buyNow?"Mua ngay":"Thêm vào giỏ hàng");
+        sheet.confirm.setOnClickListener(v->{
+            if(selected[0]==null||selected[0].quantity<quantity[0])return;
+            if(buyNow)buyNow(selected[0],quantity[0]);else addToCart(selected[0],quantity[0]);
+            dialog.dismiss();
+        });
+        dialog.show();
+    }
+
     private Chip chip(String text){Chip chip=new Chip(this);chip.setText(text);chip.setCheckable(true);chip.setMinHeight(dp(48));return chip;}
-    private void showColors(){
-        b.colors.removeAllViews();selected=null;quantity=1;if(product.variants==null||sizeId==null){updateSelection();return;}Chip first=null;
-        for(var variant:product.variants)if("ACTIVE".equals(variant.status)&&variant.size!=null&&variant.color!=null&&variant.size.sizeId==sizeId){Chip color=chip(variant.color.colorName);color.setEnabled(variant.quantity>0);color.setOnClickListener(w->{selected=variant;quantity=1;updateSelection();});b.colors.addView(color);if(variant.quantity>0&&first==null){first=color;selected=variant;}}
-        if(first!=null)first.setChecked(true);updateSelection();
+
+    private void addToCart(Models.Variant selected,int quantity){
+        var session=ApiClient.get(this).session();if(!session.hasCustomer())return;
+        BigDecimal price=selected.effectivePrice==null?selected.price:selected.effectivePrice;
+        try{
+            new CartStore(this,session.userId()).add(new CartStore.CartItem(selected.variantId,product.productId,
+                    product.productName,selected.sku,selected.size.sizeName,selected.color.colorName,
+                    product.imgUrl,price,quantity,selected.quantity));
+            b.addCart.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            Snackbar.make(b.getRoot(),"Đã thêm vào giỏ hàng",Snackbar.LENGTH_SHORT).show();
+        }catch(IllegalArgumentException e){b.error.setText("Số lượng vượt tồn kho hiện tại.");}
     }
-    private void updateSelection(){
-        if(selected==null){b.addCart.setEnabled(false);b.addCart.setText("Hết hàng");b.stock.setText("Không có biến thể phù hợp.");return;}
-        boolean sale=selected.promotion!=null&&selected.effectivePrice!=null&&selected.price!=null&&selected.effectivePrice.compareTo(selected.price)<0;
-        b.effectivePrice.animate().alpha(0f).setDuration(80).withEndAction(()->{b.effectivePrice.setText(Formatters.money(sale?selected.effectivePrice:selected.price));b.effectivePrice.animate().alpha(1f).setDuration(120).start();}).start();
-        if(sale){b.price.setVisibility(View.VISIBLE);b.price.setText(Formatters.money(selected.price));b.price.setPaintFlags(b.price.getPaintFlags()|Paint.STRIKE_THRU_TEXT_FLAG);b.promotion.setText(selected.promotion.promotionName);b.promotion.setVisibility(View.VISIBLE);}else{b.price.setVisibility(View.GONE);b.promotion.setVisibility(View.GONE);}
-        b.stock.setText(selected.quantity<=0?"Hết hàng":"Còn "+selected.quantity+" sản phẩm");b.addCart.setEnabled(selected.quantity>0);b.addCart.setText(selected.quantity>0?getString(R.string.add_cart):"Hết hàng");updateQuantity();
-    }
-    private void updateQuantity(){b.quantity.setText(String.valueOf(quantity));b.decrease.setEnabled(quantity>1);b.increase.setEnabled(selected!=null&&quantity<selected.quantity);}
-    private void add(){
-        if(selected==null||selected.quantity<quantity)return;var session=ApiClient.get(this).session();if(!session.hasCustomer())return;var price=selected.effectivePrice==null?selected.price:selected.effectivePrice;
-        try{new CartStore(this,session.userId()).add(new CartStore.CartItem(selected.variantId,product.productId,product.productName,selected.sku,selected.size.sizeName,selected.color.colorName,product.imgUrl,price,quantity,selected.quantity));b.addCart.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);Snackbar.make(b.getRoot(),"Đã thêm vào giỏ hàng",Snackbar.LENGTH_SHORT).setAction("Đóng",v->{}).show();}
-        catch(IllegalArgumentException e){b.error.setText("Số lượng vượt tồn kho hiển thị.");}
+
+    private void buyNow(Models.Variant selected,int quantity){
+        BigDecimal price=selected.effectivePrice==null?selected.price:selected.effectivePrice;
+        startActivity(new Intent(this,CheckoutActivity.class)
+                .putExtra(CheckoutActivity.EXTRA_BUY_NOW,true)
+                .putExtra(CheckoutActivity.EXTRA_VARIANT_ID,selected.variantId)
+                .putExtra(CheckoutActivity.EXTRA_PRODUCT_ID,product.productId)
+                .putExtra(CheckoutActivity.EXTRA_PRODUCT_NAME,product.productName)
+                .putExtra(CheckoutActivity.EXTRA_SKU,selected.sku)
+                .putExtra(CheckoutActivity.EXTRA_SIZE,selected.size.sizeName)
+                .putExtra(CheckoutActivity.EXTRA_COLOR,selected.color.colorName)
+                .putExtra(CheckoutActivity.EXTRA_IMAGE,product.imgUrl)
+                .putExtra(CheckoutActivity.EXTRA_PRICE,price.toPlainString())
+                .putExtra(CheckoutActivity.EXTRA_QUANTITY,quantity)
+                .putExtra(CheckoutActivity.EXTRA_STOCK,selected.quantity));
     }
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
 }

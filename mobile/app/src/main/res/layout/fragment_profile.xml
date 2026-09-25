@@ -1,12 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingHorizontal="@dimen/screen_padding">
-  <TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_md" android:paddingBottom="@dimen/space_lg" android:text="@string/profile" android:textAppearance="@style/TextAppearance.Lauriel.ScreenTitle"/>
-  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal"><TextView android:id="@+id/avatar" android:layout_width="72dp" android:layout_height="72dp" android:background="@drawable/bg_avatar" android:gravity="center" android:text="@string/avatar_placeholder" android:textColor="@color/on_accent" android:textSize="28sp" android:textStyle="bold"/><TextView android:id="@+id/account" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="@dimen/space_md" android:layout_weight="1" android:lineSpacingExtra="4dp" android:textAppearance="@style/TextAppearance.Lauriel.Body"/></LinearLayout>
-  <com.google.android.material.progressindicator.CircularProgressIndicator android:id="@+id/loading" android:layout_width="32dp" android:layout_height="32dp" android:layout_gravity="center" android:layout_marginTop="@dimen/space_md" android:visibility="gone" app:indicatorColor="@color/ink" app:trackThickness="3dp"/>
-  <TextView android:id="@+id/error" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm" android:gravity="center" android:textColor="@color/danger" android:textSize="14sp"/>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent">
+ <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="@dimen/screen_padding" android:paddingBottom="@dimen/space_xl">
+  <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_md" android:paddingBottom="@dimen/space_lg" android:text="@string/profile" android:textAppearance="@style/TextAppearance.Lauriel.ScreenTitle"/>
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+   <TextView android:id="@+id/avatar" android:layout_width="72dp" android:layout_height="72dp" android:background="@drawable/bg_avatar" android:gravity="center" android:text="@string/avatar_placeholder" android:textColor="@color/on_accent" android:textSize="28sp" android:textStyle="bold"/>
+   <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="@dimen/space_md" android:orientation="vertical">
+    <TextView android:id="@+id/full_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="@style/TextAppearance.Lauriel.SectionTitle"/>
+    <TextView android:id="@+id/username" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_xxs" android:textAppearance="@style/TextAppearance.Lauriel.Caption"/>
+   </LinearLayout>
+  </LinearLayout>
+  <com.google.android.material.card.MaterialCardView style="@style/Card.Lauriel" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_lg">
+   <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/space_md">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Thông tin cá nhân" android:textAppearance="@style/TextAppearance.Lauriel.SectionTitle"/>
+    <TextView android:id="@+id/email" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_12"/>
+    <TextView android:id="@+id/phone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"/>
+    <TextView android:id="@+id/address" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm"/>
+   </LinearLayout>
+  </com.google.android.material.card.MaterialCardView>
+  <com.google.android.material.button.MaterialButton android:id="@+id/edit" style="@style/SecondaryButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md" android:text="Chỉnh sửa"/>
+  <com.google.android.material.progressindicator.CircularProgressIndicator android:id="@+id/loading" android:layout_width="32dp" android:layout_height="32dp" android:layout_gravity="center" android:layout_marginTop="@dimen/space_md" android:visibility="gone" app:indicatorColor="@color/ink"/>
+  <TextView android:id="@+id/error" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_sm" android:gravity="center" android:textColor="@color/danger"/>
   <com.google.android.material.button.MaterialButton android:id="@+id/retry" style="@style/SecondaryButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md" android:text="@string/retry"/>
   <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="@dimen/space_lg" android:background="@color/divider"/>
   <com.google.android.material.button.MaterialButton android:id="@+id/orders" style="@style/TextButton" android:layout_width="match_parent" android:layout_height="56dp" android:gravity="start|center_vertical" android:text="@string/orders" app:icon="@drawable/ic_nav_orders" app:iconGravity="textStart"/>
   <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider"/>
   <com.google.android.material.button.MaterialButton android:id="@+id/logout" style="@style/TextButton" android:layout_width="match_parent" android:layout_height="56dp" android:gravity="start|center_vertical" android:text="@string/logout" android:textColor="@color/danger" app:icon="@drawable/ic_logout" app:iconGravity="textStart" app:iconTint="@color/danger"/>
-</LinearLayout>
+ </LinearLayout>
+</androidx.core.widget.NestedScrollView>

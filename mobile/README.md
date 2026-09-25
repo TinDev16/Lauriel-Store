@@ -60,7 +60,7 @@ Không đặt JWT signing secret trong Android. App chỉ lưu access token tr�
 
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
 - `GET /api/promotions/active`
-- `GET /api/products`, `GET /api/products/{id}`, `GET /api/sizes`, `GET /api/colors`
+- `GET /api/products`, `GET /api/products/{id}`, `GET /api/categories`, `GET /api/sizes`, `GET /api/colors`
 - `POST /api/vouchers/validate`
 - `POST /api/orders`, `GET /api/orders/my-orders`, `GET /api/orders/{id}`, `POST /api/orders/{id}/cancel`
 
@@ -74,3 +74,14 @@ JWT lưu trong SharedPreferences gắn với cài đặt app; password không l�
 API 401 của request có Bearer sẽ xóa session và điều hướng về Login; 403/409 giữ message phù hợp.
 Ảnh sản phẩm do web quản trị tải lên dùng đường dẫn /uploads/products/...; ứng dụng ghép đường dẫn này với địa chỉ backend (10.0.2.2 trên emulator) để Glide tải ảnh ở danh sách, chi tiết và giỏ hàng. URL ảnh cũ dạng đầy đủ vẫn hiển thị; nếu ảnh trống/lỗi, ứng dụng dùng ảnh mặc định.
 Không có dữ liệu giả trong đường chạy chính.
+
+## Commerce upgrade
+
+- Checkout hiển thị danh sách sản phẩm có ảnh và một khối tổng tiền chung, gồm phí giao hàng do server trả về.
+- Voucher được preview qua backend và bị hủy preview khi giỏ hàng thay đổi. Promotion dùng `effectivePrice` từ backend.
+- Chi tiết sản phẩm có gallery, chọn biến thể thực tế, Thêm vào giỏ, Mua ngay và sản phẩm liên quan.
+- Mua ngay tạo checkout tạm thời, không ghi vào giỏ hàng bền vững.
+- Đơn hàng lọc trạng thái phía server. Profile có màn hình xem và chỉnh sửa.
+- Login/Register phát 3 giây đầu của video chung trong `res/raw`, sau đó hiện form bằng fade-in.
+
+API bổ sung: `GET/PUT /api/customers/me`, `GET /api/products/{id}/related`, và tham số `status` cho `GET /api/orders/my-orders`.

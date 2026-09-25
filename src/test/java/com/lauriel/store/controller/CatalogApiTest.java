@@ -46,6 +46,8 @@ class CatalogApiTest {
     private static final String TEST_HASH = new BCryptPasswordEncoder().encode("TestPassword123");
     @Autowired private WebApplicationContext context;
     @Autowired private ProductRepository products;
+    @Autowired private ProductImageRepository productImages;
+    @Autowired private CategoryRepository categories;
     @MockitoSpyBean private ProductVariantRepository variants;
     @Autowired private SizeRepository sizes;
     @Autowired private ColorRepository colors;
@@ -58,6 +60,7 @@ class CatalogApiTest {
     @Autowired private EntityManagerFactory entityManagerFactory;
     private MockMvc mvc;
     private final Map<String, User> accounts = new HashMap<>();
+    private Category category;
     private Size small, medium, large;
     private Color black, white;
     private Product shirt, pants, jacket, hidden;
@@ -82,6 +85,8 @@ class CatalogApiTest {
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        category = new Category(); category.setCategoryName("Clothing"); category.setStatus(ActiveStatus.ACTIVE);
+        category = categories.saveAndFlush(category);
         small = size("S");
         medium = size("M");
         large = size("L");
@@ -122,6 +127,7 @@ class CatalogApiTest {
 
     private Product product(String name, String description, String price, ActiveStatus status) {
         Product product = new Product();
+        product.setCategory(category);
         product.setProductName(name);
         product.setDescription(description);
         product.setPrice(new BigDecimal(price));
@@ -147,7 +153,7 @@ class CatalogApiTest {
     }
 
     private String productJson(String name, String price, String status) {
-        return mapper.writeValueAsString(Map.of("productName", name, "description", "Sample",
+        return mapper.writeValueAsString(Map.of("productName", name, "categoryId", category.getCategoryId(), "description", "Sample",
                 "price", new BigDecimal(price), "imgUrl", "/static/product.png", "status", status));
     }
 
@@ -598,13 +604,129 @@ class CatalogApiTest {
         entityManager.clear(); // No fixture entities may hide lazy-load queries in this check.
         var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         statistics.clear();
-        var page = productService.listPublic(0, 1, null, null, null, "price", "asc");
+        var page = productService.listPublic(0, 1, null, null, null, null, "price", "asc");
         assertThat(page.totalElements()).isEqualTo(3);
         assertThat(statistics.getPrepareStatementCount()).isEqualTo(2); // Summary query + count.
         entityManager.clear();
         statistics.clear();
         var detail = productService.getPublicDetail(shirt.getProductId());
         assertThat(detail.variants()).hasSize(3);
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(2); // Product + graph-fetched variants.
+        assertThat(statistics.getPrepareStatementCount()).isEqualTo(3); // Product + variants/promotions + gallery.
     }
+
+    @Test
+    void publicCategoriesOnlyReturnActiveRows() throws Exception {
+        var inactive = new Category(); inactive.setCategoryName("Archived"); inactive.setStatus(ActiveStatus.INACTIVE);
+        categories.saveAndFlush(inactive);
+        mvc.perform(get("/api/categories")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].categoryName").value("Clothing"))
+                .andExpect(jsonPath("$[?(@.categoryName == 'Archived')]").isEmpty());
+    }
+
+    @Test
+    void categoryAdminCrudNormalizesNamesAndRejectsDuplicates() throws Exception {
+        String body = mapper.writeValueAsString(Map.of("categoryName", "  Áo   khoác  ", "status", "ACTIVE"));
+        var result = mvc.perform(post("/api/admin/categories").header("Authorization", token("STAFF"))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.categoryName").value("Áo khoác"))
+                .andReturn();
+        long id = mapper.readTree(result.getResponse().getContentAsString()).get("categoryId").asLong();
+        mvc.perform(put("/api/admin/categories/" + id).header("Authorization", token("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/admin/categories").header("Authorization", token("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isConflict());
+        mvc.perform(patch("/api/admin/categories/" + id + "/status").header("Authorization", token("STAFF"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"INACTIVE\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("INACTIVE"));
+    }
+
+    @Test
+    void categoryAdminSecurityUsesCatalogPolicy() throws Exception {
+        mvc.perform(get("/api/admin/categories")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/admin/categories").header("Authorization", token("CUSTOMER")))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/admin/categories").header("Authorization", token("STAFF")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void productCreateRequiresExistingActiveCategory() throws Exception {
+        String missing = productJson("Missing category", "10", "ACTIVE")
+                .replace(category.getCategoryId().toString(), "999999");
+        mvc.perform(post("/api/admin/products").header("Authorization", token("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON).content(missing))
+                .andExpect(status().isNotFound());
+        var inactive = new Category(); inactive.setCategoryName("Inactive category"); inactive.setStatus(ActiveStatus.INACTIVE);
+        inactive = categories.saveAndFlush(inactive);
+        String disabled = productJson("Disabled category", "10", "ACTIVE")
+                .replace(category.getCategoryId().toString(), inactive.getCategoryId().toString());
+        mvc.perform(post("/api/admin/products").header("Authorization", token("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON).content(disabled))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void inactiveCategoryHidesExistingProductsFromPublicCatalog() throws Exception {
+        category.setStatus(ActiveStatus.INACTIVE); categories.saveAndFlush(category); entityManager.clear();
+        mvc.perform(get("/api/products")).andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get("/api/products/" + shirt.getProductId())).andExpect(status().isNotFound());
+        assertThat(products.count()).isEqualTo(4);
+        assertThat(variants.count()).isEqualTo(6);
+    }
+
+    @Test
+    void categoryCombinesWithSizeAndColorFiltersWithoutDuplicates() throws Exception {
+        mvc.perform(get("/api/products").param("categoryId", category.getCategoryId().toString())
+                        .param("sizeId", medium.getSizeId().toString()).param("colorId", black.getColorId().toString()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.content[0].category.categoryName").value("Clothing"));
+    }
+
+    @Test
+    void productUpdateCanChangeCategoryWithoutTouchingVariants() throws Exception {
+        var next = new Category(); next.setCategoryName("Outerwear"); next.setStatus(ActiveStatus.ACTIVE);
+        next = categories.saveAndFlush(next);
+        String body = productJson("Moved Shirt", "250", "ACTIVE")
+                .replace(category.getCategoryId().toString(), next.getCategoryId().toString());
+        mvc.perform(put("/api/admin/products/" + shirt.getProductId()).header("Authorization", token("STAFF"))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.category.categoryName").value("Outerwear"));
+        assertThat(variants.findById(editableVariant.getVariantId()).orElseThrow().getProduct().getProductId())
+                .isEqualTo(shirt.getProductId());
+    }
+    @Test
+    void productDetailReturnsOrderedGalleryAndLegacyPrimaryImage() throws Exception {
+        ProductImage primary = new ProductImage();
+        primary.setProduct(shirt); primary.setImageUrl("/uploads/products/1/primary.jpg");
+        primary.setPrimary(true); primary.setDisplayOrder(0);
+        productImages.saveAndFlush(primary);
+        ProductImage secondary = new ProductImage();
+        secondary.setProduct(shirt); secondary.setImageUrl("/uploads/products/1/secondary.webp");
+        secondary.setPrimary(false); secondary.setDisplayOrder(1);
+        productImages.saveAndFlush(secondary);
+        shirt.setImgUrl(primary.getImageUrl()); products.saveAndFlush(shirt);
+        entityManager.clear();
+
+        mvc.perform(get("/api/products/" + shirt.getProductId()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.imgUrl").value(primary.getImageUrl()))
+                .andExpect(jsonPath("$.images.length()").value(2))
+                .andExpect(jsonPath("$.images[0].primary").value(true))
+                .andExpect(jsonPath("$.images[1].order").value(1));
+        mvc.perform(get("/api/products"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.productId == " + shirt.getProductId() + ")].imgUrl")
+                        .value(primary.getImageUrl()));
+    }
+
+    @Test
+    void relatedProductsAreActiveSameCategoryHaveVariantsAndExcludeCurrent() throws Exception {
+        mvc.perform(get("/api/products/" + shirt.getProductId() + "/related").param("limit", "6"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].productId").value(pants.getProductId()))
+                .andExpect(jsonPath("$[?(@.productId == " + shirt.getProductId() + ")]").isEmpty())
+                .andExpect(jsonPath("$[?(@.productId == " + hidden.getProductId() + ")]").isEmpty());
+    }
+
 }

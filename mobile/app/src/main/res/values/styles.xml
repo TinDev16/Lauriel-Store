@@ -22,5 +22,9 @@
     <style name="TextAppearance.Lauriel.Price" parent="TextAppearance.MaterialComponents.Subtitle1"><item name="android:textColor">@color/ink</item><item name="android:textSize">17sp</item><item name="android:textStyle">bold</item></style>
     <style name="TextAppearance.Lauriel.Body" parent="TextAppearance.MaterialComponents.Body1"><item name="android:textColor">@color/ink</item><item name="android:textSize">15sp</item></style>
     <style name="TextAppearance.Lauriel.Caption" parent="TextAppearance.MaterialComponents.Caption"><item name="android:textColor">@color/muted</item><item name="android:textSize">13sp</item></style>
+    <style name="TextAppearance.Lauriel.Navigation" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">11sp</item>
+        <item name="android:lineSpacingExtra">0dp</item>
+    </style>
     <style name="NavActiveIndicator"><item name="android:color">@color/surface_strong</item><item name="shapeAppearance">@style/Shape.Lauriel.Large</item></style>
 </resources>

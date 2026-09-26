@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::section},'Thêm nhanh biến thể','products')}">
+<body><section>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+<div>
+<h1 class="h4 mb-1">Thêm nhanh biến thể</h1>
+<p class="text-muted mb-0" th:text="${product.productName}"></p>
+</div>
+<a class="btn btn-outline-primary btn-sm"
+   th:href="@{/admin/products/{id}/variants(id=${product.productId})}">Quay lại danh sách</a>
+</div>
+
+<form method="post" th:action="@{${action}}" th:object="${form}" data-bulk-variants>
+<div th:replace="~{fragments/fields :: errors}"></div>
+<div class="alert alert-info">
+Chọn nhiều kích cỡ và màu sắc. Hệ thống sẽ tạo tất cả tổ hợp, tự sinh SKU và bỏ qua tổ hợp đã tồn tại.
+</div>
+
+<div class="row g-4">
+<div class="col-lg-6">
+<div class="card h-100"><div class="card-body">
+<div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+<div>
+<h2 class="h6 mb-1">1. Chọn kích cỡ</h2>
+<div class="small text-muted"><span data-size-count>0</span> kích cỡ đã chọn</div>
+</div>
+<div class="btn-group btn-group-sm">
+<button type="button" class="btn btn-outline-primary" data-select-all="sizeIds">Chọn tất cả</button>
+<button type="button" class="btn btn-outline-secondary" data-clear-all="sizeIds">Bỏ tất cả</button>
+</div>
+</div>
+<div class="d-flex flex-wrap gap-2" data-choice-group="sizeIds">
+<div th:each="size:${sizes}">
+<input class="btn-check" type="checkbox" th:field="*{sizeIds}"
+       th:value="${size.sizeId}" th:id="|bulk-size-${size.sizeId}|">
+<label class="btn btn-outline-dark px-3 variant-choice" th:for="|bulk-size-${size.sizeId}|"
+       th:text="${size.sizeName}"></label>
+</div>
+</div>
+<div class="text-danger small mt-2" th:errors="*{sizeIds}"></div>
+</div></div>
+</div>
+
+<div class="col-lg-6">
+<div class="card h-100"><div class="card-body">
+<div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+<div>
+<h2 class="h6 mb-1">2. Chọn màu sắc</h2>
+<div class="small text-muted"><span data-color-count>0</span> màu đã chọn</div>
+</div>
+<div class="btn-group btn-group-sm">
+<button type="button" class="btn btn-outline-primary" data-select-all="colorIds">Chọn tất cả</button>
+<button type="button" class="btn btn-outline-secondary" data-clear-all="colorIds">Bỏ tất cả</button>
+</div>
+</div>
+<div class="d-flex flex-wrap gap-2" data-choice-group="colorIds">
+<div th:each="color:${colors}">
+<input class="btn-check" type="checkbox" th:field="*{colorIds}"
+       th:value="${color.colorId}" th:id="|bulk-color-${color.colorId}|">
+<label class="btn btn-outline-dark px-3 variant-choice" th:for="|bulk-color-${color.colorId}|"
+       th:text="${color.colorName}"></label>
+</div>
+</div>
+<div class="text-danger small mt-2" th:errors="*{colorIds}"></div>
+</div></div>
+</div>
+</div>
+
+<div class="card mt-4"><div class="card-body">
+<h2 class="h6 mb-3">3. Thông tin áp dụng chung</h2>
+<div class="row g-3">
+<div class="col-md-6">
+<div th:replace="~{fragments/fields :: input('price','Giá bán','number')}"></div>
+<div class="form-text">Mặc định lấy từ giá cơ bản của sản phẩm.</div>
+</div>
+<div class="col-md-6">
+<div th:replace="~{fragments/fields :: status}"></div>
+</div>
+</div>
+</div></div>
+
+<div class="sticky-bottom bg-body border-top mt-4 py-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+<div>
+<div class="fw-semibold">Sẽ tạo <span data-combination-count>0</span> tổ hợp</div>
+<div class="small text-muted">Tồn kho ban đầu bằng 0; nhập kho bằng phiếu nhập.</div>
+</div>
+<button class="btn btn-primary px-4" type="submit" data-submit-variants disabled>Tạo biến thể</button>
+</div>
+</div>
+</form>
+<link rel="stylesheet" th:href="@{/css/variant-bulk.css}">
+<script th:src="@{/js/variant-bulk.js}" defer></script>
+</section></body>
+</html>

@@ -42,6 +42,12 @@ public class VoucherService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<VoucherResponse> listAvailable(int page, int size) {
+        return InventoryPagination.response(vouchers.findAvailable(ActiveStatus.ACTIVE, pricing.now(),
+                InventoryPagination.page(page, size, Sort.unsorted())), MarketingMapper::voucher);
+    }
+
+    @Transactional(readOnly = true)
     public VoucherResponse detail(Long id) {
         return MarketingMapper.voucher(vouchers.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Voucher")));

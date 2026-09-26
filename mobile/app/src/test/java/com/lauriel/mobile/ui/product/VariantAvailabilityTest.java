@@ -31,6 +31,42 @@ public class VariantAvailabilityTest {
     }
 
     @Test
+    public void selectingWhiteKeepsMediumSelectedWhenMediumWhiteIsInStock() {
+        VariantAvailability availability = new VariantAvailability(List.of(
+                variant(1, 10, "M", 20, "Black", 3),
+                variant(2, 10, "M", 21, "White", 320),
+                variant(3, 11, "L", 20, "Black", 2)));
+        VariantSelection selection = new VariantSelection(availability);
+
+        selection.selectSize(10L);
+        assertTrue(selection.isColorEnabled(20));
+        assertTrue(selection.isColorEnabled(21));
+
+        selection.selectColor(21L);
+        assertEquals(Long.valueOf(10), selection.sizeId());
+        assertEquals(Long.valueOf(21), selection.colorId());
+        assertTrue(selection.isSizeEnabled(10));
+        assertNotNull(selection.selectedVariant());
+        assertEquals(2, selection.selectedVariant().variantId);
+    }
+
+    @Test
+    public void incompatibleSecondChoiceClearsOnlyThePreviousChoice() {
+        VariantAvailability availability = new VariantAvailability(List.of(
+                variant(1, 10, "M", 20, "Black", 3),
+                variant(2, 11, "L", 21, "White", 5)));
+        VariantSelection selection = new VariantSelection(availability);
+
+        selection.selectSize(10L);
+        selection.selectColor(21L);
+
+        assertNull(selection.sizeId());
+        assertEquals(Long.valueOf(21), selection.colorId());
+        assertTrue(selection.isSizeEnabled(11));
+        assertFalse(selection.isSizeEnabled(10));
+    }
+
+    @Test
     public void keepsOutOfStockOptionsVisibleButDisabled() {
         VariantAvailability availability = new VariantAvailability(
                 List.of(variant(1, 10, "S", 20, "Black", 0)));

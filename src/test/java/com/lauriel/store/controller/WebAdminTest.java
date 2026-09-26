@@ -317,19 +317,54 @@ class WebAdminTest {
         assertThat(updated.getQuantity()).isEqualTo(5);
         assertThat(updated.getSku()).isEqualTo("WEB-SKU");
     }
-    @Test void variantCreateStartsWithZeroStockAndDuplicateRendersForm() throws Exception {
-        var size=tx.execute(s->{var z=new Size();z.setSizeName("L");return sizes.saveAndFlush(z);});
-        var request=staff(post(productPath()+"/variants").with(csrf()).param("sku","NEW-VARIANT").param("sizeId",size.getSizeId().toString())
-                .param("colorId",variant.getColor().getColorId().toString()).param("price","100").param("status","ACTIVE").param("quantity","900"));
-        var newForm=mvc.perform(staff(get(productPath()+"/variants/new"))).andExpect(status().isOk()).andReturn();
-        var defaults=(ProductVariantRequest)newForm.getModelAndView().getModel().get("form");
+    @Test void bulkVariantCreateStartsWithZeroStockAndDuplicateRendersForm() throws Exception {
+        var large=tx.execute(s->{var value=new Size();value.setSizeName("L");return sizes.saveAndFlush(value);});
+        var request=staff(post(productPath()+"/variants").with(csrf())
+                .param("sizeIds",large.getSizeId().toString())
+                .param("colorIds",variant.getColor().getColorId().toString())
+                .param("price","100").param("status","ACTIVE").param("quantity","900"));
+        var newForm=mvc.perform(staff(get(productPath()+"/variants/new")))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/products/variant-bulk-form"))
+                .andExpect(content().string(containsString("data-select-all=\"sizeIds\"")))
+                .andExpect(content().string(containsString("data-clear-all=\"colorIds\"")))
+                .andReturn();
+        var defaults=(BulkProductVariantRequest)newForm.getModelAndView().getModel().get("form");
         assertThat(defaults.price()).isEqualByComparingTo(product.getPrice());
-        assertThat(newForm.getResponse().getContentAsString()).doesNotContain("name=\"sku\"");
+
         mvc.perform(request).andExpect(redirectedUrl(productPath()+"/variants"));
-        var created=variants.findAll().stream().filter(v->v.getSize().getSizeId().equals(size.getSizeId())).findFirst().orElseThrow();
+        var created=variants.findAll().stream()
+                .filter(value->value.getSize().getSizeId().equals(large.getSizeId()))
+                .findFirst().orElseThrow();
         assertThat(created.getQuantity()).isZero();
-        assertThat(created.getSku()).isEqualTo("SP-"+product.getProductId()+"-S"+size.getSizeId()+"-C"+variant.getColor().getColorId());
-        mvc.perform(request).andExpect(status().isOk()).andExpect(view().name("admin/products/variant-form")).andExpect(model().attributeHasErrors("form"));
+        assertThat(created.getSku()).isEqualTo("SP-"+product.getProductId()+"-S"
+                +large.getSizeId()+"-C"+variant.getColor().getColorId());
+
+        mvc.perform(request).andExpect(status().isOk())
+                .andExpect(view().name("admin/products/variant-bulk-form"))
+                .andExpect(model().attributeHasErrors("form"));
+    }
+
+    @Test void bulkVariantCreateBuildsCartesianProductAndSkipsExistingCombination() throws Exception {
+        var large=tx.execute(s->{var value=new Size();value.setSizeName("L");return sizes.saveAndFlush(value);});
+        var blue=tx.execute(s->{var value=new Color();value.setColorName("Blue");return colors.saveAndFlush(value);});
+
+        mvc.perform(staff(post(productPath()+"/variants").with(csrf())
+                        .param("sizeIds",variant.getSize().getSizeId().toString(),large.getSizeId().toString())
+                        .param("colorIds",variant.getColor().getColorId().toString(),blue.getColorId().toString())
+                        .param("price","275000").param("status","ACTIVE")))
+                .andExpect(redirectedUrl(productPath()+"/variants"))
+                .andExpect(flash().attribute("successMessage",containsString("Đã tạo 3 biến thể")))
+                .andExpect(flash().attribute("successMessage",containsString("Bỏ qua 1")));
+
+        var all=variants.findAll();
+        assertThat(all).hasSize(4);
+        assertThat(all).filteredOn(value->value.getProduct().getProductId().equals(product.getProductId()))
+                .allMatch(value->value.getQuantity()>=0);
+        assertThat(all).filteredOn(value->!value.getVariantId().equals(variant.getVariantId()))
+                .allMatch(value->value.getPrice().compareTo(new BigDecimal("275000"))==0)
+                .allMatch(value->value.getStatus()==ActiveStatus.ACTIVE)
+                .allMatch(value->value.getQuantity()==0);
     }
     @Test void variantCannotBeEditedUnderDifferentProduct() throws Exception {
         mvc.perform(admin(get("/admin/products/999999/variants/"+variant.getVariantId()+"/edit"))).andExpect(status().isNotFound()).andExpect(view().name("error/404"));
@@ -571,29 +606,26 @@ class WebAdminTest {
     }
 
     @Test
-    void adminCanOptionallyAssignAnUploadedImageToASize() throws Exception {
+    void adminCanOptionallyAssignAnUploadedImageToAColor() throws Exception {
         byte[] png = new byte[] {(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10, 1, 2, 3};
-        Size medium = sizes.findAll().stream()
-                .filter(item -> "M".equals(item.getSizeName()))
-                .findFirst()
-                .orElseThrow();
+        Color green = variant.getColor();
         MockMultipartFile shared = new MockMultipartFile("imageFiles", "shared.png", "image/png", png);
-        MockMultipartFile image = new MockMultipartFile("imageFiles", "medium.png", "image/png", png);
+        MockMultipartFile image = new MockMultipartFile("imageFiles", "green.png", "image/png", png);
 
         mvc.perform(admin(multipart(productPath() + "/images")
                         .file(shared)
                         .file(image)
-                        .param("imageSizeIds", "", medium.getSizeId().toString())
+                        .param("imageColorIds", "", green.getColorId().toString())
                         .with(csrf())))
                 .andExpect(redirectedUrl(productPath() + "/edit"));
 
         var gallery = productImages
                 .findByProduct_ProductIdOrderByDisplayOrderAscProductImageIdAsc(product.getProductId());
-        assertThat(gallery.getFirst().getSize()).isNull();
+        assertThat(gallery.getFirst().getColor()).isNull();
         var saved = gallery.get(1);
-        assertThat(saved.getSize()).isNotNull();
-        assertThat(saved.getSize().getSizeId()).isEqualTo(medium.getSizeId());
-        assertThat(saved.getSize().getSizeName()).isEqualTo("M");
+        assertThat(saved.getColor()).isNotNull();
+        assertThat(saved.getColor().getColorId()).isEqualTo(green.getColorId());
+        assertThat(saved.getColor().getColorName()).isEqualTo("Green");
     }
     @Test
     void galleryRejectsMoreThanEightImages() throws Exception {

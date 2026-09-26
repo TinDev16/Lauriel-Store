@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ProductImageRepository extends JpaRepository<ProductImage, Long> {
-    @EntityGraph(attributePaths = "size")
+    @EntityGraph(attributePaths = "color")
     List<ProductImage> findByProduct_ProductIdOrderByDisplayOrderAscProductImageIdAsc(Long productId);
     Optional<ProductImage> findByProductImageIdAndProduct_ProductId(Long imageId, Long productId);
     long countByProduct_ProductId(Long productId);

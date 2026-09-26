@@ -3,15 +3,15 @@
   const selectedName = document.getElementById("selectedImageName");
   const previews = document.getElementById("newImagePreviews");
   const error = document.getElementById("imageError");
-  const sizeOptions = document.getElementById("imageSizeOptions");
-  if (!input || !selectedName || !previews || !error || !sizeOptions) return;
+  const colorOptions = document.getElementById("imageColorOptions");
+  if (!input || !selectedName || !previews || !error || !colorOptions) return;
 
   const maxBytes = 5 * 1024 * 1024;
   const maxImages = 8;
   const existingCount = Number(input.dataset.existingCount || 0);
   const allowed = new Set(["image/png", "image/jpeg", "image/webp"]);
   const selectedFiles = [];
-  const assignedSizes = new Map();
+  const assignedColors = new Map();
   let urls = [];
 
   const keyOf = file => `${file.name}:${file.size}:${file.lastModified}`;
@@ -62,12 +62,12 @@
       name.textContent = file.name;
 
       const select = document.createElement("select");
-      select.name = "imageSizeIds";
+      select.name = "imageColorIds";
       select.className = "form-select form-select-sm mt-2";
-      select.appendChild(sizeOptions.content.cloneNode(true));
-      select.value = assignedSizes.get(key) || "";
-      select.setAttribute("aria-label", `Size cho ảnh ${file.name}`);
-      select.addEventListener("change", () => assignedSizes.set(key, select.value));
+      select.appendChild(colorOptions.content.cloneNode(true));
+      select.value = assignedColors.get(key) || "";
+      select.setAttribute("aria-label", `Màu cho ảnh ${file.name}`);
+      select.addEventListener("change", () => assignedColors.set(key, select.value));
 
       const remove = document.createElement("button");
       remove.type = "button";
@@ -75,7 +75,7 @@
       remove.textContent = "Bỏ ảnh";
       remove.addEventListener("click", () => {
         selectedFiles.splice(index, 1);
-        assignedSizes.delete(key);
+        assignedColors.delete(key);
         showError("");
         render();
       });

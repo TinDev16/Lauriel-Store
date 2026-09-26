@@ -34,7 +34,7 @@ public final class Models {
     public static final class Promotion { public long promotionId; public String promotionName,description,startDate,endDate,status; public BigDecimal discountPercent; }
     public static final class PromotionInfo { public long promotionId; public String promotionName,startDate,endDate; public BigDecimal discountPercent; }
     public static final class ProductImage {
-        public long id; public String url,sizeName; public Long sizeId; public boolean primary; public int order;
+        public long id; public String url,colorName; public Long colorId; public boolean primary; public int order;
     }
     public static final class Product {
         public long productId; public String productName,description,imgUrl,status;
@@ -49,6 +49,10 @@ public final class Models {
     public static final class Item {
         public long variantId; public int quantity;
         public Item(long variantId,int quantity){this.variantId=variantId;this.quantity=quantity;}
+    }
+    public static final class Voucher {
+        public long voucherId; public String code,voucherName,discountType,startDate,endDate,status;
+        public BigDecimal discountValue,minOrderAmount,maxDiscountAmount; public int quantity;
     }
     public static final class VoucherRequest {
         public String code; public List<Item> items;

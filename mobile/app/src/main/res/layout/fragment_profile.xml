@@ -24,6 +24,8 @@
   <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="@dimen/space_lg" android:background="@color/divider"/>
   <com.google.android.material.button.MaterialButton android:id="@+id/orders" style="@style/TextButton" android:layout_width="match_parent" android:layout_height="56dp" android:gravity="start|center_vertical" android:text="@string/orders" app:icon="@drawable/ic_nav_orders" app:iconGravity="textStart"/>
   <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider"/>
-  <com.google.android.material.button.MaterialButton android:id="@+id/logout" style="@style/TextButton" android:layout_width="match_parent" android:layout_height="56dp" android:gravity="start|center_vertical" android:text="@string/logout" android:textColor="@color/danger" app:icon="@drawable/ic_logout" app:iconGravity="textStart" app:iconTint="@color/danger"/>
+  <com.google.android.material.button.MaterialButton android:id="@+id/vouchers" style="@style/TextButton" android:layout_width="match_parent" android:layout_height="56dp" android:gravity="start|center_vertical" android:text="Mã giảm giá của tôi" app:icon="@drawable/ic_ticket" app:iconGravity="textStart"/>
+   <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider"/>
+   <com.google.android.material.button.MaterialButton android:id="@+id/logout" style="@style/TextButton" android:layout_width="match_parent" android:layout_height="56dp" android:gravity="start|center_vertical" android:text="@string/logout" android:textColor="@color/danger" app:icon="@drawable/ic_logout" app:iconGravity="textStart" app:iconTint="@color/danger"/>
  </LinearLayout>
 </androidx.core.widget.NestedScrollView>

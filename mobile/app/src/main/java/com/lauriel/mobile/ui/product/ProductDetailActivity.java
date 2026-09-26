@@ -138,11 +138,9 @@ public class ProductDetailActivity extends BaseActivity {
                 .error(R.drawable.image_placeholder).centerCrop().into(sheet.image);
 
         VariantAvailability availability=new VariantAvailability(product.variants);
+        VariantSelection selection=new VariantSelection(availability);
         final Models.Variant[] selected={null};
-        final Long[] sizeId={null};
-        final Long[] colorId={null};
         final int[] quantity={1};
-        final int[] lastChoice={0};
         List<Chip> sizeChips=new ArrayList<>();
         List<Chip> colorChips=new ArrayList<>();
 
@@ -151,7 +149,7 @@ public class ProductDetailActivity extends BaseActivity {
             BigDecimal price=variant==null?product.basePrice:
                     (variant.effectivePrice==null?variant.price:variant.effectivePrice);
             sheet.price.setText(Formatters.money(price));
-            Glide.with(sheet.image).load(ApiClient.imageUrl(imageForSize(sizeId[0])))
+            Glide.with(sheet.image).load(ApiClient.imageUrl(imageForColor(selection.colorId())))
                     .placeholder(R.drawable.image_placeholder).error(R.drawable.image_placeholder)
                     .centerCrop().into(sheet.image);
             sheet.stock.setText(variant==null?"Ch\u1ECDn k\u00EDch th\u01B0\u1EDBc v\u00E0 m\u00E0u":
@@ -164,27 +162,15 @@ public class ProductDetailActivity extends BaseActivity {
 
         final Runnable[] refresh={null};
         refresh[0]=()->{
-            if(lastChoice[0]==1&&colorId[0]!=null
-                    &&availability.findInStock(sizeId[0],colorId[0])==null){
-                colorId[0]=null;
-                sheet.colors.clearCheck();
-            }else if(lastChoice[0]==2&&sizeId[0]!=null
-                    &&availability.findInStock(sizeId[0],colorId[0])==null){
-                sizeId[0]=null;
-                sheet.sizes.clearCheck();
-            }
-
             for(Chip chip:sizeChips){
                 long id=(Long)chip.getTag();
-                Long colorConstraint=lastChoice[0]==2?colorId[0]:null;
-                chip.setEnabled(availability.sizeAvailable(id,colorConstraint));
+                chip.setEnabled(selection.isSizeEnabled(id));
             }
             for(Chip chip:colorChips){
                 long id=(Long)chip.getTag();
-                Long sizeConstraint=lastChoice[0]==1?sizeId[0]:null;
-                chip.setEnabled(availability.colorAvailable(id,sizeConstraint));
+                chip.setEnabled(selection.isColorEnabled(id));
             }
-            selected[0]=availability.findInStock(sizeId[0],colorId[0]);
+            selected[0]=selection.selectedVariant();
             quantity[0]=1;
             update.run();
         };
@@ -193,8 +179,9 @@ public class ProductDetailActivity extends BaseActivity {
             Chip chip=chip(size.sizeName);
             chip.setTag(size.sizeId);
             chip.setOnClickListener(v->{
-                sizeId[0]=chip.isChecked()?(Long)chip.getTag():null;
-                lastChoice[0]=1;
+                Long oldColorId=selection.colorId();
+                selection.selectSize(chip.isChecked()?(Long)chip.getTag():null);
+                if(oldColorId!=null&&selection.colorId()==null)sheet.colors.clearCheck();
                 refresh[0].run();
             });
             sizeChips.add(chip);
@@ -204,8 +191,9 @@ public class ProductDetailActivity extends BaseActivity {
             Chip chip=chip(color.colorName);
             chip.setTag(color.colorId);
             chip.setOnClickListener(v->{
-                colorId[0]=chip.isChecked()?(Long)chip.getTag():null;
-                lastChoice[0]=2;
+                Long oldSizeId=selection.sizeId();
+                selection.selectColor(chip.isChecked()?(Long)chip.getTag():null);
+                if(oldSizeId!=null&&selection.sizeId()==null)sheet.sizes.clearCheck();
                 refresh[0].run();
             });
             colorChips.add(chip);
@@ -252,14 +240,14 @@ public class ProductDetailActivity extends BaseActivity {
                 .putExtra(CheckoutActivity.EXTRA_QUANTITY,quantity)
                 .putExtra(CheckoutActivity.EXTRA_STOCK,selected.quantity));
     }
-    private String imageForSize(Long sizeId){
+    private String imageForColor(Long colorId){
         if(product!=null&&product.images!=null){
-            if(sizeId!=null)for(var image:product.images)
-                if(image.sizeId!=null&&image.sizeId.equals(sizeId)&&image.url!=null&&!image.url.isBlank())return image.url;
+            if(colorId!=null)for(var image:product.images)
+                if(image.colorId!=null&&image.colorId.equals(colorId)&&image.url!=null&&!image.url.isBlank())return image.url;
             for(var image:product.images)
                 if(image.primary&&image.url!=null&&!image.url.isBlank())return image.url;
             for(var image:product.images)
-                if(image.sizeId==null&&image.url!=null&&!image.url.isBlank())return image.url;
+                if(image.colorId==null&&image.url!=null&&!image.url.isBlank())return image.url;
         }
         return product==null?null:product.imgUrl;
     }

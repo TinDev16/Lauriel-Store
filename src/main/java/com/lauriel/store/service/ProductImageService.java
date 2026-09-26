@@ -3,12 +3,12 @@ package com.lauriel.store.service;
 import com.lauriel.store.dto.response.ProductImageResponse;
 import com.lauriel.store.entity.Product;
 import com.lauriel.store.entity.ProductImage;
-import com.lauriel.store.entity.Size;
+import com.lauriel.store.entity.Color;
 import com.lauriel.store.exception.BadRequestException;
 import com.lauriel.store.exception.ResourceNotFoundException;
 import com.lauriel.store.repository.ProductImageRepository;
 import com.lauriel.store.repository.ProductRepository;
-import com.lauriel.store.repository.SizeRepository;
+import com.lauriel.store.repository.ColorRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,14 +25,14 @@ public class ProductImageService {
     private final ProductRepository products;
     private final ProductImageRepository images;
     private final ProductImageStorage storage;
-    private final SizeRepository sizes;
+    private final ColorRepository colors;
 
     public ProductImageService(ProductRepository products, ProductImageRepository images,
-            ProductImageStorage storage, SizeRepository sizes) {
+            ProductImageStorage storage, ColorRepository colors) {
         this.products = products;
         this.images = images;
         this.storage = storage;
-        this.sizes = sizes;
+        this.colors = colors;
     }
 
     @Transactional(readOnly = true)
@@ -47,16 +47,16 @@ public class ProductImageService {
     }
 
     @Transactional
-    public List<ProductImageResponse> add(Long productId, MultipartFile[] files, Long[] sizeIds) {
+    public List<ProductImageResponse> add(Long productId, MultipartFile[] files, Long[] colorIds) {
         Product product = lockProduct(productId);
         List<MultipartFile> selected = new ArrayList<>();
-        List<Long> selectedSizeIds = new ArrayList<>();
+        List<Long> selectedColorIds = new ArrayList<>();
         if (files != null) {
             for (int index = 0; index < files.length; index++) {
                 MultipartFile file = files[index];
                 if (file == null || file.isEmpty()) continue;
                 selected.add(file);
-                selectedSizeIds.add(sizeIds != null && index < sizeIds.length ? sizeIds[index] : null);
+                selectedColorIds.add(colorIds != null && index < colorIds.length ? colorIds[index] : null);
             }
         }
         if (selected.isEmpty()) return list(productId);
@@ -64,7 +64,7 @@ public class ProductImageService {
         if (existing.size() + selected.size() > MAX_IMAGES) {
             throw new BadRequestException("Mỗi sản phẩm chỉ được có tối đa 8 hình ảnh.");
         }
-        Map<Long, Size> sizeById = resolveSizes(selectedSizeIds);
+        Map<Long, Color> colorById = resolveColors(selectedColorIds);
         int order = existing.stream().mapToInt(ProductImage::getDisplayOrder).max().orElse(-1) + 1;
         boolean needsPrimary = existing.stream().noneMatch(ProductImage::isPrimary);
         List<String> stored = new ArrayList<>();
@@ -74,8 +74,8 @@ public class ProductImageService {
                 stored.add(url);
                 ProductImage image = new ProductImage();
                 image.setProduct(product);
-                Long selectedSizeId = selectedSizeIds.get(index);
-                image.setSize(selectedSizeId == null ? null : sizeById.get(selectedSizeId));
+                Long selectedColorId = selectedColorIds.get(index);
+                image.setColor(selectedColorId == null ? null : colorById.get(selectedColorId));
                 image.setImageUrl(url);
                 image.setDisplayOrder(order++);
                 image.setPrimary(needsPrimary);
@@ -155,12 +155,12 @@ public class ProductImageService {
         return all.stream().map(ProductImageService::response).toList();
     }
 
-    private Map<Long, Size> resolveSizes(List<Long> requested) {
+    private Map<Long, Color> resolveColors(List<Long> requested) {
         Set<Long> ids = requested.stream().filter(java.util.Objects::nonNull).collect(Collectors.toSet());
         if (ids.isEmpty()) return Map.of();
-        Map<Long, Size> result = sizes.findAllById(ids).stream()
-                .collect(Collectors.toMap(Size::getSizeId, Function.identity()));
-        if (result.size() != ids.size()) throw new BadRequestException("Kích cỡ gắn với hình ảnh không hợp lệ.");
+        Map<Long, Color> result = colors.findAllById(ids).stream()
+                .collect(Collectors.toMap(Color::getColorId, Function.identity()));
+        if (result.size() != ids.size()) throw new BadRequestException("Màu sắc gắn với hình ảnh không hợp lệ.");
         return result;
     }
     private Product lockProduct(Long id) {
@@ -171,7 +171,7 @@ public class ProductImageService {
     private static ProductImageResponse response(ProductImage image) {
         return new ProductImageResponse(image.getProductImageId(), image.getImageUrl(),
                 image.isPrimary(), image.getDisplayOrder(),
-                image.getSize() == null ? null : image.getSize().getSizeId(),
-                image.getSize() == null ? null : image.getSize().getSizeName());
+                image.getColor() == null ? null : image.getColor().getColorId(),
+                image.getColor() == null ? null : image.getColor().getColorName());
     }
 }

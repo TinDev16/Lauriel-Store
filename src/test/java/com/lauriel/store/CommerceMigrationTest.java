@@ -26,4 +26,11 @@ class CommerceMigrationTest {
         assertThat(sql).contains("ADD COLUMN size_id", "REFERENCES sizes", "ON DELETE SET NULL");
         assertThat(sql.toUpperCase()).doesNotContain("DROP TABLE", "TRUNCATE", "DROP COLUMN");
     }
+    @Test
+    void productImageColorMigrationReplacesTheSizeAssociationSafely() throws Exception {
+        String sql=Files.readString(Path.of("database/migrations/V6__change_product_image_size_to_color.sql"));
+        assertThat(sql).contains("UPDATE product_images SET size_id = NULL",
+                "CHANGE COLUMN size_id color_id", "REFERENCES colors", "ON DELETE SET NULL");
+        assertThat(sql.toUpperCase()).doesNotContain("DROP TABLE", "TRUNCATE");
+    }
 }

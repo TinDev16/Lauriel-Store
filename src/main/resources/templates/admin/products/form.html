@@ -26,9 +26,9 @@
 <div id="imageError" class="text-danger small mt-1" role="alert" hidden></div>
 <div id="imageHelp" class="form-text">PNG, JPEG hoặc WebP; tối đa 5 MB/ảnh và 8 ảnh/sản phẩm. Thứ tự chọn là thứ tự hiển thị.</div>
 <div id="newImagePreviews" class="row g-3 mt-1"></div>
-<template id="imageSizeOptions">
-<option value="">Dùng chung cho mọi Size</option>
-<option th:each="size:${sizes}" th:value="${size.sizeId}" th:text="|Size ${size.sizeName}|"></option>
+<template id="imageColorOptions">
+<option value="">Dùng chung cho mọi màu</option>
+<option th:each="color:${colors}" th:value="${color.colorId}" th:text="${color.colorName}"></option>
 </template>
 </div>
 <div th:replace="~{fragments/fields :: status}"></div>
@@ -46,7 +46,7 @@
 <img th:src="${image.url}" class="img-fluid rounded mb-2" style="height:160px;width:100%;object-fit:cover" alt="Hình sản phẩm">
 <div class="d-flex flex-wrap gap-1 mb-2">
 <span class="badge text-bg-primary" th:if="${image.primary}">Ảnh đại diện</span>
-<span class="badge text-bg-light border" th:text="${image.sizeName != null ? 'Size ' + image.sizeName : 'Mọi Size'}"></span>
+<span class="badge text-bg-light border" th:text="${image.colorName != null ? 'Màu ' + image.colorName : 'Mọi màu'}"></span>
 </div>
 <form th:if="${!image.primary}" method="post" class="d-inline"
       th:action="@{/admin/products/{id}/images/{imageId}/primary(id=${id},imageId=${image.id})}">

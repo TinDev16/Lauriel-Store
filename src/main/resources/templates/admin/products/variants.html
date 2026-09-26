@@ -1,57 +1,73 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Biến thể sản phẩm','products')}">
-<body>
-<section>
-<h2 class="h5" th:text="${product.productName}">
-</h2>
-<div class="mb-3">
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{id}/variants/new(id=${product.productId})}">Thêm biến thể</a>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::section},'Biến thể sản phẩm','products')}">
+<body><section>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+<div>
+<h2 class="h5 mb-1" th:text="${product.productName}"></h2>
+<div class="text-muted small">
+<span th:text="|${page.totalElements} biến thể|"></span>
+<span class="mx-1">·</span>
+<span th:text="|${#maps.size(variantGroups)} nhóm màu trên trang này|"></span>
+</div>
+</div>
+<div class="d-flex flex-wrap gap-2">
+<a class="btn btn-primary btn-sm"
+   th:href="@{/admin/products/{id}/variants/new(id=${product.productId})}">Thêm biến thể</a>
 <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Sản phẩm</a>
 </div>
-<div class="card">
+</div>
+
+<div th:if="${#lists.isEmpty(page.content)}" class="card">
+<div class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</div>
+</div>
+
+<div class="card mb-4 overflow-hidden" th:each="group:${variantGroups}">
+<div class="card-header bg-body-tertiary d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+<div class="d-flex align-items-center gap-2">
+<span class="badge rounded-pill text-bg-dark px-3 py-2"
+      th:text="|${group.key.colorName}|"></span>
+<span class="fw-semibold">Nhóm màu</span>
+</div>
+<span class="text-muted small" th:text="|${#lists.size(group.value)} biến thể|"></span>
+</div>
 <div class="table-responsive">
 <table class="table table-hover align-middle mb-0">
 <thead>
 <tr>
-<th>Mã SKU</th>
 <th>Kích cỡ</th>
-<th>Màu sắc</th>
+<th>Mã SKU</th>
 <th>Giá</th>
 <th>Giá sau giảm</th>
-<th>Tồn kho (chỉ xem)</th>
+<th>Tồn kho</th>
 <th>Trạng thái</th>
-<th>Thao tác</th>
+<th class="text-end">Thao tác</th>
 </tr>
 </thead>
 <tbody>
-<tr th:each="r:${page.content}">
-<td th:text="${r.sku}">
-</td>
-<td th:text="${r.size.sizeName}">
-</td>
-<td th:text="${r.color.colorName}">
-</td>
-<td th:text="${@view.money(r.price)}">
-</td>
-<td th:text="${@view.money(r.effectivePrice)}">
-</td>
-<td th:text="${r.quantity}">
-</td>
-<td th:text="${@view.label(r.status)}">
-</td>
+<tr th:each="variant:${group.value}">
+<td><span class="badge text-bg-light border px-3 py-2"
+          th:text="${variant.size.sizeName}"></span></td>
+<td class="font-monospace" th:text="${variant.sku}"></td>
+<td th:text="${@view.money(variant.price)}"></td>
+<td th:text="${@view.money(variant.effectivePrice)}"></td>
 <td>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{p}/variants/{id}/edit(p=${product.productId},id=${r.variantId})}">Sửa thông tin</a>
+<span class="fw-semibold" th:text="${variant.quantity}"></span>
+<span class="text-muted small"> sản phẩm</span>
 </td>
-</tr>
-<tr th:if="${#lists.isEmpty(page.content)}">
-<td colspan="8" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+<td th:text="${@view.label(variant.status)}"></td>
+<td class="text-end">
+<a class="btn btn-outline-primary btn-sm"
+   th:href="@{/admin/products/{productId}/variants/{id}/edit(productId=${product.productId},id=${variant.variantId})}">
+Sửa thông tin
+</a>
+</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<div th:replace="~{fragments/pagination :: pagination}">
-</div>
-</section>
-</body>
+
+<div th:replace="~{fragments/pagination :: pagination}"></div>
+</section></body>
 </html>

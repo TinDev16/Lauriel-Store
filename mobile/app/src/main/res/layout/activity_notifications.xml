@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+ android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+ android:paddingHorizontal="@dimen/screen_padding">
+ <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:paddingVertical="@dimen/space_12">
+  <com.google.android.material.button.MaterialButton android:id="@+id/back" style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+   android:layout_width="48dp" android:layout_height="48dp" android:contentDescription="@string/back"
+   app:icon="@drawable/ic_back" app:iconPadding="0dp" app:iconTint="@color/ink"/>
+  <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+   android:text="Thông báo" android:textAppearance="@style/TextAppearance.Lauriel.ScreenTitle"/>
+ </LinearLayout>
+ <com.google.android.material.card.MaterialCardView style="@style/Card.Lauriel"
+  android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_md">
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+   android:gravity="center_vertical" android:padding="@dimen/space_md">
+   <ImageView android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp"
+    android:background="@color/success_surface" android:src="@drawable/ic_ticket" android:contentDescription="@null" app:tint="@color/success"/>
+   <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+    android:layout_marginStart="@dimen/space_md" android:orientation="vertical">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Ưu đãi dành cho bạn"
+     android:textAppearance="@style/TextAppearance.Lauriel.Product"/>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_xxs"
+     android:text="Xem và lưu các mã giảm giá đang khả dụng." android:textAppearance="@style/TextAppearance.Lauriel.Caption"/>
+   </LinearLayout>
+   <com.google.android.material.button.MaterialButton android:id="@+id/vouchers" style="@style/TextButton"
+    android:layout_width="wrap_content" android:layout_height="48dp" android:text="Xem"/>
+  </LinearLayout>
+ </com.google.android.material.card.MaterialCardView>
+ <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_lg"
+  android:gravity="center" android:text="Các thông báo mới sẽ xuất hiện tại đây." android:textAppearance="@style/TextAppearance.Lauriel.Caption"/>
+</LinearLayout>

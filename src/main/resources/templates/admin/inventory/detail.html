@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::section},'Chi tiết kho hàng','inventory')}">
+<body><section>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+<div><a class="text-decoration-none small" th:href="@{/admin/inventory}">← Quay lại kho hàng</a>
+<h2 class="h4 mt-2 mb-1" th:text="${detail.summary.productName}"></h2>
+<p class="text-muted mb-0">Tồn kho được phân nhóm theo màu sắc và kích cỡ.</p></div>
+<div class="card card-body py-2 px-4 text-center"><span class="text-muted small">Tổng hàng còn</span>
+<strong class="fs-3" th:text="${detail.summary.totalQuantity}"></strong></div></div>
+<div class="row g-3 mb-4">
+<div class="col-md-4"><div class="card card-body"><span class="text-muted small">Số biến thể</span><strong class="fs-4" th:text="${detail.summary.variantCount}"></strong></div></div>
+<div class="col-md-4"><div class="card card-body"><span class="text-muted small">Biến thể hết hàng</span><strong class="fs-4" th:classappend="${detail.summary.outOfStockCount > 0} ? ' text-danger'" th:text="${detail.summary.outOfStockCount}"></strong></div></div>
+<div class="col-md-4"><div class="card card-body"><span class="text-muted small">Nhóm màu</span><strong class="fs-4" th:text="${#maps.size(variantGroups)}"></strong></div></div>
+</div>
+<div class="card mb-4 overflow-hidden" th:each="group:${variantGroups}">
+<div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center py-3">
+<strong th:text="|Màu ${group.key.colorName}|"></strong><span class="text-muted small" th:text="|${#lists.size(group.value)} kích cỡ|"></span></div>
+<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr>
+<th>Kích cỡ</th><th>Mã SKU</th><th class="text-center">Số lượng</th><th>Giá bán</th><th>Trạng thái</th>
+</tr></thead><tbody><tr th:each="variant:${group.value}">
+<td><span class="badge text-bg-light border px-3 py-2" th:text="${variant.size.sizeName}"></span></td>
+<td class="font-monospace" th:text="${variant.sku}"></td>
+<td class="text-center"><span class="fw-bold" th:classappend="${variant.quantity == 0} ? ' text-danger' : (${variant.quantity <= 5} ? ' text-warning' : ' text-success')" th:text="${variant.quantity}"></span></td>
+<td th:text="${@view.money(variant.price)}"></td><td th:text="${@view.label(variant.status)}"></td>
+</tr></tbody></table></div></div>
+</section></body></html>

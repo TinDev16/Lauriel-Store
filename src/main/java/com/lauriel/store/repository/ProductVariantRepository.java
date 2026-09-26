@@ -15,6 +15,44 @@ import org.springframework.data.domain.Pageable;
 import jakarta.persistence.LockModeType;
 
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long>, JpaSpecificationExecutor<ProductVariant> {
+    interface ProductInventorySummary {
+        Long getProductId();
+        String getProductName();
+        String getImageUrl();
+        String getRepresentativeSku();
+        long getVariantCount();
+        long getTotalQuantity();
+        long getOutOfStockCount();
+        ActiveStatus getStatus();
+    }
+
+    @Query(value = """
+            select v.product.productId as productId,
+                   v.product.productName as productName,
+                   v.product.imgUrl as imageUrl,
+                   min(v.sku) as representativeSku,
+                   count(v.variantId) as variantCount,
+                   sum(v.quantity) as totalQuantity,
+                   sum(case when v.quantity = 0 then 1 else 0 end) as outOfStockCount,
+                   v.product.status as status
+            from ProductVariant v
+            where (:keyword is null or lower(v.product.productName) like lower(concat('%', :keyword, '%')))
+            group by v.product.productId, v.product.productName, v.product.imgUrl, v.product.status
+            having (:threshold is null or sum(v.quantity) <= :threshold)
+            """,
+            countQuery = """
+            select count(distinct v.product.productId)
+            from ProductVariant v
+            where (:keyword is null or lower(v.product.productName) like lower(concat('%', :keyword, '%')))
+              and (:threshold is null or v.product.productId in (
+                    select v2.product.productId from ProductVariant v2
+                    group by v2.product.productId having sum(v2.quantity) <= :threshold))
+            """)
+    Page<ProductInventorySummary> findInventoryProducts(String keyword, Integer threshold, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"product", "size", "color"})
+    List<ProductVariant> findByProduct_ProductIdOrderByColor_ColorNameAscSize_SizeNameAscVariantIdAsc(Long productId);
+
     long countByQuantityLessThanEqual(int quantity);
     @Query("select v.product.productId as productId, count(v) as variants from ProductVariant v where v.product.productId in :ids group by v.product.productId")
     List<VariantCount> countForProducts(java.util.Collection<Long> ids);
@@ -49,6 +87,13 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             + "where v.product.productId = :productId and v.status = :status order by v.variantId, p.promotionId")
     List<VariantPromotionView> findPublicVariantsWithPromotions(Long productId, ActiveStatus status,
             java.time.LocalDateTime now);
+    @Query("select v.size.sizeId as sizeId, v.color.colorId as colorId "
+            + "from ProductVariant v where v.product.productId = :productId")
+    List<VariantAttributes> findAttributesByProductId(Long productId);
+    interface VariantAttributes {
+        Long getSizeId();
+        Long getColorId();
+    }
     boolean existsBySkuIgnoreCase(String sku);
     boolean existsBySkuIgnoreCaseAndVariantIdNot(String sku, Long variantId);
     boolean existsByProduct_ProductIdAndSize_SizeIdAndColor_ColorId(Long productId, Long sizeId, Long colorId);

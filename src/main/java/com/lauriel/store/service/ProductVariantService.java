@@ -1,5 +1,6 @@
 package com.lauriel.store.service;
 
+import com.lauriel.store.dto.request.BulkProductVariantRequest;
 import com.lauriel.store.dto.request.ProductVariantRequest;
 import com.lauriel.store.dto.response.ProductVariantResponse;
 import com.lauriel.store.entity.ProductVariant;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ProductVariantService {
+    public record BulkCreateResult(int created, int skipped) {}
     private final ProductVariantRepository variants;
     private final ProductRepository products;
     private final SizeRepository sizes;
@@ -49,6 +51,55 @@ public class ProductVariantService {
         return pricing.variantResponse(variants.saveAndFlush(variant));
     }
 
+
+    @Transactional
+    public BulkCreateResult createBulk(Long productId, BulkProductVariantRequest request) {
+        var product = products.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
+        var selectedSizeIds = new java.util.LinkedHashSet<>(request.sizeIds());
+        var selectedColorIds = new java.util.LinkedHashSet<>(request.colorIds());
+
+        var sizeById = sizes.findAllById(selectedSizeIds).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        com.lauriel.store.entity.Size::getSizeId, java.util.function.Function.identity()));
+        var colorById = colors.findAllById(selectedColorIds).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        com.lauriel.store.entity.Color::getColorId, java.util.function.Function.identity()));
+        if (sizeById.size() != selectedSizeIds.size()) {
+            throw new ResourceNotFoundException("Có kích cỡ không còn tồn tại");
+        }
+        if (colorById.size() != selectedColorIds.size()) {
+            throw new ResourceNotFoundException("Có màu sắc không còn tồn tại");
+        }
+
+        var existing = variants.findAttributesByProductId(productId).stream()
+                .map(item -> item.getSizeId() + ":" + item.getColorId())
+                .collect(java.util.stream.Collectors.toSet());
+        var created = new java.util.ArrayList<ProductVariant>();
+        int skipped = 0;
+        for (Long sizeId : selectedSizeIds) {
+            for (Long colorId : selectedColorIds) {
+                if (existing.contains(sizeId + ":" + colorId)) {
+                    skipped++;
+                    continue;
+                }
+                ProductVariant variant = new ProductVariant();
+                variant.setProduct(product);
+                variant.setSize(sizeById.get(sizeId));
+                variant.setColor(colorById.get(colorId));
+                variant.setSku(nextSku(productId, sizeId, colorId));
+                variant.setPrice(request.price());
+                variant.setQuantity(0);
+                variant.setStatus(request.status());
+                created.add(variant);
+            }
+        }
+        if (created.isEmpty()) {
+            throw new DuplicateResourceException("Tất cả tổ hợp đã tồn tại.");
+        }
+        variants.saveAllAndFlush(created);
+        return new BulkCreateResult(created.size(), skipped);
+    }
     @Transactional
     public ProductVariantResponse update(Long variantId, ProductVariantRequest request) {
         var variant = variants.findById(variantId)
@@ -66,8 +117,13 @@ public class ProductVariantService {
     @Transactional(readOnly = true)
     public com.lauriel.store.dto.response.PageResponse<ProductVariantResponse> listAdmin(Long productId,int page,int size) {
         if (!products.existsById(productId)) throw new ResourceNotFoundException("Không tìm thấy sản phẩm");
-        var result = variants.findByProduct_ProductId(productId, InventoryPagination.page(page,size,
-                org.springframework.data.domain.Sort.by("variantId")));
+        var result = variants.findByProduct_ProductId(productId, InventoryPagination.page(page, size,
+                org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Order.asc("color.colorName"),
+                        org.springframework.data.domain.Sort.Order.asc("color.colorId"),
+                        org.springframework.data.domain.Sort.Order.asc("size.sizeName"),
+                        org.springframework.data.domain.Sort.Order.asc("size.sizeId"),
+                        org.springframework.data.domain.Sort.Order.asc("variantId"))));
         var prices=pricing.priceVariants(result.getContent(),pricing.now());
         return InventoryPagination.response(result, v -> {
             var p=prices.get(v.getVariantId());

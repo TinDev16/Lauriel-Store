@@ -244,7 +244,7 @@ class OrderCheckoutApiTest {
     void missingVariantIs404AndInsufficientStockIs409() throws Exception {
         checkout(json(request(new CheckoutItemRequest(999999L, 1))), "A").andExpect(status().isNotFound());
         checkout(json(request(item(first, 6))), "A").andExpect(status().isConflict())
-                .andExpect(content().string(containsString("tồn kho")));
+                .andExpect(jsonPath("$.message").value(containsString("kho")));
         noCheckoutWrites();
     }
 

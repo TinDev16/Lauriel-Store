@@ -68,8 +68,8 @@ public class ProductService {
         var images = productImages.findByProduct_ProductIdOrderByDisplayOrderAscProductImageIdAsc(productId)
                 .stream().map(i -> new ProductImageResponse(i.getProductImageId(), i.getImageUrl(),
                         i.isPrimary(), i.getDisplayOrder(),
-                        i.getSize() == null ? null : i.getSize().getSizeId(),
-                        i.getSize() == null ? null : i.getSize().getSizeName())).toList();
+                        i.getColor() == null ? null : i.getColor().getColorId(),
+                        i.getColor() == null ? null : i.getColor().getColorName())).toList();
         return new ProductDetailResponse(product.getProductId(), product.getProductName(),
                 CatalogMapper.category(product.getCategory()), product.getDescription(), product.getPrice(),
                 product.getImgUrl(), product.getStatus(), variants, images);

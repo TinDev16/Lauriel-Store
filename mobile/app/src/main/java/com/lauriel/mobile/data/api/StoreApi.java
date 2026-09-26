@@ -20,6 +20,7 @@ public interface StoreApi {
     @GET("api/categories") Call<List<Models.Category>> categories();
     @GET("api/sizes") Call<List<Models.Size>> sizes();
     @GET("api/colors") Call<List<Models.Color>> colors();
+    @GET("api/vouchers/active") Call<Models.Page<Models.Voucher>> activeVouchers(@Query("page") int page,@Query("size") int size);
     @POST("api/vouchers/validate") Call<Models.VoucherPreview> preview(@Body Models.VoucherRequest body);
     @POST("api/orders") Call<Models.Order> checkout(@Body Models.CheckoutRequest body);
     @GET("api/orders/my-orders") Call<Models.Page<Models.OrderSummary>> myOrders(

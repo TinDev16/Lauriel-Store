@@ -1,0 +1,26 @@
+.variant-choice {
+  min-width: 64px;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+
+.variant-choice.is-selected,
+.btn-check:checked ~ .variant-choice {
+  color: #fff !important;
+  background-color: #111 !important;
+  border-color: #111 !important;
+  box-shadow: 0 0 0 .22rem rgba(17, 17, 17, .22);
+  font-weight: 700;
+}
+
+.variant-choice.is-selected::before,
+.btn-check:checked ~ .variant-choice::before {
+  content: "\2713";
+  display: inline-block;
+  margin-right: .45rem;
+  font-weight: 800;
+}
+
+.btn-check:focus-visible ~ .variant-choice {
+  outline: 3px solid rgba(17, 17, 17, .3);
+  outline-offset: 2px;
+}

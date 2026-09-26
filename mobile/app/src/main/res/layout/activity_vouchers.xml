@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+ android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+ android:paddingHorizontal="@dimen/screen_padding">
+ <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:paddingVertical="@dimen/space_12">
+  <com.google.android.material.button.MaterialButton android:id="@+id/back" style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+   android:layout_width="48dp" android:layout_height="48dp" android:contentDescription="@string/back"
+   app:icon="@drawable/ic_back" app:iconPadding="0dp" app:iconTint="@color/ink"/>
+  <TextView android:id="@+id/title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+   android:text="Mã giảm giá toàn sàn" android:textAppearance="@style/TextAppearance.Lauriel.ScreenTitle"/>
+ </LinearLayout>
+ <com.google.android.material.button.MaterialButtonToggleGroup android:layout_width="match_parent" android:layout_height="wrap_content"
+  app:singleSelection="true" app:selectionRequired="true">
+  <com.google.android.material.button.MaterialButton android:id="@+id/all" style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+   android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="Toàn sàn" android:textAllCaps="false"/>
+  <com.google.android.material.button.MaterialButton android:id="@+id/mine" style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+   android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:text="Của tôi" android:textAllCaps="false"/>
+ </com.google.android.material.button.MaterialButtonToggleGroup>
+ <com.google.android.material.progressindicator.CircularProgressIndicator android:id="@+id/loading"
+  android:layout_width="32dp" android:layout_height="32dp" android:layout_gravity="center" android:layout_marginTop="@dimen/space_lg"/>
+ <TextView android:id="@+id/error" android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:layout_marginTop="@dimen/space_md" android:gravity="center" android:textColor="@color/danger"/>
+ <com.google.android.material.button.MaterialButton android:id="@+id/retry" style="@style/SecondaryButton"
+  android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center"
+  android:text="@string/retry" android:visibility="gone"/>
+ <TextView android:id="@+id/empty" android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:layout_marginTop="64dp" android:gravity="center" android:textAppearance="@style/TextAppearance.Lauriel.Body"
+  android:textColor="@color/muted" android:visibility="gone"/>
+ <androidx.recyclerview.widget.RecyclerView android:id="@+id/list" android:layout_width="match_parent" android:layout_height="0dp"
+  android:layout_weight="1" android:clipToPadding="false" android:paddingTop="@dimen/space_md" android:paddingBottom="@dimen/space_lg"/>
+</LinearLayout>

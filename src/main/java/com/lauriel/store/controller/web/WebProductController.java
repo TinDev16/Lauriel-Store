@@ -8,7 +8,7 @@ import com.lauriel.store.service.CategoryService;
 import com.lauriel.store.service.ProductImageService;
 import com.lauriel.store.service.ProductImageStorage;
 import com.lauriel.store.service.ProductService;
-import com.lauriel.store.service.SizeService;
+import com.lauriel.store.service.ColorService;
 import com.lauriel.store.service.ProductVariantService;
 import jakarta.validation.Valid;
 import java.util.Arrays;
@@ -27,17 +27,17 @@ public class WebProductController {
     private final ProductImageService galleries;
     private final ProductImageStorage storage;
     private final CategoryService categories;
-    private final SizeService sizes;
+    private final ColorService colors;
 
     public WebProductController(ProductService products, ProductVariantService variants,
             ProductImageService galleries, ProductImageStorage storage, CategoryService categories,
-            SizeService sizes) {
+            ColorService colors) {
         this.products = products;
         this.variants = variants;
         this.galleries = galleries;
         this.storage = storage;
         this.categories = categories;
-        this.sizes = sizes;
+        this.colors = colors;
     }
 
     @GetMapping
@@ -74,7 +74,7 @@ public class WebProductController {
     public String create(@Valid @ModelAttribute("form") ProductRequest request, BindingResult errors,
             @RequestParam(name = "imageFile", required = false) MultipartFile legacyFile,
             @RequestParam(name = "imageFiles", required = false) MultipartFile[] imageFiles,
-            @RequestParam(name = "imageSizeIds", required = false) Long[] imageSizeIds,
+            @RequestParam(name = "imageColorIds", required = false) Long[] imageColorIds,
             Model model, RedirectAttributes flash) {
         validateImages(legacyFile, imageFiles, errors);
         if (errors.hasErrors()) return form(model, null, request.categoryId());
@@ -83,7 +83,7 @@ public class WebProductController {
         if (!WebActions.save(() -> created[0] = products.create(savedRequest), errors)) {
             return form(model, null, request.categoryId());
         }
-        addImages(created[0].productId(), legacyFile, imageFiles, imageSizeIds);
+        addImages(created[0].productId(), legacyFile, imageFiles, imageColorIds);
         return WebActions.saved("/admin/products", flash);
     }
 
@@ -92,7 +92,7 @@ public class WebProductController {
             BindingResult errors,
             @RequestParam(name = "imageFile", required = false) MultipartFile legacyFile,
             @RequestParam(name = "imageFiles", required = false) MultipartFile[] imageFiles,
-            @RequestParam(name = "imageSizeIds", required = false) Long[] imageSizeIds,
+            @RequestParam(name = "imageColorIds", required = false) Long[] imageColorIds,
             Model model, RedirectAttributes flash) {
         validateImages(legacyFile, imageFiles, errors);
         if (errors.hasErrors()) return form(model, id, request.categoryId());
@@ -100,16 +100,16 @@ public class WebProductController {
         if (!WebActions.save(() -> products.update(id, withImage(request, primary)), errors)) {
             return form(model, id, request.categoryId());
         }
-        addImages(id, legacyFile, imageFiles, imageSizeIds);
+        addImages(id, legacyFile, imageFiles, imageColorIds);
         return WebActions.saved("/admin/products", flash);
     }
 
     @PostMapping("/{id}/images")
     public String uploadImages(@PathVariable Long id,
             @RequestParam("imageFiles") MultipartFile[] imageFiles,
-            @RequestParam(name = "imageSizeIds", required = false) Long[] imageSizeIds,
+            @RequestParam(name = "imageColorIds", required = false) Long[] imageColorIds,
             RedirectAttributes flash) {
-        return WebActions.action(() -> galleries.add(id, imageFiles, imageSizeIds), "/admin/products/" + id + "/edit", flash);
+        return WebActions.action(() -> galleries.add(id, imageFiles, imageColorIds), "/admin/products/" + id + "/edit", flash);
     }
 
     @PostMapping("/{id}/images/{imageId}/primary")
@@ -148,9 +148,9 @@ public class WebProductController {
         }
     }
 
-    private void addImages(Long id, MultipartFile legacy, MultipartFile[] files, Long[] imageSizeIds) {
+    private void addImages(Long id, MultipartFile legacy, MultipartFile[] files, Long[] imageColorIds) {
         if (selected(legacy)) galleries.replaceLegacyImage(id, legacy);
-        if (files != null && Arrays.stream(files).anyMatch(this::selected)) galleries.add(id, files, imageSizeIds);
+        if (files != null && Arrays.stream(files).anyMatch(this::selected)) galleries.add(id, files, imageColorIds);
     }
 
     private boolean selected(MultipartFile file) {
@@ -168,7 +168,7 @@ public class WebProductController {
         model.addAttribute("action", id == null ? "/admin/products" : "/admin/products/" + id);
         model.addAttribute("categories", categories.listSelectable(currentCategoryId));
         model.addAttribute("productImages", id == null ? java.util.List.of() : galleries.list(id));
-        model.addAttribute("sizes", sizes.list());
+        model.addAttribute("colors", colors.list());
         return "admin/products/form";
     }
 }

@@ -19,8 +19,8 @@ public class ProductImage {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "size_id")
-    private Size size;
+    @JoinColumn(name = "color_id")
+    private Color color;
     @Column(name = "image_url", columnDefinition = "text", nullable = false)
     private String imageUrl;
     @Column(name = "is_primary", nullable = false)

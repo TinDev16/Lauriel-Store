@@ -1,97 +1,171 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Chi tiết phiếu nhập','purchase-receipts')}">
-<body>
-<section>
-<div class="card mb-3">
-<div class="card-body">
-<h2 class="h5" th:text="|Phiếu #${receipt.receiptId} · ${@view.label(receipt.status)}|">
-</h2>
-<p th:text="|Nhà cung cấp: ${receipt.supplier.supplierName} · Người tạo: ${receipt.createdBy.username}|">
-</p>
-<p th:text="${@view.date(receipt.createdAt)}">
-</p>
-<strong th:text="|Tổng: ${@view.money(receipt.totalAmount)}|">
-</strong>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::section},'Chi tiết phiếu nhập','purchase-receipts')}">
+<body><section>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+<div>
+<a class="btn btn-light border d-inline-flex align-items-center gap-2 mb-3"
+   th:href="@{/admin/purchase-receipts}">
+<i class="bi bi-arrow-left" aria-hidden="true"></i><span>Danh sách phiếu nhập</span>
+</a>
+<h2 class="h4 mb-1" th:text="|Phiếu nhập #${receipt.receiptId}|"></h2>
+<div class="d-flex flex-wrap align-items-center gap-2 text-muted">
+<span th:text="${receipt.supplier.supplierName}"></span><span>·</span>
+<span th:text="|${receipt.createdBy.username} tạo phiếu|"></span><span>·</span>
+<span th:text="${@view.date(receipt.createdAt)}"></span>
 </div>
 </div>
-<div class="card mb-3">
+<div class="d-flex flex-column align-items-end gap-2">
+<span class="badge fs-6 px-3 py-2"
+      th:classappend="${receipt.status.name() == 'DRAFT'} ? ' text-bg-warning' : (${receipt.status.name() == 'COMPLETED'} ? ' text-bg-success' : ' text-bg-secondary')"
+      th:text="${@view.label(receipt.status)}"></span>
+<div class="text-end"><span class="text-muted small d-block">Tổng giá trị phiếu</span>
+<strong class="fs-4" th:text="${@view.money(receipt.totalAmount)}"></strong></div>
+</div>
+</div>
+
+<div class="card mb-4 overflow-hidden">
+<div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center py-3">
+<div><h3 class="h6 mb-1">Mặt hàng trong phiếu</h3>
+<span class="text-muted small" th:text="|${#lists.size(receipt.items)} dòng sản phẩm|"></span></div>
+</div>
 <div class="table-responsive">
-<table class="table align-middle">
-<thead>
-<tr>
-<th>Sản phẩm / Mã SKU</th>
-<th>Số lượng</th>
-<th>Đơn giá</th>
-<th>Thành tiền</th>
-<th th:if="${receipt.status.name() == 'DRAFT'}">Thao tác</th>
-</tr>
-</thead>
+<table class="table table-hover align-middle mb-0">
+<thead><tr>
+<th>Sản phẩm</th><th>Biến thể</th><th>Mã SKU</th>
+<th class="text-center">Số lượng</th><th>Đơn giá</th><th>Thành tiền</th>
+<th class="text-end" th:if="${receipt.status.name() == 'DRAFT'}">Thao tác</th>
+</tr></thead>
 <tbody>
-<tr th:each="r:${receipt.items}">
-<td>
-<span th:text="${r.productName}">
-</span>
-<br>
-<small th:text="${r.sku}">
-</small>
-</td>
-<td th:text="${r.quantity}">
-</td>
-<td th:text="${@view.money(r.unitPrice)}">
-</td>
-<td th:text="${@view.money(r.lineTotal)}">
-</td>
-<td th:if="${receipt.status.name() == 'DRAFT'}">
-<form class="d-flex gap-1 mb-1" method="post" th:action="@{/admin/purchase-receipts/{id}/items/{v}(id=${receipt.receiptId},v=${r.variantId})}">
-<input class="form-control form-control-sm item-input number-input" name="quantity" type="text" inputmode="numeric" data-number-scale="0" required th:value="${r.quantity}" aria-label="Số lượng">
-<input class="form-control form-control-sm item-input number-input" name="unitPrice" type="text" inputmode="decimal" data-number-scale="2" required th:value="${r.unitPrice}" aria-label="Đơn giá">
-<button class="btn btn-outline-primary btn-sm">Lưu</button>
+<tr th:each="item:${receipt.items}">
+<td><span class="fw-semibold" th:text="${item.productName}"></span></td>
+<td><div class="d-flex flex-wrap gap-1">
+<span class="badge text-bg-light border" th:text="|Size ${item.size.sizeName}|"></span>
+<span class="badge text-bg-light border" th:text="${item.color.colorName}"></span>
+</div></td>
+<td class="font-monospace small" th:text="${item.sku}"></td>
+<td class="text-center fw-semibold" th:text="${item.quantity}"></td>
+<td th:text="${@view.money(item.unitPrice)}"></td>
+<td class="fw-semibold" th:text="${@view.money(item.lineTotal)}"></td>
+<td class="text-end" th:if="${receipt.status.name() == 'DRAFT'}">
+<div class="d-flex flex-column align-items-end gap-2">
+<form class="d-flex gap-2 justify-content-end" method="post"
+      th:action="@{/admin/purchase-receipts/{id}/items/{variantId}(id=${receipt.receiptId},variantId=${item.variantId})}">
+<input class="form-control form-control-sm number-input" style="width:90px" name="quantity" type="text"
+       inputmode="numeric" data-number-scale="0" required th:value="${item.quantity}" aria-label="Số lượng">
+<input class="form-control form-control-sm number-input" style="width:140px" name="unitPrice" type="text"
+       inputmode="decimal" data-number-scale="2" required th:value="${item.unitPrice}" aria-label="Đơn giá">
+<button class="btn btn-outline-primary btn-sm"><i class="bi bi-check2 me-1"></i>Lưu</button>
 </form>
-<form method="post" th:action="@{/admin/purchase-receipts/{id}/items/{v}/remove(id=${receipt.receiptId},v=${r.variantId})}" data-confirm="Bỏ mặt hàng khỏi phiếu?">
-<button class="btn btn-outline-danger btn-sm">Bỏ dòng</button>
+<form method="post"
+      th:action="@{/admin/purchase-receipts/{id}/items/{variantId}/remove(id=${receipt.receiptId},variantId=${item.variantId})}"
+      data-confirm="Bỏ mặt hàng khỏi phiếu?">
+<button class="btn btn-link text-danger btn-sm p-0"><i class="bi bi-trash me-1"></i>Bỏ dòng</button>
 </form>
+</div>
 </td>
 </tr>
+<tr th:if="${#lists.isEmpty(receipt.items)}"><td colspan="7" class="text-center p-5">
+<i class="bi bi-box-seam fs-2 text-muted d-block mb-2"></i>
+<div class="fw-semibold">Phiếu nhập chưa có mặt hàng</div>
+<div class="text-muted small">Chọn sản phẩm và biến thể ở biểu mẫu bên dưới.</div>
+</td></tr>
 </tbody>
 </table>
 </div>
 </div>
+
 <div th:if="${receipt.status.name() == 'DRAFT'}">
-<div class="card mb-3">
-<div class="card-body">
-<h3 class="h5">Thêm mặt hàng</h3>
-<p class="text-muted">Chọn sản phẩm theo tên, Size và màu; không cần nhớ mã biến thể hoặc SKU.</p>
-<form method="post" th:action="@{/admin/purchase-receipts/{id}/items(id=${receipt.receiptId})}" th:object="${form}">
-<div th:replace="~{fragments/fields :: errors}">
+<div class="card mb-4" data-receipt-item-picker>
+<div class="card-header bg-body-tertiary py-3">
+<h3 class="h5 mb-1">Thêm mặt hàng</h3>
+<p class="text-muted small mb-0">Chọn sản phẩm trước, sau đó chọn đúng biến thể màu và kích cỡ.</p>
 </div>
-<div class="mb-3">
-<label class="form-label" for="variantId">Sản phẩm / biến thể</label>
-<select id="variantId" class="form-select" th:field="*{variantId}" required>
-<option value="">Chọn sản phẩm, Size và màu</option>
-<option th:each="v:${variants}" th:value="${v.variantId}"
-        th:text="|${v.productName} · Size ${v.size.sizeName} · ${v.color.colorName} · ${v.sku}|">
-</option>
+<div class="card-body">
+<form method="post" th:action="@{/admin/purchase-receipts/{id}/items(id=${receipt.receiptId})}" th:object="${form}">
+<div th:replace="~{fragments/fields :: errors}"></div>
+<div class="row g-4">
+<div class="col-lg-6">
+<div class="d-flex align-items-center gap-2 mb-3">
+<span class="badge rounded-circle text-bg-dark">1</span>
+<strong>Chọn sản phẩm</strong>
+</div>
+<label class="form-label" for="receipt-product">Sản phẩm</label>
+<select id="receipt-product" class="form-select" data-product-select required>
+<option value="">Chọn một sản phẩm</option>
+<option th:each="product:${receiptProducts}" th:value="${product.key}"
+        th:text="${product.value.productName}"
+        th:attr="data-search=${#strings.toLowerCase(product.value.productName)},data-base-price=${product.value.basePrice}"></option>
 </select>
+<div class="input-group input-group-sm mt-2">
+<span class="input-group-text"><i class="bi bi-search"></i></span>
+<input id="receipt-product-search" class="form-control" type="search"
+       placeholder="Lọc nhanh danh sách sản phẩm..." autocomplete="off" data-product-search
+       aria-label="Lọc nhanh danh sách sản phẩm">
+<button class="btn btn-outline-secondary" type="button" data-clear-product-search
+        aria-label="Xóa nội dung tìm kiếm"><i class="bi bi-x-lg"></i></button>
+</div>
+<div class="form-text" data-product-result
+     th:text="|${#maps.size(receiptProducts)} sản phẩm có biến thể|"></div>
+</div>
+
+<div class="col-lg-6 border-start-lg">
+<div class="d-flex align-items-center gap-2 mb-3">
+<span class="badge rounded-circle text-bg-dark">2</span>
+<strong>Chọn biến thể tương ứng</strong>
+</div>
+<input type="hidden" th:field="*{variantId}" data-variant-id>
+<div class="row g-3">
+<div class="col-md-6">
+<label class="form-label" for="receipt-size">Kích cỡ</label>
+<select id="receipt-size" class="form-select" data-size-select disabled>
+<option value="">Hãy chọn sản phẩm trước</option>
+</select>
+</div>
+<div class="col-md-6">
+<label class="form-label" for="receipt-color">Màu sắc</label>
+<select id="receipt-color" class="form-select" data-color-select disabled>
+<option value="">Hãy chọn kích cỡ trước</option>
+</select>
+</div>
+</div>
+<div class="d-none" aria-hidden="true">
+<span th:each="variant:${variants}" data-variant-source
+      th:attr="data-variant-id=${variant.variantId},data-product-id=${variant.productId},data-size-id=${variant.size.sizeId},data-size-name=${variant.size.sizeName},data-color-id=${variant.color.colorId},data-color-name=${variant.color.colorName},data-sku=${variant.sku},data-quantity=${variant.quantity}"></span>
+</div>
+<div class="form-text mt-2" data-variant-result>Chọn sản phẩm để xem kích cỡ và màu sắc hiện có.</div>
 <div class="text-danger small" th:errors="*{variantId}"></div>
 </div>
-<div th:replace="~{fragments/fields :: input('quantity','Số lượng','number')}">
 </div>
-<div th:replace="~{fragments/fields :: input('unitPrice','Đơn giá','number')}">
+
+<hr class="my-4">
+<div class="row g-3 align-items-end">
+<div class="col-md-4">
+<div th:replace="~{fragments/fields :: input('quantity','Số lượng nhập','number')}"></div>
 </div>
-<button class="btn btn-primary">Thêm mặt hàng</button>
+<div class="col-md-4">
+<div th:replace="~{fragments/fields :: input('unitPrice','Đơn giá nhập','number')}"></div>
+</div>
+<div class="col-md-4">
+<button class="btn btn-primary w-100" data-add-receipt-item disabled>
+<i class="bi bi-plus-lg me-1"></i>Thêm vào phiếu
+</button>
+</div>
+</div>
 </form>
 </div>
 </div>
-<div class="d-flex gap-2 mb-3">
-<form method="post" th:action="@{/admin/purchase-receipts/{id}/complete(id=${receipt.receiptId})}" data-confirm="Hoàn tất phiếu và nhập kho?">
-<button class="btn btn-success">Hoàn tất phiếu</button>
+
+<div class="d-flex flex-wrap gap-2 mb-3">
+<form method="post" th:action="@{/admin/purchase-receipts/{id}/complete(id=${receipt.receiptId})}"
+      data-confirm="Hoàn tất phiếu và nhập kho?">
+<button class="btn btn-success"><i class="bi bi-check-circle me-1"></i>Hoàn tất và nhập kho</button>
 </form>
-<form method="post" th:action="@{/admin/purchase-receipts/{id}/cancel(id=${receipt.receiptId})}" data-confirm="Hủy phiếu nhập?">
-<button class="btn btn-outline-danger">Hủy phiếu</button>
+<form method="post" th:action="@{/admin/purchase-receipts/{id}/cancel(id=${receipt.receiptId})}"
+      data-confirm="Hủy phiếu nhập?">
+<button class="btn btn-outline-danger"><i class="bi bi-x-circle me-1"></i>Hủy phiếu</button>
 </form>
 </div>
 </div>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/purchase-receipts}">Danh sách phiếu</a>
-</section>
-</body>
-</html>
+<script th:src="@{/assets/js/receipt-item-picker.js(v=4)}"></script>
+</section></body></html>

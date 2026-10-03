@@ -2,6 +2,12 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Khách hàng (chỉ xem)','customers')}">
 <body>
 <section>
+<form class="card card-body mb-3" method="get" th:action="@{/admin/customers}" data-live-filter>
+<div class="row g-3 align-items-end"><div class="col-lg-7"><label class="form-label">Tìm khách hàng</label>
+<input class="form-control" type="search" name="keyword" placeholder="Họ tên, tài khoản, email, điện thoại..." th:value="${keyword}"></div>
+<div class="col-lg-3"><label class="form-label">Trạng thái tài khoản</label><select class="form-select" name="status"><option value="">Tất cả trạng thái</option>
+<option th:each="item:${userStatuses}" th:value="${item}" th:text="${@view.label(item)}" th:selected="${item == status}"></option></select></div>
+<div class="col-lg-2"><a class="btn btn-outline-secondary w-100" th:href="@{/admin/customers}">Đặt lại</a></div></div></form>
 <div class="card">
 <div class="table-responsive">
 <table class="table table-hover align-middle mb-0">

@@ -43,13 +43,22 @@ public class WebInventoryController {
     @GetMapping("/transactions")
     public String history(@RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long variantId,
             @RequestParam(required = false) InventoryTransactionType type,
             @RequestParam(required = false) LocalDateTime from,
             @RequestParam(required = false) LocalDateTime to, Model model) {
-        model.addAttribute("page", inventory.history(page, size, variantId, type, from, to));
+        model.addAttribute("page", inventory.history(page, size, keyword, variantId, type, from, to));
+        model.addAttribute("keyword", keyword);
         model.addAttribute("variantId", variantId);
-        model.addAttribute("variants", inventory.selectableVariants());
+        var selectableVariants = inventory.selectableVariants();
+        var products = selectableVariants.stream().collect(Collectors.toMap(
+                InventoryResponse::productId,
+                InventoryResponse::productName,
+                (current, ignored) -> current,
+                LinkedHashMap::new));
+        model.addAttribute("inventoryProducts", products);
+        model.addAttribute("variants", selectableVariants);
         model.addAttribute("type", type);
         model.addAttribute("from", from);
         model.addAttribute("to", to);

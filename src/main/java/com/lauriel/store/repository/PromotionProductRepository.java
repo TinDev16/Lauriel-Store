@@ -15,4 +15,17 @@ public interface PromotionProductRepository extends JpaRepository<PromotionProdu
 
     @EntityGraph(attributePaths = {"product"})
     Page<PromotionProduct> findById_PromotionId(Long promotionId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"product"})
+    @Query(value = "select pp from PromotionProduct pp where pp.id.promotionId = :promotionId "
+            + "and (:keyword is null or lower(pp.product.productName) like lower(concat('%', :keyword, '%'))) "
+            + "and (:status is null or pp.product.status = :status)",
+            countQuery = "select count(pp) from PromotionProduct pp where pp.id.promotionId = :promotionId "
+            + "and (:keyword is null or lower(pp.product.productName) like lower(concat('%', :keyword, '%'))) "
+            + "and (:status is null or pp.product.status = :status)")
+    Page<PromotionProduct> findAdminProducts(Long promotionId, String keyword, ActiveStatus status, Pageable pageable);
+
+    @Query("select pp.id.productId from PromotionProduct pp where pp.id.promotionId = :promotionId " +
+            "and pp.id.productId in :productIds")
+    List<Long> findLinkedProductIds(Long promotionId, Collection<Long> productIds);
 }

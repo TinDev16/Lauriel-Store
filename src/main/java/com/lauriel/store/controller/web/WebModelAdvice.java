@@ -4,6 +4,8 @@ import com.lauriel.store.entity.enums.ActiveStatus;
 import com.lauriel.store.entity.enums.DiscountType;
 import com.lauriel.store.entity.enums.InventoryTransactionType;
 import com.lauriel.store.entity.enums.OrderStatus;
+import com.lauriel.store.entity.enums.PurchaseReceiptStatus;
+import com.lauriel.store.entity.enums.UserStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -34,6 +36,12 @@ public class WebModelAdvice {
 
     @ModelAttribute("orderStatuses")
     OrderStatus[] orderStatuses() { return OrderStatus.values(); }
+
+    @ModelAttribute("receiptStatuses")
+    PurchaseReceiptStatus[] receiptStatuses() { return PurchaseReceiptStatus.values(); }
+
+    @ModelAttribute("userStatuses")
+    UserStatus[] userStatuses() { return UserStatus.values(); }
 
     @ModelAttribute("discountTypes")
     DiscountType[] discountTypes() { return DiscountType.values(); }

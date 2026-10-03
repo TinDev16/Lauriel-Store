@@ -47,7 +47,8 @@ public class InventoryService {
         }
         String normalizedKeyword = keyword == null || keyword.isBlank() ? null : keyword.strip();
         var result = variants.findInventoryProducts(normalizedKeyword, threshold,
-                InventoryPagination.page(page, size, Sort.by(Sort.Direction.ASC, "productName")));
+                InventoryPagination.page(page, size,
+                        Sort.by(Sort.Order.asc("status"), Sort.Order.asc("productName"))));
         return InventoryPagination.response(result, this::productSummary);
     }
 
@@ -86,6 +87,12 @@ public class InventoryService {
     @Transactional(readOnly = true)
     public PageResponse<InventoryTransactionResponse> history(int page, int size, Long variantId,
             InventoryTransactionType type, LocalDateTime from, LocalDateTime to) {
+        return history(page, size, null, variantId, type, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<InventoryTransactionResponse> history(int page, int size, String keyword,
+            Long variantId, InventoryTransactionType type, LocalDateTime from, LocalDateTime to) {
         if (variantId != null && variantId <= 0) {
             throw new BadRequestException("variantId pháº£i lÃ  sá»‘ dÆ°Æ¡ng");
         }
@@ -98,6 +105,15 @@ public class InventoryService {
             if (type != null) predicates.add(builder.equal(root.get("transactionType"), type));
             if (from != null) predicates.add(builder.greaterThanOrEqualTo(root.get("createdAt"), from));
             if (to != null) predicates.add(builder.lessThanOrEqualTo(root.get("createdAt"), to));
+            if (keyword != null && !keyword.isBlank()) {
+                String term = "%" + keyword.strip().toLowerCase(java.util.Locale.ROOT) + "%";
+                var variant = root.join("productVariant");
+                predicates.add(builder.or(
+                        builder.like(builder.lower(variant.get("sku")), term),
+                        builder.like(builder.lower(variant.get("product").get("productName")), term),
+                        builder.like(builder.lower(root.get("referenceType")), term),
+                        builder.like(builder.lower(root.get("note")), term)));
+            }
             return builder.and(predicates.toArray(Predicate[]::new));
         };
         return InventoryPagination.response(transactions.findAll(filter, InventoryPagination.page(page, size,

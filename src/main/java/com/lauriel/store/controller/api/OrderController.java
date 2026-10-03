@@ -15,9 +15,16 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/orders")
 public class OrderController {
     private final OrderService orders;
+    private final com.lauriel.store.service.VoucherService vouchers;
 
-    public OrderController(OrderService orders) {
+    public OrderController(OrderService orders, com.lauriel.store.service.VoucherService vouchers) {
         this.orders = orders;
+        this.vouchers = vouchers;
+    }
+
+    @PostMapping("/preview")
+    public VoucherValidationResponse preview(@Valid @RequestBody com.lauriel.store.dto.request.OrderPreviewRequest request) {
+        return vouchers.preview(request);
     }
 
     @PostMapping

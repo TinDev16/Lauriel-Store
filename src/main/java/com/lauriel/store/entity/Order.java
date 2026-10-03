@@ -29,6 +29,19 @@ public class Order {
     @JoinColumn(name = "voucher_id", nullable = true)
     private Voucher voucher;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_promotion_id")
+    private OrderPromotion orderPromotion;
+
+    @Column(name = "order_promotion_name", length = 200)
+    private String orderPromotionName;
+
+    @Column(name = "order_promotion_percent", precision = 5, scale = 2)
+    private BigDecimal orderPromotionPercent;
+
+    @Column(name = "order_promotion_discount", precision = 14, scale = 2, nullable = false)
+    private BigDecimal orderPromotionDiscount = BigDecimal.ZERO;
+
     @Column(name = "total_amount", precision = 14, scale = 2, nullable = false)
     private BigDecimal totalAmount = BigDecimal.ZERO;
 

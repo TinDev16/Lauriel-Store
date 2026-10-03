@@ -1,13 +1,24 @@
 package com.lauriel.mobile.ui.home;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.*;
-import androidx.annotation.*;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Toast;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.PagerSnapHelper;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.lauriel.mobile.R;
 import com.lauriel.mobile.adapter.ProductAdapter;
+import com.lauriel.mobile.adapter.PromotionOfferAdapter;
 import com.lauriel.mobile.data.api.ApiClient;
 import com.lauriel.mobile.data.model.Models;
 import com.lauriel.mobile.data.repository.ProductRepository;
@@ -16,10 +27,24 @@ import com.lauriel.mobile.ui.MainActivity;
 import com.lauriel.mobile.ui.common.GridSpacingDecoration;
 import com.lauriel.mobile.ui.notification.NotificationActivity;
 import com.lauriel.mobile.ui.product.ProductDetailActivity;
-import retrofit2.*;
+import com.lauriel.mobile.util.Formatters;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
+    private ProductRepository repository;
+    private ProductAdapter adapter;
+    private PromotionOfferAdapter promotionAdapter;
+    private final EnumMap<PromotionOfferAdapter.Type, PromotionOfferAdapter.Offer> offers =
+            new EnumMap<>(PromotionOfferAdapter.Type.class);
+    private int pendingPromotionRequests;
+    private int refreshGeneration;
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle state) {
@@ -28,8 +53,8 @@ public class HomeFragment extends Fragment {
     }
 
     @Override public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
-        var repository = new ProductRepository(ApiClient.get(requireContext()).api());
-        var adapter = new ProductAdapter(product -> startActivity(
+        repository = new ProductRepository(ApiClient.get(requireContext()).api());
+        adapter = new ProductAdapter(product -> startActivity(
                 new Intent(requireContext(), ProductDetailActivity.class)
                         .putExtra("productId", product.productId)));
         binding.list.setLayoutManager(new GridLayoutManager(requireContext(), 2));
@@ -38,40 +63,169 @@ public class HomeFragment extends Fragment {
         binding.list.setHasFixedSize(true);
         binding.list.setLayoutAnimation(android.view.animation.AnimationUtils.loadLayoutAnimation(
                 requireContext(), R.anim.layout_fade_in));
+
+        promotionAdapter = new PromotionOfferAdapter(new PromotionOfferAdapter.Listener() {
+            @Override public void onOpen(PromotionOfferAdapter.Offer offer) {
+                showPromotionDetail(offer);
+            }
+            @Override public void onAction(PromotionOfferAdapter.Offer offer) {
+                handlePromotionAction(offer);
+            }
+        });
+        binding.promotions.setLayoutManager(new LinearLayoutManager(
+                requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        binding.promotions.setAdapter(promotionAdapter);
+        new PagerSnapHelper().attachToRecyclerView(binding.promotions);
+
         binding.shop.setOnClickListener(item ->
                 ((MainActivity) requireActivity()).showTab(R.id.nav_shop));
         binding.notifications.setOnClickListener(item ->
                 startActivity(new Intent(requireContext(), NotificationActivity.class)));
-        binding.error.setOnClickListener(item -> loadProducts(repository, adapter));
+        binding.error.setOnClickListener(item -> refresh());
         binding.loadMore.setOnClickListener(item ->
                 ((MainActivity) requireActivity()).showTab(R.id.nav_shop));
-        loadProducts(repository, adapter);
-        loadPromotions(repository);
+        refresh();
     }
 
-    private void loadPromotions(ProductRepository repository) {
+    public void refresh() {
+        if (binding == null || repository == null || adapter == null) return;
+        int generation = ++refreshGeneration;
+        binding.list.scrollToPosition(0);
+        loadProducts(generation);
+        loadPromotions(generation);
+    }
+
+    private void loadPromotions(int generation) {
+        offers.clear();
+        promotionAdapter.submit(List.of());
+        pendingPromotionRequests = 3;
+        binding.promotionTitle.setVisibility(View.VISIBLE);
+        binding.promotionHint.setVisibility(View.VISIBLE);
+        binding.promotions.setVisibility(View.VISIBLE);
+
         repository.promotions(new Callback<Models.Page<Models.Promotion>>() {
             @Override public void onResponse(Call<Models.Page<Models.Promotion>> call,
                     Response<Models.Page<Models.Promotion>> response) {
-                if (binding == null) return;
+                if (binding == null || generation != refreshGeneration) return;
                 if (response.isSuccessful() && response.body() != null
                         && response.body().content != null && !response.body().content.isEmpty()) {
-                    StringBuilder names = new StringBuilder();
-                    for (var promotion : response.body().content) {
-                        names.append("• ").append(promotion.promotionName).append(" · giảm ")
-                                .append(promotion.discountPercent).append("%\n");
+                    Models.Promotion best = response.body().content.get(0);
+                    for (Models.Promotion value : response.body().content) {
+                        if (number(value.discountPercent).compareTo(number(best.discountPercent)) > 0) best = value;
                     }
-                    binding.promotions.setText(names.toString().trim());
-                } else hidePromotions();
+                    offers.put(PromotionOfferAdapter.Type.PRODUCT, new PromotionOfferAdapter.Offer(
+                            PromotionOfferAdapter.Type.PRODUCT, "GIẢM GIÁ SẢN PHẨM", best.promotionName,
+                            "Giảm " + plain(best.discountPercent) + "%",
+                            best.description == null || best.description.isBlank()
+                                    ? "Áp dụng cho sản phẩm trong chương trình" : best.description,
+                            "Xem sản phẩm", null));
+                }
+                promotionRequestFinished(generation);
             }
             @Override public void onFailure(Call<Models.Page<Models.Promotion>> call, Throwable error) {
-                hidePromotions();
+                promotionRequestFinished(generation);
+            }
+        });
+
+        ApiClient.get(requireContext()).api().activeOrderPromotions(0, 20)
+                .enqueue(new Callback<Models.Page<Models.OrderPromotion>>() {
+            @Override public void onResponse(Call<Models.Page<Models.OrderPromotion>> call,
+                    Response<Models.Page<Models.OrderPromotion>> response) {
+                if (binding == null || generation != refreshGeneration) return;
+                if (response.isSuccessful() && response.body() != null
+                        && response.body().content != null && !response.body().content.isEmpty()) {
+                    Models.OrderPromotion value = response.body().content.get(0);
+                    String maximum = value.maxDiscountAmount == null
+                            ? "" : " · tối đa " + Formatters.money(value.maxDiscountAmount);
+                    offers.put(PromotionOfferAdapter.Type.ORDER, new PromotionOfferAdapter.Offer(
+                            PromotionOfferAdapter.Type.ORDER, "KHUYẾN MÃI ĐƠN HÀNG", value.promotionName,
+                            "Giảm " + plain(value.discountPercent) + "%" + maximum,
+                            "Đơn từ " + Formatters.money(number(value.minOrderAmount)) + " · Tự động áp dụng",
+                            "Mua ngay", null));
+                }
+                promotionRequestFinished(generation);
+            }
+            @Override public void onFailure(Call<Models.Page<Models.OrderPromotion>> call, Throwable error) {
+                promotionRequestFinished(generation);
+            }
+        });
+
+        ApiClient.get(requireContext()).api().activeVouchers(0, 20)
+                .enqueue(new Callback<Models.Page<Models.Voucher>>() {
+            @Override public void onResponse(Call<Models.Page<Models.Voucher>> call,
+                    Response<Models.Page<Models.Voucher>> response) {
+                if (binding == null || generation != refreshGeneration) return;
+                if (response.isSuccessful() && response.body() != null
+                        && response.body().content != null && !response.body().content.isEmpty()) {
+                    Models.Voucher value = response.body().content.get(0);
+                    String benefit = "PERCENT".equals(value.discountType)
+                            ? "Giảm " + plain(value.discountValue) + "%"
+                            : "Giảm " + Formatters.money(number(value.discountValue));
+                    offers.put(PromotionOfferAdapter.Type.VOUCHER, new PromotionOfferAdapter.Offer(
+                            PromotionOfferAdapter.Type.VOUCHER, "MÃ GIẢM GIÁ", value.voucherName,
+                            benefit, "Mã " + value.code + " · Đơn từ "
+                                    + Formatters.money(number(value.minOrderAmount)) + expiry(value.endDate),
+                            "Sao chép", value.code));
+                }
+                promotionRequestFinished(generation);
+            }
+            @Override public void onFailure(Call<Models.Page<Models.Voucher>> call, Throwable error) {
+                promotionRequestFinished(generation);
             }
         });
     }
 
-    private void loadProducts(ProductRepository repository, ProductAdapter adapter) {
-        if (binding == null) return;
+    private void promotionRequestFinished(int generation) {
+        if (binding == null || generation != refreshGeneration) return;
+        pendingPromotionRequests--;
+        List<PromotionOfferAdapter.Offer> values = new ArrayList<>();
+        for (PromotionOfferAdapter.Type type : PromotionOfferAdapter.Type.values()) {
+            PromotionOfferAdapter.Offer offer = offers.get(type);
+            if (offer != null) values.add(offer);
+        }
+        promotionAdapter.submit(values);
+        if (pendingPromotionRequests == 0 && values.isEmpty()) hidePromotions();
+    }
+
+    private void handlePromotionAction(PromotionOfferAdapter.Offer offer) {
+        if (offer.copyText != null) {
+            ClipboardManager clipboard = (ClipboardManager) requireContext()
+                    .getSystemService(Context.CLIPBOARD_SERVICE);
+            clipboard.setPrimaryClip(ClipData.newPlainText("Mã giảm giá", offer.copyText));
+            Toast.makeText(requireContext(), "Đã sao chép mã " + offer.copyText, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ((MainActivity) requireActivity()).showTab(R.id.nav_shop);
+    }
+
+    private void showPromotionDetail(PromotionOfferAdapter.Offer offer) {
+        String message = offer.benefit + "\n\n" + offer.condition;
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(offer.title)
+                .setMessage(message)
+                .setNegativeButton("Đóng", null);
+        if (offer.action != null) {
+            dialog.setPositiveButton(offer.action,
+                    (ignored, which) -> handlePromotionAction(offer));
+        }
+        dialog.show();
+    }
+
+    private static BigDecimal number(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private static String plain(BigDecimal value) {
+        return number(value).stripTrailingZeros().toPlainString();
+    }
+
+    private static String expiry(String value) {
+        if (value == null || value.isBlank()) return "";
+        return " · HSD " + value.substring(0, Math.min(10, value.length()));
+    }
+
+    private void loadProducts(int generation) {
+        if (binding == null || generation != refreshGeneration) return;
         binding.loading.setVisibility(View.VISIBLE);
         binding.loadMore.setVisibility(View.GONE);
         binding.error.setText("");
@@ -80,7 +234,7 @@ public class HomeFragment extends Fragment {
         repository.list(0, null, null, null, null, new Callback<Models.Page<Models.Product>>() {
             @Override public void onResponse(Call<Models.Page<Models.Product>> call,
                     Response<Models.Page<Models.Product>> response) {
-                if (binding == null) return;
+                if (binding == null || generation != refreshGeneration) return;
                 binding.loading.setVisibility(View.GONE);
                 if (response.isSuccessful() && response.body() != null) {
                     adapter.submit(response.body().content);
@@ -94,7 +248,7 @@ public class HomeFragment extends Fragment {
                 }
             }
             @Override public void onFailure(Call<Models.Page<Models.Product>> call, Throwable error) {
-                if (binding != null) {
+                if (binding != null && generation == refreshGeneration) {
                     binding.loading.setVisibility(View.GONE);
                     binding.error.setText("Không thể kết nối máy chủ. Chạm để thử lại.");
                     binding.stateIcon.setVisibility(View.VISIBLE);
@@ -106,6 +260,7 @@ public class HomeFragment extends Fragment {
     private void hidePromotions() {
         if (binding != null) {
             binding.promotionTitle.setVisibility(View.GONE);
+            binding.promotionHint.setVisibility(View.GONE);
             binding.promotions.setVisibility(View.GONE);
         }
     }

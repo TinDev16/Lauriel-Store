@@ -2,8 +2,8 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Sản phẩm','products')}">
 <body><section>
 <div class="mb-3"><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/new}">Thêm sản phẩm</a></div>
-<form class="row g-2 mb-3" method="get" th:action="@{/admin/products}">
-<div class="col-lg-4"><input class="form-control" name="keyword" placeholder="Tìm tên sản phẩm" th:value="${keyword}"></div>
+<form class="row g-2 mb-3" method="get" data-live-filter data-preserve-scroll th:action="@{/admin/products}">
+<div class="col-lg-4"><input class="form-control" type="search" name="keyword" placeholder="Tìm tên sản phẩm" th:value="${keyword}"></div>
 <div class="col-lg-3"><select name="categoryId" class="form-select"><option value="">Tất cả danh mục</option><option th:each="c:${categories}" th:value="${c.categoryId}" th:text="${c.categoryName}" th:selected="${c.categoryId == categoryId}"></option></select></div>
 <div class="col-lg-2"><select name="status" class="form-select"><option value="">Tất cả trạng thái</option><option th:each="s:${statuses}" th:value="${s}" th:text="${@view.label(s)}" th:selected="${s == status}"></option></select></div>
 <div class="col-auto"><button class="btn btn-primary">Lọc</button> <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Đặt lại</a></div>

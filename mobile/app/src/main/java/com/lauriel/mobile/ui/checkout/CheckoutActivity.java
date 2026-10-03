@@ -9,6 +9,7 @@ import com.lauriel.mobile.R;
 import com.lauriel.mobile.adapter.CheckoutProductAdapter;
 import com.lauriel.mobile.data.api.ApiClient;
 import com.lauriel.mobile.data.local.CartStore;
+import com.lauriel.mobile.data.local.VoucherStore;
 import com.lauriel.mobile.data.model.Models;
 import com.lauriel.mobile.data.repository.CheckoutUseCase;
 import com.lauriel.mobile.data.repository.OrderRepository;
@@ -17,9 +18,12 @@ import com.lauriel.mobile.databinding.ActivityCheckoutBinding;
 import com.lauriel.mobile.ui.BaseActivity;
 import com.lauriel.mobile.ui.MainActivity;
 import com.lauriel.mobile.ui.order.OrderDetailActivity;
+import com.lauriel.mobile.ui.product.ProductDetailActivity;
 import com.lauriel.mobile.util.Formatters;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import retrofit2.*;
 
 public class CheckoutActivity extends BaseActivity {
@@ -27,37 +31,44 @@ public class CheckoutActivity extends BaseActivity {
     public static final String EXTRA_VARIANT_ID="variantId",EXTRA_PRODUCT_ID="productId",EXTRA_PRODUCT_NAME="productName";
     public static final String EXTRA_SKU="sku",EXTRA_SIZE="size",EXTRA_COLOR="color",EXTRA_IMAGE="image";
     public static final String EXTRA_PRICE="price",EXTRA_QUANTITY="quantity",EXTRA_STOCK="stock";
-    private static final BigDecimal SHIPPING_PREVIEW=new BigDecimal("20000");
-
     private ActivityCheckoutBinding b;
     private CartStore cart;
+    private VoucherStore voucherStore;
     private List<CartStore.CartItem> items;
     private boolean buyNow;
     private Models.VoucherPreview preview;
+    private Models.VoucherPreview automaticPreview;
     private long previewRevision=-1;
     private String previewCode;
-    private boolean submitting,validating;
+    private boolean submitting,validating,vouchersLoading;
 
     @Override protected void onCreate(Bundle state){
         super.onCreate(state);
         b=ActivityCheckoutBinding.inflate(getLayoutInflater());setContentView(b.getRoot());
         com.lauriel.mobile.ui.SystemBars.apply(b.getRoot());
         buyNow=getIntent().getBooleanExtra(EXTRA_BUY_NOW,false);
+        voucherStore=new VoucherStore(this,ApiClient.get(this).session().userId());
         if(buyNow){
             try{items=List.of(intentItem());}catch(RuntimeException error){finish();return;}
         }else{
             cart=new CartStore(this,ApiClient.get(this).session().userId());
             items=cart.items();
         }
-        CheckoutProductAdapter adapter=new CheckoutProductAdapter();
+        CheckoutProductAdapter adapter=new CheckoutProductAdapter(item -> startActivity(
+                new Intent(this, ProductDetailActivity.class).putExtra("productId", item.productId)));
         b.products.setLayoutManager(new LinearLayoutManager(this));b.products.setAdapter(adapter);adapter.submit(items);
         b.back.setOnClickListener(v->finish());b.apply.setOnClickListener(v->validateVoucher());b.checkout.setOnClickListener(v->checkout());
+        b.chooseSavedVoucher.setOnClickListener(v->chooseSavedVoucher());
+        b.removeVoucher.setOnClickListener(v->removeVoucher());
+        b.paymentCod.setOnCheckedChangeListener((button, checked) -> {
+            if (checked) b.paymentError.setVisibility(View.GONE);
+        });
         b.voucher.addTextChangedListener(new android.text.TextWatcher(){
             @Override public void beforeTextChanged(CharSequence s,int start,int count,int after){}
             @Override public void onTextChanged(CharSequence s,int start,int before,int count){clearPreview();renderPrice();}
             @Override public void afterTextChanged(android.text.Editable s){}
         });
-        loadAddress();renderPrice();
+        loadAddress();renderPrice();loadAutomaticPreview();
     }
 
     private CartStore.CartItem intentItem(){
@@ -73,9 +84,9 @@ public class CheckoutActivity extends BaseActivity {
 
     @Override protected void onResume(){
         super.onResume();
-        if(!buyNow&&cart!=null&&previewRevision!=cart.revision()){clearPreview();items=cart.items();
+        if(!buyNow&&cart!=null&&previewRevision!=cart.revision()){clearPreview();automaticPreview=null;items=cart.items();
             ((CheckoutProductAdapter)b.products.getAdapter()).submit(items);}
-        if(b!=null)renderPrice();
+        if(b!=null){renderPrice();loadAutomaticPreview();}
     }
 
     private void loadAddress(){
@@ -95,28 +106,170 @@ public class CheckoutActivity extends BaseActivity {
         return result;
     }
     private long revision(){return buyNow?0:cart.revision();}
-    private BigDecimal subtotal(){
-        BigDecimal total=BigDecimal.ZERO;
-        for(var item:items)if(item.displayPrice!=null)total=total.add(item.displayPrice.multiply(BigDecimal.valueOf(item.quantity)));
-        return total;
-    }
     private boolean empty(){return items==null||items.isEmpty();}
 
     private void renderPrice(){
-        BigDecimal base=preview==null?subtotal():preview.orderAmount;
-        BigDecimal discount=preview==null?BigDecimal.ZERO:preview.discountAmount;
-        BigDecimal shipping=preview==null?SHIPPING_PREVIEW:preview.shippingFee;
-        BigDecimal finalValue=preview==null?base.add(shipping):preview.finalAmount;
-        b.subtotal.setText("Tạm tính: "+Formatters.money(base));
-        b.discount.setText("Giảm giá: -"+Formatters.money(discount));
-        b.shipping.setText("Phí giao hàng: "+Formatters.money(shipping));
-        b.total.setText("Tổng thanh toán: "+Formatters.money(finalValue));
-        b.checkout.setEnabled(!empty()&&!submitting);
+        Models.VoucherPreview shown=preview!=null?preview:automaticPreview;
+        if(shown==null){
+            b.subtotal.setText("Tạm tính: Đang tính…");
+            b.productPromotionDiscount.setVisibility(View.GONE);
+            b.orderPromotionDiscount.setVisibility(View.GONE);
+            b.discount.setVisibility(View.GONE);
+            b.shipping.setText("Phí giao hàng: Đang tính…");
+            b.total.setText("Tổng thanh toán: Đang tính…");
+            b.checkout.setEnabled(false);
+            return;
+        }
+        BigDecimal productDiscount=amount(shown.productPromotionDiscount);
+        BigDecimal discountedSubtotal=amount(shown.subtotal);
+        BigDecimal grossSubtotal=discountedSubtotal.add(productDiscount);
+        BigDecimal orderDiscount=amount(shown.orderPromotionDiscount);
+        BigDecimal voucherDiscount=amount(shown.discountAmount);
+        b.subtotal.setText("Tạm tính: "+Formatters.money(grossSubtotal));
+        showDiscount(b.productPromotionDiscount,"Khuyến mãi sản phẩm",productDiscount);
+        String campaign=shown.orderPromotionName==null?"Khuyến mãi đơn hàng":shown.orderPromotionName;
+        showDiscount(b.orderPromotionDiscount,campaign,orderDiscount);
+        showDiscount(b.discount,"Mã giảm giá",voucherDiscount);
+        b.shipping.setText("Phí giao hàng: "+Formatters.money(amount(shown.shippingFee)));
+        b.total.setText("Tổng thanh toán: "+Formatters.money(amount(shown.finalAmount)));
+        b.checkout.setEnabled(!empty()&&!submitting&&!validating);
+    }
+
+    private static BigDecimal amount(BigDecimal value){return value==null?BigDecimal.ZERO:value;}
+    private void showDiscount(android.widget.TextView view,String label,BigDecimal value){
+        view.setVisibility(value.signum()>0?View.VISIBLE:View.GONE);
+        view.setText(label+": -"+Formatters.money(value));
+    }
+
+    private void loadAutomaticPreview(){
+        if(empty())return;
+        long requestedRevision=revision();
+        automaticPreview=null;
+        renderPrice();
+        ApiClient.get(this).api().previewOrder(new Models.OrderPreviewRequest(payload(),null)).enqueue(new Callback<Models.VoucherPreview>(){
+            @Override public void onResponse(Call<Models.VoucherPreview> c,Response<Models.VoucherPreview> r){
+                if(!isFinishing()&&requestedRevision==revision()&&r.isSuccessful()&&r.body()!=null){
+                    automaticPreview=r.body();
+                    b.error.setText("");
+                    renderPrice();
+                }else if(!isFinishing()&&requestedRevision==revision()){
+                    b.error.setText(ApiClient.get(CheckoutActivity.this).error(r));
+                    renderPrice();
+                }
+            }
+            @Override public void onFailure(Call<Models.VoucherPreview> c,Throwable e){
+                if(!isFinishing()&&requestedRevision==revision()){
+                    b.error.setText("Không thể tính giá từ máy chủ. Vui lòng thử lại.");
+                    renderPrice();
+                }
+            }
+        });
     }
 
     private void clearPreview(){
         preview=null;previewRevision=-1;previewCode=null;
-        if(b!=null){b.preview.setText("");b.previewCard.setVisibility(View.GONE);}
+        if(b!=null){
+            b.preview.setText("");
+            b.previewCard.setVisibility(View.GONE);
+            b.voucherEntryCard.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void removeVoucher(){
+        b.voucher.setText("");
+        clearPreview();
+        b.chooseSavedVoucher.setText(R.string.choose_saved_voucher);
+        b.error.setText("");
+        renderPrice();
+        loadAutomaticPreview();
+    }
+
+    private void chooseSavedVoucher(){
+        if(vouchersLoading)return;
+        vouchersLoading=true;
+        b.chooseSavedVoucher.setEnabled(false);
+        b.chooseSavedVoucher.setText(R.string.loading_vouchers);
+        ApiClient.get(this).api().activeVouchers(0,100).enqueue(new Callback<Models.Page<Models.Voucher>>(){
+            @Override public void onResponse(Call<Models.Page<Models.Voucher>> call,
+                    Response<Models.Page<Models.Voucher>> response){
+                finishVoucherLoading();
+                if(isFinishing())return;
+                if(!response.isSuccessful()||response.body()==null){
+                    b.error.setText(ApiClient.get(CheckoutActivity.this).error(response));return;
+                }
+                Set<Long> saved=voucherStore.savedIds();
+                List<Models.Voucher> available=new ArrayList<>();
+                if(response.body().content!=null){
+                    for(Models.Voucher voucher:response.body().content){
+                        if(saved.contains(voucher.voucherId))available.add(voucher);
+                    }
+                }
+                if(available.isEmpty()){
+                    new MaterialAlertDialogBuilder(CheckoutActivity.this)
+                            .setTitle(R.string.choose_voucher_title)
+                            .setMessage(R.string.no_saved_vouchers)
+                            .setPositiveButton(android.R.string.ok,null).show();
+                    return;
+                }
+                CharSequence[] labels=new CharSequence[available.size()];
+                for(int index=0;index<available.size();index++){
+                    labels[index]=savedVoucherLabel(available.get(index));
+                }
+                new MaterialAlertDialogBuilder(CheckoutActivity.this)
+                        .setTitle("Mã giảm giá đã lưu")
+                        .setIcon(R.drawable.ic_bookmark)
+                        .setItems(labels,(dialog,index)->{
+                            Models.Voucher selected=available.get(index);
+                            BigDecimal shortfall=amount(selected.minOrderAmount).subtract(voucherEligibleAmount());
+                            if(shortfall.signum()>0){
+                                b.error.setText("Thêm "+Formatters.money(shortfall)+" để sử dụng mã "+selected.code);
+                                return;
+                            }
+                            b.voucher.setText(selected.code);
+                            b.voucher.setSelection(b.voucher.length());
+                            b.chooseSavedVoucher.setText("Đã chọn mã đã lưu: "+selected.code);
+                            validateVoucher();
+                        })
+                        .setNegativeButton("Đóng",null).show();
+            }
+            @Override public void onFailure(Call<Models.Page<Models.Voucher>> call,Throwable error){
+                finishVoucherLoading();
+                if(!isFinishing())b.error.setText(R.string.network_error);
+            }
+        });
+    }
+
+    private String savedVoucherLabel(Models.Voucher voucher){
+        String benefit;
+        if("PERCENT".equals(voucher.discountType)){
+            String percent=voucher.discountValue==null?"0":voucher.discountValue.stripTrailingZeros().toPlainString();
+            benefit="Giảm "+percent+"%";
+            if(voucher.maxDiscountAmount!=null)benefit+=" · tối đa "+Formatters.money(voucher.maxDiscountAmount);
+        }else{
+            benefit="Giảm "+Formatters.money(voucher.discountValue);
+        }
+        BigDecimal minimum=voucher.minOrderAmount==null?BigDecimal.ZERO:voucher.minOrderAmount;
+        String condition=minimum.signum()<=0?"Mọi đơn hàng":"Đơn từ "+Formatters.money(minimum);
+        BigDecimal shortfall=minimum.subtract(voucherEligibleAmount());
+        String eligibility=shortfall.signum()>0
+                ? "\nChưa đủ điều kiện · Thêm "+Formatters.money(shortfall)
+                : "\nCó thể sử dụng";
+        String expiry=voucher.endDate==null?"":" · HSD "+voucher.endDate.substring(0,Math.min(10,voucher.endDate.length()));
+        return "✓ ĐÃ LƯU  "+voucher.code+"\n"
+                +voucher.voucherName+"\n"
+                +benefit+" · "+condition+expiry+eligibility;
+    }
+
+    private BigDecimal voucherEligibleAmount(){
+        if(automaticPreview==null)return BigDecimal.ZERO;
+        return amount(automaticPreview.orderAmount).subtract(amount(automaticPreview.orderPromotionDiscount));
+    }
+
+    private void finishVoucherLoading(){
+        vouchersLoading=false;
+        if(b==null)return;
+        b.chooseSavedVoucher.setEnabled(true);
+        b.chooseSavedVoucher.setText(R.string.choose_saved_voucher);
     }
 
     private void validateVoucher(){
@@ -130,8 +283,10 @@ public class CheckoutActivity extends BaseActivity {
                 if(revision!=revision()||!code.equalsIgnoreCase(b.voucher.getText().toString().trim())){clearPreview();renderPrice();return;}
                 if(r.isSuccessful()&&r.body()!=null&&r.body().valid){
                     preview=r.body();previewRevision=revision;previewCode=code;
+                    automaticPreview=r.body();
                     b.previewCard.setVisibility(View.VISIBLE);
-                    b.preview.setText("✓ Đã áp dụng "+preview.code+"\n-"+Formatters.money(preview.discountAmount));
+                    b.voucherEntryCard.setVisibility(View.GONE);
+                    b.preview.setText("✓ Đã áp dụng "+preview.code+"\nTiết kiệm "+Formatters.money(preview.discountAmount));
                     renderPrice();
                 }else{clearPreview();renderPrice();b.error.setText(ApiClient.get(CheckoutActivity.this).error(r));}
             }
@@ -146,6 +301,12 @@ public class CheckoutActivity extends BaseActivity {
         if(submitting||validating||empty())return;
         String address=b.address.getText().toString().trim(),code=b.voucher.getText().toString().trim();
         b.addressLayout.setError(null);
+        if(!b.paymentCod.isChecked()){
+            b.paymentError.setVisibility(View.VISIBLE);
+            b.paymentCod.requestFocus();
+            return;
+        }
+        b.paymentError.setVisibility(View.GONE);
         if(address.isEmpty()){b.addressLayout.setError("Vui lòng nhập địa chỉ giao hàng");b.address.requestFocus();return;}
         if(!code.isEmpty()&&(preview==null||previewRevision!=revision()||!code.equalsIgnoreCase(previewCode))){
             b.error.setText("Giỏ hàng hoặc mã đã thay đổi. Vui lòng áp dụng voucher lại.");return;

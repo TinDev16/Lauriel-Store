@@ -1,6 +1,10 @@
 package com.lauriel.mobile.ui.voucher;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.os.Bundle;
+import android.widget.Toast;
 import android.view.View;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.lauriel.mobile.data.api.ApiClient;
@@ -9,6 +13,7 @@ import com.lauriel.mobile.data.model.Models;
 import com.lauriel.mobile.adapter.VoucherAdapter;
 import com.lauriel.mobile.databinding.ActivityVouchersBinding;
 import com.lauriel.mobile.ui.BaseActivity;
+import com.lauriel.mobile.ui.SystemBars;
 import java.util.*;
 import retrofit2.*;
 
@@ -24,11 +29,18 @@ public final class VoucherActivity extends BaseActivity {
         super.onCreate(state);
         binding = ActivityVouchersBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        store = new VoucherStore(this);
+        SystemBars.apply(binding.getRoot());
+        store = new VoucherStore(this, ApiClient.get(this).session().userId());
         showMine = getIntent().getBooleanExtra(EXTRA_MY_VOUCHERS, false);
-        adapter = new VoucherAdapter(voucher -> {
-            store.toggle(voucher.voucherId);
-            render();
+        adapter = new VoucherAdapter(new VoucherAdapter.Listener() {
+            @Override public void onSave(Models.Voucher voucher) {
+                store.toggle(voucher.voucherId);
+                render();
+            }
+
+            @Override public void onCopy(Models.Voucher voucher) {
+                copyVoucher(voucher);
+            }
         });
         binding.list.setLayoutManager(new LinearLayoutManager(this));
         binding.list.setAdapter(adapter);
@@ -63,15 +75,24 @@ public final class VoucherActivity extends BaseActivity {
 
     private void render() {
         Set<Long> saved = store.savedIds();
-        List<Models.Voucher> visible = showMine
-                ? vouchers.stream().filter(item -> saved.contains(item.voucherId)).toList()
-                : vouchers;
+        List<Models.Voucher> visible = new ArrayList<>();
+        for (Models.Voucher voucher : vouchers) {
+            if (!showMine || saved.contains(voucher.voucherId)) visible.add(voucher);
+        }
+        visible.sort(Comparator.comparing((Models.Voucher item) -> !saved.contains(item.voucherId)));
         adapter.submit(visible, saved);
         binding.title.setText(showMine ? "Mã giảm giá của tôi" : "Mã giảm giá toàn sàn");
         binding.all.setChecked(!showMine);
         binding.mine.setChecked(showMine);
         binding.empty.setVisibility(visible.isEmpty() ? View.VISIBLE : View.GONE);
         binding.empty.setText(showMine ? "Bạn chưa lưu mã giảm giá nào." : "Hiện chưa có mã giảm giá khả dụng.");
+    }
+
+    private void copyVoucher(Models.Voucher voucher) {
+        if (voucher.code == null || voucher.code.isBlank()) return;
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        clipboard.setPrimaryClip(ClipData.newPlainText(getString(com.lauriel.mobile.R.string.voucher_code), voucher.code));
+        Toast.makeText(this, getString(com.lauriel.mobile.R.string.voucher_copied, voucher.code), Toast.LENGTH_SHORT).show();
     }
 
     private void showError(String message) {

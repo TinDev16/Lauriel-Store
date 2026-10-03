@@ -13,8 +13,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class WebVoucherController {
     private final VoucherService vouchers;
     public WebVoucherController(VoucherService vouchers) {this.vouchers=vouchers;}
-    @GetMapping public String list(@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="12") int size,Model m) {
-        m.addAttribute("page",vouchers.list(page,size));return "admin/vouchers/list";
+    @GetMapping public String list(@RequestParam(defaultValue="0") int page,
+            @RequestParam(defaultValue="12") int size,
+            @RequestParam(required=false) String keyword,
+            @RequestParam(required=false) ActiveStatus status,
+            @RequestParam(required=false) DiscountType discountType, Model m) {
+        m.addAttribute("page",vouchers.list(page,size,keyword,status,discountType));
+        m.addAttribute("keyword",keyword); m.addAttribute("status",status);
+        m.addAttribute("discountType",discountType); return "admin/vouchers/list";
     }
     @GetMapping("/new") public String createForm(Model m) {m.addAttribute("form",new VoucherRequest("","",DiscountType.PERCENT,null,java.math.BigDecimal.ZERO,null,0,null,null,ActiveStatus.ACTIVE));return form(m,null);}
     @GetMapping("/{id}/edit") public String edit(@PathVariable Long id,Model m) {

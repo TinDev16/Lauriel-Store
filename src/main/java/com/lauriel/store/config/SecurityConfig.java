@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .requestCache(cache -> cache.requestCache(new NullRequestCache()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/promotions/active", "/api/vouchers/active").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/promotions/active", "/api/order-promotions/active", "/api/vouchers/active").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/vouchers/validate").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/{id}",
                                 "/api/products/{productId}/variants", "/api/products/{id}/related",

@@ -37,7 +37,24 @@ public class VoucherService {
 
     @Transactional(readOnly = true)
     public PageResponse<VoucherResponse> list(int page, int size) {
-        return InventoryPagination.response(vouchers.findAll(InventoryPagination.page(page, size, Sort.by("voucherId"))),
+        return list(page, size, null, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<VoucherResponse> list(int page, int size, String keyword, ActiveStatus status,
+            com.lauriel.store.entity.enums.DiscountType discountType) {
+        String term = keyword == null || keyword.isBlank() ? null : "%" + keyword.strip().toLowerCase(Locale.ROOT) + "%";
+        org.springframework.data.jpa.domain.Specification<Voucher> filter = (root, query, builder) -> {
+            var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (status != null) predicates.add(builder.equal(root.get("status"), status));
+            if (discountType != null) predicates.add(builder.equal(root.get("discountType"), discountType));
+            if (term != null) predicates.add(builder.or(
+                    builder.like(builder.lower(root.get("code")), term),
+                    builder.like(builder.lower(root.get("voucherName")), term)));
+            return builder.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+        return InventoryPagination.response(vouchers.findAll(filter, InventoryPagination.page(page, size,
+                        Sort.by(Sort.Order.asc("status"), Sort.Order.asc("voucherId")))),
                 MarketingMapper::voucher);
     }
 
@@ -77,8 +94,16 @@ public class VoucherService {
 
     @Transactional(readOnly = true)
     public VoucherValidationResponse preview(VoucherValidationRequest request) {
-        var quantities = CheckoutItems.normalize(request.items());
-        // Read-only preview deliberately takes no inventory/voucher write locks and does not reserve anything.
+        return previewAmounts(request.items(), request.code());
+    }
+
+    @Transactional(readOnly = true)
+    public VoucherValidationResponse preview(OrderPreviewRequest request) {
+        return previewAmounts(request.items(), request.voucherCode());
+    }
+
+    private VoucherValidationResponse previewAmounts(List<CheckoutItemRequest> requestedItems, String requestedCode) {
+        var quantities = CheckoutItems.normalize(requestedItems);
         var found = variants.findByVariantIdIn(quantities.keySet());
         if (found.size() != quantities.size()) throw new ResourceNotFoundException("Không tìm thấy biến thể");
         if (found.stream().anyMatch(v -> v.getStatus() != ActiveStatus.ACTIVE
@@ -88,19 +113,29 @@ public class VoucherService {
         var now = pricing.now();
         var prices = pricing.priceVariants(found, now);
         BigDecimal amount = BigDecimal.ZERO;
+        BigDecimal productPromotionDiscount = BigDecimal.ZERO;
         for (var variant : found) {
             amount = pricing.checkedAmount(amount.add(pricing.lineTotal(
                     prices.get(variant.getVariantId()).effectivePrice(), quantities.get(variant.getVariantId()))));
+            productPromotionDiscount = pricing.checkedAmount(productPromotionDiscount.add(pricing.lineTotal(
+                    prices.get(variant.getVariantId()).promotionDiscount(), quantities.get(variant.getVariantId()))));
         }
-        String code = normalizeCode(request.code());
-        var voucher = vouchers.findByCodeIgnoreCase(code)
-                .orElseThrow(() -> new BadRequestException("Voucher không hợp lệ hoặc không đủ điều kiện sử dụng"));
-        var discount = pricing.voucherDiscount(voucher, amount, now);
+        var threshold = pricing.orderPromotion(amount, now);
+        var amountAfterOrderPromotion = threshold.amountAfter(amount);
+        Voucher voucher = null;
+        BigDecimal discount = BigDecimal.ZERO.setScale(2);
+        if (requestedCode != null && !requestedCode.isBlank()) {
+            voucher = vouchers.findByCodeIgnoreCase(normalizeCode(requestedCode))
+                    .orElseThrow(() -> new BadRequestException("Voucher không hợp lệ hoặc không đủ điều kiện sử dụng"));
+            discount = pricing.voucherDiscount(voucher, amountAfterOrderPromotion, now);
+        }
         var shipping = pricing.checkedAmount(commerce.getShippingFee());
-        return new VoucherValidationResponse(true, voucher.getCode(), amount, discount, shipping,
-                pricing.checkedAmount(amount.subtract(discount).add(shipping)));
+        return new VoucherValidationResponse(true, voucher == null ? null : voucher.getCode(), amount, amount,
+                productPromotionDiscount, threshold.promotion() == null ? null : threshold.promotion().getOrderPromotionId(),
+                threshold.promotion() == null ? null : threshold.promotion().getPromotionName(),
+                threshold.promotion() == null ? null : threshold.promotion().getDiscountPercent(), threshold.discount(),
+                discount, shipping, pricing.checkedAmount(amountAfterOrderPromotion.subtract(discount).add(shipping)));
     }
-
     @Transactional(propagation = Propagation.MANDATORY)
     public AppliedVoucher consume(String requestedCode, BigDecimal amount, LocalDateTime now) {
         if (requestedCode == null || requestedCode.isBlank()) return new AppliedVoucher(null, BigDecimal.ZERO);

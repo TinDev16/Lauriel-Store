@@ -19,7 +19,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
                 c.categoryId, c.categoryName, c.status, c.createdAt, count(p.productId))
             from Category c left join c.products p
             group by c.categoryId, c.categoryName, c.status, c.createdAt
-            order by c.categoryName, c.categoryId
+            order by c.status, c.categoryName, c.categoryId
             """)
     List<CategoryResponse> findAllWithProductCount();
 }

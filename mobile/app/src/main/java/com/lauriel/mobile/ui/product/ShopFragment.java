@@ -29,6 +29,7 @@ import retrofit2.Response;
 
 public class ShopFragment extends Fragment {
     private FragmentShopBinding b; private ShopViewModel vm; private ProductRepository products;
+    private boolean firstResume=true;
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,@Nullable ViewGroup parent,@Nullable Bundle saved) { b=FragmentShopBinding.inflate(inflater,parent,false); return b.getRoot(); }
     @Override public void onViewCreated(@NonNull View view,@Nullable Bundle saved) {
         products=new ProductRepository(ApiClient.get(requireContext()).api()); vm=new ViewModelProvider(this).get(ShopViewModel.class);
@@ -88,5 +89,10 @@ public class ShopFragment extends Fragment {
     private Long checkedTag(ChipGroup group) { int id=group.getCheckedChipId(); if(id==View.NO_ID)return null; Object tag=group.findViewById(id).getTag(); return tag instanceof Long?(Long)tag:null; }
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
     private void showError(){if(b!=null)b.error.setText(R.string.network_error);}
+    @Override public void onResume(){
+        super.onResume();
+        if(firstResume){firstResume=false;return;}
+        if(vm!=null)vm.refresh();
+    }
     @Override public void onDestroyView(){super.onDestroyView();b=null;}
 }

@@ -272,4 +272,56 @@ public class StatisticsRepository {
                 "SELECT COUNT(*) FROM purchase_receipts WHERE status='DRAFT'", Long.class);
         return count == null ? 0 : count;
     }
+
+    public StatisticsReport.Engagement engagement(LocalDateTime onlineSince) {
+        String sql = """
+                SELECT
+                  (SELECT COUNT(*) FROM customer_activity a
+                   JOIN customers c ON c.user_id=a.user_id WHERE a.last_seen_at>=:onlineSince) online_customers,
+                  (SELECT COUNT(DISTINCT user_id) FROM customer_cart_items) cart_customers,
+                  (SELECT COUNT(DISTINCT v.product_id) FROM customer_cart_items i
+                   JOIN product_variants v ON v.variant_id=i.variant_id) cart_products,
+                  (SELECT COALESCE(SUM(quantity),0) FROM customer_cart_items) cart_quantity
+                """;
+        return jdbc.queryForObject(sql, new MapSqlParameterSource("onlineSince", onlineSince), (rs, n) ->
+                new StatisticsReport.Engagement(rs.getLong("online_customers"),
+                        rs.getLong("cart_customers"), rs.getLong("cart_products"),
+                        rs.getLong("cart_quantity")));
+    }
+
+    public List<StatisticsReport.OnlineCustomer> onlineCustomers(LocalDateTime onlineSince, int limit) {
+        String sql = """
+                SELECT c.customer_id, c.customer_name, u.username, a.last_seen_at,
+                       COUNT(DISTINCT i.variant_id) distinct_items, COALESCE(SUM(i.quantity),0) quantity
+                FROM customer_activity a
+                JOIN users u ON u.user_id=a.user_id
+                JOIN customers c ON c.user_id=a.user_id
+                LEFT JOIN customer_cart_items i ON i.user_id=a.user_id
+                WHERE a.last_seen_at>=:onlineSince
+                GROUP BY c.customer_id,c.customer_name,u.username,a.last_seen_at
+                ORDER BY a.last_seen_at DESC LIMIT :limit
+                """;
+        var params = new MapSqlParameterSource("onlineSince", onlineSince).addValue("limit", limit);
+        return jdbc.query(sql, params, (rs, n) -> new StatisticsReport.OnlineCustomer(
+                rs.getLong("customer_id"), rs.getString("customer_name"), rs.getString("username"),
+                rs.getTimestamp("last_seen_at").toLocalDateTime(),
+                rs.getLong("distinct_items"), rs.getLong("quantity")));
+    }
+
+    public List<StatisticsReport.CartInterest> cartInterest(int limit) {
+        String sql = """
+                SELECT p.product_id,p.product_name,COUNT(DISTINCT i.user_id) customer_count,
+                       SUM(i.quantity) quantity
+                FROM customer_cart_items i
+                JOIN product_variants v ON v.variant_id=i.variant_id
+                JOIN products p ON p.product_id=v.product_id
+                GROUP BY p.product_id,p.product_name
+                ORDER BY customer_count DESC,quantity DESC,p.product_id
+                LIMIT :limit
+                """;
+        return jdbc.query(sql, new MapSqlParameterSource("limit", limit), (rs, n) ->
+                new StatisticsReport.CartInterest(rs.getLong("product_id"),
+                        rs.getString("product_name"), rs.getLong("customer_count"),
+                        rs.getLong("quantity")));
+    }
 }

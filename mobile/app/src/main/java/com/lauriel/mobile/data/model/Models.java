@@ -33,12 +33,16 @@ public final class Models {
     public static final class Color { public long colorId; public String colorName; }
     public static final class Promotion { public long promotionId; public String promotionName,description,startDate,endDate,status; public BigDecimal discountPercent; }
     public static final class PromotionInfo { public long promotionId; public String promotionName,startDate,endDate; public BigDecimal discountPercent; }
+    public static final class OrderPromotion {
+        public long orderPromotionId; public String promotionName,description,startDate,endDate,status;
+        public BigDecimal minOrderAmount,discountPercent,maxDiscountAmount;
+    }
     public static final class ProductImage {
         public long id; public String url,colorName; public Long colorId; public boolean primary; public int order;
     }
     public static final class Product {
         public long productId; public String productName,description,imgUrl,status;
-        public BigDecimal price,basePrice; public Category category; public List<Variant> variants;
+        public BigDecimal price,basePrice,effectivePrice; public PromotionInfo promotion; public Category category; public List<Variant> variants;
         public List<ProductImage> images;
     }
     public static final class Variant {
@@ -50,6 +54,10 @@ public final class Models {
         public long variantId; public int quantity;
         public Item(long variantId,int quantity){this.variantId=variantId;this.quantity=quantity;}
     }
+    public static final class CartSnapshot {
+        public List<Item> items;
+        public CartSnapshot(List<Item> items){this.items=items;}
+    }
     public static final class Voucher {
         public long voucherId; public String code,voucherName,discountType,startDate,endDate,status;
         public BigDecimal discountValue,minOrderAmount,maxDiscountAmount; public int quantity;
@@ -60,7 +68,12 @@ public final class Models {
     }
     public static final class VoucherPreview {
         public boolean valid; public String code;
-        public BigDecimal orderAmount,discountAmount,shippingFee,finalAmount;
+        public Long orderPromotionId; public String orderPromotionName;
+        public BigDecimal orderAmount,subtotal,productPromotionDiscount,orderPromotionPercent,orderPromotionDiscount,discountAmount,shippingFee,finalAmount;
+    }
+    public static final class OrderPreviewRequest {
+        public List<Item> items; public String voucherCode;
+        public OrderPreviewRequest(List<Item> items,String voucherCode){this.items=items;this.voucherCode=voucherCode;}
     }
     public static final class CheckoutRequest {
         public List<Item> items; public String shippingAddress,voucherCode;
@@ -70,7 +83,7 @@ public final class Models {
     }
     public static final class OrderSummary {
         public long orderId,customerId; public String status,createdAt;
-        public BigDecimal totalAmount,discountAmount,shippingFee,finalAmount;
+        public BigDecimal totalAmount,orderPromotionDiscount,discountAmount,shippingFee,finalAmount;
     }
     public static final class OrderLine {
         public long variantId; public String sku,productName,imageUrl;
@@ -78,8 +91,8 @@ public final class Models {
         public BigDecimal unitPrice,discountAmount,subtotal;
     }
     public static final class Order {
-        public long orderId,customerId; public String status,createdAt,updatedAt,shippingAddress,voucherCode;
-        public BigDecimal totalAmount,discountAmount,shippingFee,finalAmount; public List<OrderLine> items;
+        public long orderId,customerId; public Long orderPromotionId; public String status,createdAt,updatedAt,shippingAddress,voucherCode,orderPromotionName;
+        public BigDecimal totalAmount,orderPromotionDiscount,orderPromotionPercent,discountAmount,shippingFee,finalAmount; public List<OrderLine> items;
     }
     public static final class ApiError { public int status; public String error,message; }
 }

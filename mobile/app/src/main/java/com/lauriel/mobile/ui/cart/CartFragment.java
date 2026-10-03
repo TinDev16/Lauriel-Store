@@ -47,7 +47,7 @@ public class CartFragment extends Fragment {
         @Override public void onFailure(Call<Models.Product> call,Throwable error){}
     });}
     private void render(){
-        var items=cart.items();adapter.submit(items);boolean empty=items.isEmpty();b.emptyContainer.setVisibility(empty?View.VISIBLE:View.GONE);b.list.setVisibility(empty?View.GONE:View.VISIBLE);b.checkout.setEnabled(!empty);b.checkout.setVisibility(empty?View.GONE:View.VISIBLE);b.subtotal.setVisibility(empty?View.GONE:View.VISIBLE);b.note.setVisibility(empty?View.GONE:View.VISIBLE);b.subtotal.setText("Tạm tính: "+Formatters.money(cart.displaySubtotal()));if(requireActivity() instanceof MainActivity)((MainActivity)requireActivity()).updateCartBadge();
+        var items=cart.items();adapter.submit(items);boolean empty=items.isEmpty();b.emptyContainer.setVisibility(empty?View.VISIBLE:View.GONE);b.list.setVisibility(empty?View.GONE:View.VISIBLE);b.checkout.setEnabled(!empty);b.checkout.setVisibility(empty?View.GONE:View.VISIBLE);b.subtotal.setVisibility(empty?View.GONE:View.VISIBLE);b.note.setVisibility(empty?View.GONE:View.VISIBLE);b.subtotal.setText("Tạm tính: "+Formatters.money(cart.displaySubtotal()));if(requireActivity() instanceof MainActivity){((MainActivity)requireActivity()).updateCartBadge();((MainActivity)requireActivity()).syncEngagement();}
     }
     @Override public void onDestroyView(){super.onDestroyView();b=null;}
 }

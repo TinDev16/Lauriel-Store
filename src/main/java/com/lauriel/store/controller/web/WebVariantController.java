@@ -34,14 +34,21 @@ public class WebVariantController {
     @GetMapping
     public String list(@PathVariable Long productId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "12") int size, Model model) {
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) ActiveStatus status,
+            @RequestParam(required = false) Long colorId, Model model) {
         model.addAttribute("product", products.getById(productId));
-        var result = variants.listAdmin(productId, page, size);
+        var result = variants.listAdmin(productId, page, size, keyword, status, colorId);
         var groups = result.content().stream().collect(java.util.stream.Collectors.groupingBy(
                 com.lauriel.store.dto.response.ProductVariantResponse::color,
                 java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
         model.addAttribute("page", result);
         model.addAttribute("variantGroups", groups);
+        model.addAttribute("colors", colors.list());
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("status", status);
+        model.addAttribute("colorId", colorId);
         return "admin/products/variants";
     }
 

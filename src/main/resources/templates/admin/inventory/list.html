@@ -7,7 +7,7 @@
 <p class="text-muted mb-0">Theo dõi tổng tồn của từng sản phẩm và mở chi tiết để xem màu, kích cỡ.</p></div>
 <a class="btn btn-outline-primary" th:href="@{/admin/inventory/transactions}">Lịch sử kho</a>
 </div>
-<form class="card card-body mb-4" method="get" th:action="@{/admin/inventory}">
+<form class="card card-body mb-4" method="get" data-live-filter th:action="@{/admin/inventory}">
 <div class="row g-3 align-items-end">
 <div class="col-lg-7"><label class="form-label fw-semibold" for="inventory-keyword">Tìm theo tên sản phẩm</label>
 <div class="input-group"><span class="input-group-text">⌕</span>
@@ -28,7 +28,7 @@
 <div class="card overflow-hidden"><div class="table-responsive">
 <table class="table table-hover align-middle mb-0"><thead class="table-light"><tr>
 <th>Sản phẩm</th><th class="text-center">Biến thể</th><th class="text-center">Tổng hàng còn</th>
-<th class="text-center">Hết hàng</th><th>Trạng thái</th><th class="text-end">Chi tiết</th>
+<th>Trạng thái</th><th class="text-end">Chi tiết</th>
 </tr></thead><tbody>
 <tr th:each="item:${page.content}">
 <td><div class="d-flex align-items-center gap-3">
@@ -40,13 +40,11 @@
 <td class="text-center"><span class="badge fs-6 px-3 py-2"
     th:classappend="${item.totalQuantity == 0} ? ' text-bg-danger' : (${item.totalQuantity <= 10} ? ' text-bg-warning' : ' text-bg-success')"
     th:text="${item.totalQuantity}"></span></td>
-<td class="text-center"><span th:classappend="${item.outOfStockCount > 0} ? 'text-danger fw-semibold' : 'text-muted'"
-    th:text="${item.outOfStockCount}"></span></td>
 <td th:text="${@view.label(item.status)}"></td>
 <td class="text-end"><a class="btn btn-outline-primary btn-sm"
     th:href="@{/admin/inventory/{id}(id=${item.productId})}">Xem size và màu</a></td>
 </tr>
-<tr th:if="${#lists.isEmpty(page.content)}"><td colspan="6" class="text-center text-muted p-5">
+<tr th:if="${#lists.isEmpty(page.content)}"><td colspan="5" class="text-center text-muted p-5">
 Không tìm thấy sản phẩm phù hợp.</td></tr>
 </tbody></table></div></div>
 <div th:replace="~{fragments/pagination :: pagination}"></div>

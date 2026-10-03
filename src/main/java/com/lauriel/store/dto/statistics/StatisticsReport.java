@@ -26,7 +26,10 @@ public record StatisticsReport(
         List<Voucher> topVouchersByDiscount,
         List<PromotionProduct> topPromotionProducts,
         long newCustomersThisMonth,
-        List<CustomerPoint> newCustomers) {
+        List<CustomerPoint> newCustomers,
+        Engagement engagement,
+        List<OnlineCustomer> onlineCustomers,
+        List<CartInterest> cartInterest) {
 
     public record Range(String preset, LocalDate fromDate, LocalDate toDate, String groupBy, int threshold, int top) {}
     public record Kpis(BigDecimal revenueToday, BigDecimal revenueMonth, BigDecimal revenueYear,
@@ -53,4 +56,7 @@ public record StatisticsReport(
     public record Voucher(long voucherId, String code, long orderCount, BigDecimal discount) {}
     public record PromotionProduct(long productId, String productName, long quantity, BigDecimal discount) {}
     public record CustomerPoint(String label, long count) {}
+    public record Engagement(long onlineCustomers, long customersWithCart, long distinctProductsInCarts, long cartQuantity) {}
+    public record OnlineCustomer(long customerId, String customerName, String username, java.time.LocalDateTime lastSeenAt, long distinctItems, long quantity) {}
+    public record CartInterest(long productId, String productName, long customerCount, long quantity) {}
 }

@@ -67,6 +67,7 @@ public class StatisticsService {
         var promotion = repository.promotions(from, until);
         var discounts = new StatisticsReport.Discounts(orders.voucherDiscount(), promotion.discount(),
                 orders.voucherDiscount().add(promotion.discount()), orders.voucherOrders(), promotion.quantity());
+        LocalDateTime onlineSince = LocalDateTime.now(clock).minusMinutes(5);
         long newCustomersThisMonth = repository.customersCreated(
                 monthStart.atStartOfDay(), today.plusDays(1).atStartOfDay());
 
@@ -88,7 +89,10 @@ public class StatisticsService {
                 repository.topVouchers(from, until, top, true),
                 repository.topPromotionProducts(from, until, top),
                 newCustomersThisMonth,
-                customerSeries(range, repository.customersDaily(from, until)));
+                customerSeries(range, repository.customersDaily(from, until)),
+                repository.engagement(onlineSince),
+                repository.onlineCustomers(onlineSince, top),
+                repository.cartInterest(top));
     }
 
     public StatisticsReport.Range resolve(String preset, LocalDate from, LocalDate to, String groupBy,

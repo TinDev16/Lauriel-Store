@@ -40,6 +40,13 @@ public final class ShopViewModel extends ViewModel {
     }
     public String keyword() { return keyword; } public Long categoryId() { return categoryId; } public Long sizeId() { return sizeId; } public Long colorId() { return colorId; } public String sort() { return sort; }
     public void retry() { if (!loading) loadMore(); }
+    public void refresh() {
+        if (repository == null) return;
+        generation++;
+        if (active != null) active.cancel();
+        products.clear(); page=0; hasMore=true; loading=false;
+        publish(null); loadMore();
+    }
     public void loadMore() {
         if (repository == null || loading || !hasMore) return;
         loading=true; publish(null); int requestGeneration=generation;
@@ -58,7 +65,7 @@ public final class ShopViewModel extends ViewModel {
     }
     private void publish(String error) {
         List<Models.Product> visible=new ArrayList<>(products);
-        Comparator<Models.Product> price=Comparator.comparing(p -> p.price == null ? BigDecimal.ZERO : p.price);
+        Comparator<Models.Product> price=Comparator.comparing(p -> p.effectivePrice != null ? p.effectivePrice : (p.price == null ? BigDecimal.ZERO : p.price));
         if ("PRICE_ASC".equals(sort)) visible.sort(price); else if ("PRICE_DESC".equals(sort)) visible.sort(price.reversed());
         state.setValue(new State(Collections.unmodifiableList(visible),loading,hasMore,error));
     }

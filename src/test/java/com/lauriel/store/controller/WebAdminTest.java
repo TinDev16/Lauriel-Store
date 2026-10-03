@@ -57,6 +57,7 @@ class WebAdminTest {
     @Autowired VoucherRepository vouchers;
     @Autowired PromotionRepository promotions;
     @Autowired PromotionProductRepository associations;
+    @Autowired PromotionVariantRepository variantPromotions;
     @Autowired CustomerRepository customers;
     @Autowired UserRepository users;
     @Autowired RoleRepository roles;
@@ -88,7 +89,7 @@ class WebAdminTest {
         tx.executeWithoutResult(s -> {
             history.deleteAllInBatch();orderItems.deleteAllInBatch();orders.deleteAllInBatch();
             receiptItems.deleteAllInBatch();receipts.deleteAllInBatch();suppliers.deleteAllInBatch();
-            associations.deleteAllInBatch();promotions.deleteAllInBatch();vouchers.deleteAllInBatch();
+            variantPromotions.deleteAllInBatch();associations.deleteAllInBatch();promotions.deleteAllInBatch();vouchers.deleteAllInBatch();
             variants.deleteAllInBatch();products.deleteAllInBatch();categories.deleteAllInBatch();sizes.deleteAllInBatch();colors.deleteAllInBatch();
             customers.deleteAllInBatch();users.deleteAllInBatch();
             for(String role:List.of("ADMIN","STAFF","CUSTOMER")) {
@@ -208,7 +209,8 @@ class WebAdminTest {
     }
     @ParameterizedTest @ValueSource(strings={"/assets/css/main.css","/assets/css/admin.css","/assets/js/admin.js",
             "/assets/libs/bootstrap/css/bootstrap.min.css","/assets/libs/bootstrap/js/bootstrap.bundle.min.js",
-            "/assets/libs/bootstrap-icons/bootstrap-icons.css","/assets/libs/bootstrap-icons/fonts/bootstrap-icons.woff2","/assets/images/favicon.ico"})
+            "/assets/libs/bootstrap-icons/bootstrap-icons.css","/assets/libs/bootstrap-icons/fonts/bootstrap-icons.woff2","/assets/images/favicon.ico",
+            "/assets/js/receipt-item-picker.js","/assets/js/inventory-variant-filter.js"})
     void assetsArePublic(String path) throws Exception {mvc.perform(get(path)).andExpect(status().isOk());}
     @Test void anonymousRedirectsToLogin() throws Exception {
         mvc.perform(get("/admin")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
@@ -272,6 +274,24 @@ class WebAdminTest {
                 .matcher(result.getResponse().getContentAsString());
         while(forms.find()) assertThat(forms.group(1)).contains("name=\"_csrf\"");
         }
+    }
+    @Test void adminListFiltersRenderAndQueryServerSide() throws Exception {
+        mvc.perform(admin(get("/admin/purchase-receipts").param("keyword","Web").param("status","DRAFT")))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Tìm phiếu nhập")));
+        mvc.perform(admin(get("/admin/suppliers").param("keyword","Web").param("status","ACTIVE"))).andExpect(status().isOk());
+        mvc.perform(admin(get("/admin/customers").param("keyword","Web").param("status","ACTIVE"))).andExpect(status().isOk());
+        mvc.perform(admin(get("/admin/vouchers").param("keyword","WEB").param("discountType","PERCENT"))).andExpect(status().isOk());
+        mvc.perform(admin(get("/admin/promotions").param("keyword","Web").param("status","ACTIVE"))).andExpect(status().isOk());
+        mvc.perform(admin(get("/admin/orders").param("keyword","Web"))).andExpect(status().isOk());
+        mvc.perform(admin(get("/admin/inventory/transactions").param("keyword","WEB-SKU"))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("data-product-select")))
+                .andExpect(content().string(containsString("Web shirt")))
+                .andExpect(content().string(containsString("data-size-select")))
+                .andExpect(content().string(containsString("data-color-select")))
+                .andExpect(content().string(containsString("data-variant-id=\""+variant.getVariantId()+"\"")));
+        mvc.perform(admin(get(productPath()+"/variants").param("keyword","WEB-SKU")
+                .param("status","INACTIVE").param("colorId",variant.getColor().getColorId().toString())))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("WEB-SKU")));
     }
     @Test void productSearchStatusAndPaginationKeepFilters() throws Exception {
         mvc.perform(staff(get("/admin/products").param("keyword","Web").param("status","INACTIVE").param("size","1")))
@@ -379,12 +399,28 @@ class WebAdminTest {
         String path=result.getResponse().getRedirectedUrl();
         long id=Long.parseLong(path.substring(path.lastIndexOf('/')+1));
         assertThat(receipts.findById(id).orElseThrow().getStatus()).isEqualTo(PurchaseReceiptStatus.DRAFT);
-        mvc.perform(staff(get(path))).andExpect(status().isOk());
+        tx.executeWithoutResult(status -> {
+            var selected = variants.findById(variant.getVariantId()).orElseThrow();
+            selected.setPrice(new BigDecimal("275000"));
+            variants.saveAndFlush(selected);
+        });
+        mvc.perform(staff(get(path))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("data-size-select")))
+                .andExpect(content().string(containsString("data-color-select")))
+                .andExpect(content().string(containsString("data-variant-id")))
+                .andExpect(content().string(containsString("data-base-price=\"250000.00\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("data-variant-select"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Kích cỡ, màu sắc và SKU"))));
         mvc.perform(staff(post(path+"/items").with(csrf()).param("variantId",variant.getVariantId().toString()).param("quantity","3").param("unitPrice","100000")))
                 .andExpect(redirectedUrl(path));
         mvc.perform(staff(post(path+"/items/"+variant.getVariantId()).with(csrf()).param("quantity","4").param("unitPrice","100000")))
                 .andExpect(redirectedUrl(path));
         assertThat(variants.findById(variant.getVariantId()).orElseThrow().getQuantity()).isEqualTo(5);
+        mvc.perform(staff(get("/admin/purchase-receipts"))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Web shirt")))
+                .andExpect(content().string(containsString("WEB-SKU")))
+                .andExpect(content().string(containsString("Kích cỡ: M")))
+                .andExpect(content().string(containsString("Màu: Green")));
         mvc.perform(staff(post(path+"/complete").with(csrf()))).andExpect(redirectedUrl(path)).andExpect(flash().attributeExists("successMessage"));
         assertThat(variants.findById(variant.getVariantId()).orElseThrow().getQuantity()).isEqualTo(9);
         mvc.perform(staff(post(path+"/complete").with(csrf()))).andExpect(redirectedUrl(path)).andExpect(flash().attributeExists("errorMessage"));
@@ -449,7 +485,10 @@ class WebAdminTest {
         mvc.perform(promotionForm(promotionPath(),"Updated campaign")).andExpect(redirectedUrl("/admin/promotions"));
         mvc.perform(admin(post(promotionPath()+"/products").with(csrf()).param("productId",product.getProductId().toString())))
                 .andExpect(redirectedUrl(promotionPath()+"/products"));
-        mvc.perform(admin(get(promotionPath()+"/products"))).andExpect(status().isOk()).andExpect(content().string(containsString("Web shirt")));
+        mvc.perform(admin(get(promotionPath()+"/products"))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Web shirt")))
+                .andExpect(content().string(containsString("187.500")))
+                .andExpect(model().attribute("promotionActive",true));
         mvc.perform(admin(post(promotionPath()+"/products").with(csrf()).param("productId",product.getProductId().toString())))
                 .andExpect(flash().attributeExists("errorMessage"));
         mvc.perform(admin(post(promotionPath()+"/products/"+product.getProductId()+"/remove").with(csrf()))).andExpect(redirectedUrl(promotionPath()+"/products"));
@@ -457,6 +496,53 @@ class WebAdminTest {
         mvc.perform(admin(post(promotionPath()+"/status").with(csrf()).param("status","INACTIVE"))).andExpect(redirectedUrl("/admin/promotions"));
         assertThat(promotions.findById(promotion.getPromotionId()).orElseThrow().getStatus()).isEqualTo(ActiveStatus.INACTIVE);
     }
+    @Test void promotionVariantScopeCanSelectSizeColorAndReturnToAllVariants() throws Exception {
+        mvc.perform(admin(post(promotionPath()+"/products").with(csrf())
+                        .param("productId",product.getProductId().toString())))
+                .andExpect(redirectedUrl(promotionPath()+"/products"));
+
+        String scopePath=promotionPath()+"/products/"+product.getProductId()+"/variants";
+        mvc.perform(admin(get(scopePath))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Size M")))
+                .andExpect(content().string(containsString("Green")))
+                .andExpect(content().string(containsString("data-variant-picker")))
+                .andExpect(content().string(containsString("data-size-choice")))
+                .andExpect(content().string(containsString("data-color-choice")))
+                .andExpect(content().string(containsString("name=\"variantIds\"")));
+
+        mvc.perform(admin(post(scopePath).with(csrf()).param("scope","SELECTED")
+                        .param("variantIds",variant.getVariantId().toString())))
+                .andExpect(redirectedUrl(scopePath));
+        assertThat(variantPromotions.findSelectedVariantIds(promotion.getPromotionId(),product.getProductId()))
+                .containsExactly(variant.getVariantId());
+
+        mvc.perform(admin(post(scopePath).with(csrf()).param("scope","ALL")))
+                .andExpect(redirectedUrl(scopePath));
+        assertThat(variantPromotions.findSelectedVariantIds(promotion.getPromotionId(),product.getProductId())).isEmpty();
+    }
+    @Test void promotionProductPickerFiltersCategoryAndAddsMultipleProducts() throws Exception {
+        Long secondId=tx.execute(status -> {
+            var second=new Product();second.setProductName("Second web shirt");
+            second.setCategory(categories.findById(category.getCategoryId()).orElseThrow());
+            second.setPrice(new BigDecimal("310000"));second.setStatus(ActiveStatus.ACTIVE);
+            return products.saveAndFlush(second).getProductId();
+        });
+        mvc.perform(admin(get(promotionPath()+"/products")
+                        .param("categoryId",category.getCategoryId().toString())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("data-product-selection")))
+                .andExpect(content().string(containsString("data-select-all")))
+                .andExpect(content().string(containsString("Web shirt")))
+                .andExpect(content().string(containsString("Second web shirt")))
+                .andExpect(model().attribute("categoryId",category.getCategoryId()));
+        mvc.perform(admin(post(promotionPath()+"/products").with(csrf())
+                        .param("productIds",product.getProductId().toString(),secondId.toString())
+                        .param("categoryId",category.getCategoryId().toString())))
+                .andExpect(redirectedUrl(promotionPath()+"/products?categoryId="+category.getCategoryId()));
+        assertThat(associations.findLinkedProductIds(promotion.getPromotionId(),
+                List.of(product.getProductId(),secondId))).containsExactlyInAnyOrder(product.getProductId(),secondId);
+    }
+
     @Test void customerListHandlesUnlinkedAccount() throws Exception {
         mvc.perform(staff(get("/admin/customers"))).andExpect(status().isOk()).andExpect(content().string(containsString("Walk-in customer")))
                 .andExpect(content().string(containsString("Chưa liên kết tài khoản")));

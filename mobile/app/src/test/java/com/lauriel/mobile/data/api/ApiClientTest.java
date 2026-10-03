@@ -64,6 +64,16 @@ public class ApiClientTest {
         var request=server.takeRequest();assertEquals("/api/vouchers/validate",request.getPath());
         assertEquals("{\"code\":\"WEB10\",\"items\":[{\"variantId\":15,\"quantity\":2}]}",request.getBody().readUtf8());
     }
+    @Test public void pricingPreviewParsesAllBackendDiscountLayers() throws Exception {
+        String json="{\"valid\":true,\"orderAmount\":\"1200000\",\"subtotal\":\"1200000\","
+                +"\"productPromotionDiscount\":\"100000\",\"orderPromotionName\":\"Đơn lớn\","
+                +"\"orderPromotionDiscount\":\"50000\",\"discountAmount\":\"0\","
+                +"\"shippingFee\":\"20000\",\"finalAmount\":\"1170000\"}";
+        Models.VoucherPreview value=new Gson().fromJson(json,Models.VoucherPreview.class);
+        assertEquals(new BigDecimal("100000"),value.productPromotionDiscount);
+        assertEquals(new BigDecimal("50000"),value.orderPromotionDiscount);
+        assertEquals(new BigDecimal("1170000"),value.finalAmount);
+    }
     @Test public void checkoutNeverSendsLocalPricesOrOwner() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(201).setBody("{\"orderId\":42,\"items\":[]}"));
         var result=api("jwt",new AtomicInteger()).checkout(new Models.CheckoutRequest(

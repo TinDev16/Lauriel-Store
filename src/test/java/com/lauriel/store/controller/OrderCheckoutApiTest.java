@@ -21,6 +21,7 @@ import com.lauriel.store.service.*;
 import com.lauriel.store.support.*;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import org.hibernate.SessionFactory;
@@ -33,6 +34,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.*;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.*;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -42,6 +45,7 @@ import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@RecordApplicationEvents
 class OrderCheckoutApiTest {
     private static final String HASH = new BCryptPasswordEncoder().encode("TestPassword123");
     @Autowired private WebApplicationContext context;
@@ -57,11 +61,14 @@ class OrderCheckoutApiTest {
     @Autowired private ColorRepository colors;
     @Autowired private UserRepository users;
     @Autowired private RoleRepository roles;
+    @Autowired private VoucherRepository voucherRepository;
+    @Autowired private OrderPromotionRepository orderPromotionRepository;
     @Autowired private JwtService jwt;
     @Autowired private OrderService service;
     @Autowired private InventoryService inventory;
     @Autowired private ObjectMapper mapper;
     @Autowired private PlatformTransactionManager manager;
+    @Autowired private ApplicationEvents applicationEvents;
     @Autowired private EntityManager entityManager;
     @Autowired private EntityManagerFactory entityManagerFactory;
     private MockMvc mvc;
@@ -96,6 +103,8 @@ class OrderCheckoutApiTest {
             payments.deleteAllInBatch();
             details.deleteAllInBatch();
             orders.deleteAllInBatch();
+            orderPromotionRepository.deleteAllInBatch();
+            voucherRepository.deleteAllInBatch();
             variants.deleteAllInBatch();
             products.deleteAllInBatch();
             categories.deleteAllInBatch();
@@ -194,6 +203,23 @@ class OrderCheckoutApiTest {
         assertThat(history.count()).isZero();
         assertThat(quantity(first)).isEqualTo(5);
         assertThat(quantity(second)).isEqualTo(10);
+    }
+
+    @Test
+    void successfulCheckoutPublishesCompleteOrderCreatedEvent() {
+        var response = service.checkout(request(item(first, 1), item(second, 2)), actor("A"));
+
+        assertThat(applicationEvents.stream(com.lauriel.store.event.OrderCreatedEvent.class).toList())
+                .singleElement()
+                .satisfies(event -> {
+                    assertThat(event.orderId()).isEqualTo(response.orderId());
+                    assertThat(event.customerName()).isEqualTo("A");
+                    assertThat(event.phone()).isEqualTo("0901234567");
+                    assertThat(event.shippingAddress()).isEqualTo("Shipping Snapshot");
+                    assertThat(event.items()).hasSize(2);
+                    assertThat(event.shippingFee()).isEqualByComparingTo("20000.00");
+                    assertThat(event.finalAmount()).isEqualByComparingTo(response.finalAmount());
+                });
     }
 
     @Test
@@ -309,6 +335,36 @@ class OrderCheckoutApiTest {
         assertThat(quantity(first)).isZero();
         assertThat(details.count()).isEqualTo(1);
         assertThat(movements(InventoryTransactionType.SALE)).isEqualTo(1);
+    }
+
+    @Test
+    void orderPromotionRunsBeforeVoucherAndSnapshotsAllAmounts() throws Exception {
+        var now = LocalDateTime.now();
+        var promotion = new OrderPromotion();
+        promotion.setPromotionName("Đơn từ 200"); promotion.setMinOrderAmount(new BigDecimal("200"));
+        promotion.setDiscountPercent(new BigDecimal("10")); promotion.setMaxDiscountAmount(null);
+        promotion.setStartDate(now.minusDays(1)); promotion.setEndDate(now.plusDays(1)); promotion.setStatus(ActiveStatus.ACTIVE);
+        orderPromotionRepository.saveAndFlush(promotion);
+        var voucher = new Voucher(); voucher.setCode("AFTER20"); voucher.setVoucherName("Giảm sau ngưỡng");
+        voucher.setDiscountType(DiscountType.FIXED); voucher.setDiscountValue(new BigDecimal("20"));
+        voucher.setMinOrderAmount(new BigDecimal("200")); voucher.setQuantity(2);
+        voucher.setStartDate(now.minusDays(1)); voucher.setEndDate(now.plusDays(1)); voucher.setStatus(ActiveStatus.ACTIVE);
+        voucherRepository.saveAndFlush(voucher);
+
+        mvc.perform(post("/api/orders/preview").header("Authorization", token("A"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(new OrderPreviewRequest(List.of(item(first, 2)), "AFTER20"))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.orderAmount").value(241))
+                .andExpect(jsonPath("$.orderPromotionDiscount").value(24.1))
+                .andExpect(jsonPath("$.discountAmount").value(20))
+                .andExpect(jsonPath("$.finalAmount").value(20196.9));
+
+        checkout(json(new CheckoutRequest(List.of(item(first, 2)), "City", "AFTER20")), "A")
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.orderPromotionName").value("Đơn từ 200"))
+                .andExpect(jsonPath("$.orderPromotionPercent").value(10))
+                .andExpect(jsonPath("$.orderPromotionDiscount").value(24.1))
+                .andExpect(jsonPath("$.discountAmount").value(20))
+                .andExpect(jsonPath("$.finalAmount").value(20196.9));
     }
 
     @Test

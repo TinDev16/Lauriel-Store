@@ -2,11 +2,16 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Danh mục','categories')}">
 <body><section>
 <div class="mb-3"><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/categories/new}">Thêm danh mục</a></div>
+<form class="card card-body mb-3" data-local-filter><div class="row g-3">
+<div class="col-lg-8"><input class="form-control" type="search" name="keyword" placeholder="Tìm theo tên danh mục..."></div>
+<div class="col-lg-4"><select class="form-select" name="status"><option value="">Tất cả trạng thái</option>
+<option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Ngừng hoạt động</option></select></div></div></form>
 <div class="card"><div class="table-responsive">
 <table class="table table-hover align-middle mb-0">
 <thead><tr><th>ID</th><th>Tên danh mục</th><th>Số sản phẩm</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
 <tbody>
-<tr th:each="r:${items}">
+<tr th:each="r:${items}" data-filter-row
+    th:attr="data-search=${r.categoryName},data-status=${r.status}">
 <td th:text="${r.categoryId}"></td><td th:text="${r.categoryName}"></td>
 <td th:text="${r.productCount}"></td><td th:text="${@view.label(r.status)}"></td>
 <td class="text-nowrap">

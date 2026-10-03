@@ -80,11 +80,18 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             + "order by v.product.productName, v.size.sizeName, v.color.colorName, v.variantId")
     List<ProductVariant> findAllForSelection();
 
-    @Query("select v as variant, p as promotion from ProductVariant v "
-            + "join fetch v.product join fetch v.size join fetch v.color "
+    @Query("select v as variant, productPromotion as productPromotion, variantPromotion as variantPromotion "
+            + "from ProductVariant v join fetch v.product join fetch v.size join fetch v.color "
             + "left join PromotionProduct pp on pp.product = v.product "
-            + "left join pp.promotion p on p.status = :status and p.startDate <= :now and p.endDate >= :now "
-            + "where v.product.productId = :productId and v.status = :status order by v.variantId, p.promotionId")
+            + "left join pp.promotion productPromotion on productPromotion.status=:status "
+            + "and productPromotion.startDate<=:now and productPromotion.endDate>=:now "
+            + "and not exists (select scoped.id.variantId from PromotionVariant scoped "
+            + "where scoped.promotion=productPromotion and scoped.variant.product=v.product) "
+            + "left join PromotionVariant pv on pv.variant=v "
+            + "left join pv.promotion variantPromotion on variantPromotion.status=:status "
+            + "and variantPromotion.startDate<=:now and variantPromotion.endDate>=:now "
+            + "where v.product.productId=:productId and v.status=:status "
+            + "order by v.variantId, productPromotion.promotionId, variantPromotion.promotionId")
     List<VariantPromotionView> findPublicVariantsWithPromotions(Long productId, ActiveStatus status,
             java.time.LocalDateTime now);
     @Query("select v.size.sizeId as sizeId, v.color.colorId as colorId "

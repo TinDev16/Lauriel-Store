@@ -17,6 +17,16 @@ public class CheckoutLayoutTest {
         assertFalse(item.contains("@+id/subtotal"));
         assertFalse(item.contains("@+id/shipping"));
         assertTrue(item.contains("@+id/image"));
+        assertTrue(checkout.contains("@+id/payment_methods"));
+        assertTrue(checkout.contains("@+id/payment_cod"));
+        assertTrue(checkout.contains("@string/payment_method_required"));
+        assertTrue(checkout.contains("@+id/choose_saved_voucher"));
+        assertTrue(checkout.contains("@string/choose_saved_voucher"));
+        assertTrue(checkout.contains("@+id/voucher_entry_card"));
+        assertTrue(checkout.contains("@+id/preview_card"));
+        assertTrue(checkout.contains("@+id/remove_voucher"));
+        assertTrue(checkout.contains("@+id/product_promotion_discount"));
+        assertTrue(item.contains("android:clickable=\"true\""));
     }
     private int count(String source,String token){int result=0,from=0;while((from=source.indexOf(token,from))>=0){result++;from+=token.length();}return result;}
 }

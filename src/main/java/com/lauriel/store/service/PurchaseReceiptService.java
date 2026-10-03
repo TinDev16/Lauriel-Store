@@ -36,8 +36,61 @@ public class PurchaseReceiptService {
 
     @Transactional(readOnly = true)
     public PageResponse<PurchaseReceiptSummaryResponse> list(int page, int size) {
-        return InventoryPagination.response(receipts.findAll(InventoryPagination.page(page, size,
-                Sort.by(Sort.Direction.DESC, "createdAt", "receiptId"))), InventoryMapper::summary);
+        return list(page, size, null, null, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PurchaseReceiptSummaryResponse> list(int page, int size, String keyword,
+            PurchaseReceiptStatus status, java.time.LocalDateTime from, java.time.LocalDateTime to) {
+        return InventoryPagination.response(filteredPage(page, size, keyword, status, from, to),
+                InventoryMapper::summary);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PurchaseReceiptListResponse> listDetailed(int page, int size, String keyword,
+            PurchaseReceiptStatus status, java.time.LocalDateTime from, java.time.LocalDateTime to) {
+        var result = filteredPage(page, size, keyword, status, from, to);
+        var receiptIds = result.getContent().stream().map(PurchaseReceipt::getReceiptId).toList();
+        var receiptItems = receiptIds.isEmpty() ? java.util.List.<PurchaseReceiptDetail>of()
+                : items.findListItems(receiptIds);
+        var itemsByReceipt = receiptItems.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        item -> item.getId().getReceiptId(),
+                        java.util.LinkedHashMap::new,
+                        java.util.stream.Collectors.toList()));
+        return InventoryPagination.response(result,
+                receipt -> InventoryMapper.listItem(receipt,
+                        itemsByReceipt.getOrDefault(receipt.getReceiptId(), java.util.List.of())));
+    }
+
+    private org.springframework.data.domain.Page<PurchaseReceipt> filteredPage(int page, int size, String keyword,
+            PurchaseReceiptStatus status, java.time.LocalDateTime from, java.time.LocalDateTime to) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new BadRequestException("Thời gian bắt đầu phải trước hoặc bằng thời gian kết thúc");
+        }
+        String term = keyword == null || keyword.isBlank() ? null : keyword.strip().toLowerCase(java.util.Locale.ROOT);
+        org.springframework.data.jpa.domain.Specification<PurchaseReceipt> filter = (root, query, builder) -> {
+            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (status != null) predicates.add(builder.equal(root.get("status"), status));
+            if (from != null) predicates.add(builder.greaterThanOrEqualTo(root.get("createdAt"), from));
+            if (to != null) predicates.add(builder.lessThanOrEqualTo(root.get("createdAt"), to));
+            if (term != null) {
+                String pattern = "%" + term + "%";
+                var supplierName = builder.like(builder.lower(root.get("supplier").get("supplierName")), pattern);
+                var username = builder.like(builder.lower(root.get("user").get("username")), pattern);
+                var fullName = builder.like(builder.lower(root.get("user").get("fullName")), pattern);
+                jakarta.persistence.criteria.Predicate match = builder.or(supplierName, username, fullName);
+                try {
+                    match = builder.or(match, builder.equal(root.get("receiptId"), Long.valueOf(term.replace("pn-", ""))));
+                } catch (NumberFormatException ignored) {
+                    // The keyword is textual.
+                }
+                predicates.add(match);
+            }
+            return builder.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+        return receipts.findAll(filter, InventoryPagination.page(page, size,
+                Sort.by(Sort.Direction.DESC, "createdAt", "receiptId")));
     }
 
     @Transactional(readOnly = true)

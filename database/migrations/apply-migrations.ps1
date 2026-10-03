@@ -28,36 +28,19 @@ try {
         "--database=$Database",
         '--default-character-set=utf8mb4'
     )
-
-    $stateQuery = "SELECT CONCAT((SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='categories'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='products' AND COLUMN_NAME='category_id'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='orders' AND COLUMN_NAME='shipping_fee'), ':', (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='product_images'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='product_images' AND COLUMN_NAME='size_id'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='product_images' AND COLUMN_NAME='color_id'));"
+    $stateQuery = "SELECT CONCAT((SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='categories'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='products' AND COLUMN_NAME='category_id'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='orders' AND COLUMN_NAME='shipping_fee'), ':', (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='product_images'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='product_images' AND COLUMN_NAME='size_id'), ':', (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='product_images' AND COLUMN_NAME='color_id'), ':', (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='customer_activity'), ':', (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='customer_cart_items'), ':', (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='promotion_variants'), ':', (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$Database' AND TABLE_NAME='order_promotions'));"
     $state = & $mysql @commonArguments --batch --skip-column-names --execute=$stateQuery
     if ($LASTEXITCODE -ne 0) { throw 'Could not connect to MySQL with the supplied administrator account.' }
 
-    if ($state -eq '1:1:1:1:0:1') {
-        Write-Host 'V2-V6 are already fully applied. No changes were made.' -ForegroundColor Green
-        exit 0
-    }
-
-    if ($state -eq '1:1:1:1:1:0') {
-        $pendingMigrations = @('V6__change_product_image_size_to_color.sql')
-    }
-    elseif ($state -eq '1:1:1:1:0:0') {
-        $pendingMigrations = @(
-            'V5__add_product_image_size.sql',
-            'V6__change_product_image_size_to_color.sql'
-        )
-    }
-    elseif ($state -eq '0:0:0:0:0:0') {
-        $pendingMigrations = @(
-            'V2__add_product_categories.sql',
-            'V3__add_shipping_fee.sql',
-            'V4__add_product_images.sql',
-            'V5__add_product_image_size.sql',
-            'V6__change_product_image_size_to_color.sql'
-        )
-    }
-    else {
-        throw "Schema is partially migrated ($state). Inspect it manually before continuing."
+    switch ($state) {
+        '1:1:1:1:0:1:1:1:1:1' { Write-Host 'V2-V9 are already fully applied. No changes were made.' -ForegroundColor Green; exit 0 }
+        '1:1:1:1:0:1:1:1:1:0' { $pendingMigrations = @('V9__add_order_promotions.sql') }
+        '1:1:1:1:0:1:1:1:0:0' { $pendingMigrations = @('V8__add_promotion_variants.sql','V9__add_order_promotions.sql') }
+        '1:1:1:1:0:1:0:0:0:0' { $pendingMigrations = @('V7__add_customer_engagement.sql','V8__add_promotion_variants.sql','V9__add_order_promotions.sql') }
+        '1:1:1:1:1:0:0:0:0:0' { $pendingMigrations = @('V6__change_product_image_size_to_color.sql','V7__add_customer_engagement.sql','V8__add_promotion_variants.sql','V9__add_order_promotions.sql') }
+        '1:1:1:1:0:0:0:0:0:0' { $pendingMigrations = @('V5__add_product_image_size.sql','V6__change_product_image_size_to_color.sql','V7__add_customer_engagement.sql','V8__add_promotion_variants.sql','V9__add_order_promotions.sql') }
+        '0:0:0:0:0:0:0:0:0:0' { $pendingMigrations = @('V2__add_product_categories.sql','V3__add_shipping_fee.sql','V4__add_product_images.sql','V5__add_product_image_size.sql','V6__change_product_image_size_to_color.sql','V7__add_customer_engagement.sql','V8__add_promotion_variants.sql','V9__add_order_promotions.sql') }
+        default { throw "Schema is partially migrated ($state). Inspect it manually before continuing." }
     }
 
     foreach ($name in $pendingMigrations) {
@@ -68,10 +51,10 @@ try {
     }
 
     $verified = & $mysql @commonArguments --batch --skip-column-names --execute=$stateQuery
-    if ($LASTEXITCODE -ne 0 -or $verified -ne '1:1:1:1:0:1') {
+    if ($LASTEXITCODE -ne 0 -or $verified -ne '1:1:1:1:0:1:1:1:1:1') {
         throw "Could not verify schema after migration: $verified"
     }
-    Write-Host 'V2-V6 are fully applied.' -ForegroundColor Green
+    Write-Host 'V2-V9 are fully applied.' -ForegroundColor Green
 }
 finally {
     Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue

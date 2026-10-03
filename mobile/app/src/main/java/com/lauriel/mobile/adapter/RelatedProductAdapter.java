@@ -9,7 +9,7 @@ import com.lauriel.mobile.R;
 import com.lauriel.mobile.data.api.ApiClient;
 import com.lauriel.mobile.data.model.Models;
 import com.lauriel.mobile.databinding.ItemRelatedProductBinding;
-import com.lauriel.mobile.util.Formatters;
+import com.lauriel.mobile.util.ProductPriceView;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +22,7 @@ public final class RelatedProductAdapter extends RecyclerView.Adapter<RelatedPro
         return new Holder(ItemRelatedProductBinding.inflate(LayoutInflater.from(p.getContext()),p,false));
     }
     @Override public void onBindViewHolder(@NonNull Holder h,int pos){
-        var p=items.get(pos);h.b.name.setText(p.productName);h.b.price.setText(Formatters.money(p.price));
+        var p=items.get(pos);h.b.name.setText(p.productName);ProductPriceView.bind(p,h.b.effectivePrice,h.b.price,h.b.promotion);
         Glide.with(h.b.image).load(ApiClient.imageUrl(p.imgUrl)).placeholder(R.drawable.image_placeholder)
                 .error(R.drawable.image_placeholder).centerCrop().into(h.b.image);
         h.b.getRoot().setOnClickListener(v->open.open(p.productId));

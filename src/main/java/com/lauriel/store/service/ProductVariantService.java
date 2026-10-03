@@ -116,11 +116,31 @@ public class ProductVariantService {
     }
     @Transactional(readOnly = true)
     public com.lauriel.store.dto.response.PageResponse<ProductVariantResponse> listAdmin(Long productId,int page,int size) {
+        return listAdmin(productId, page, size, null, null, null);
+    }
+    @Transactional(readOnly = true)
+    public com.lauriel.store.dto.response.PageResponse<ProductVariantResponse> listAdmin(Long productId,int page,int size,
+            String keyword, ActiveStatus status, Long colorId) {
         if (!products.existsById(productId)) throw new ResourceNotFoundException("Không tìm thấy sản phẩm");
-        var result = variants.findByProduct_ProductId(productId, InventoryPagination.page(page, size,
+        org.springframework.data.jpa.domain.Specification<ProductVariant> filter = (root, query, builder) -> {
+            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            predicates.add(builder.equal(root.get("product").get("productId"), productId));
+            if (status != null) predicates.add(builder.equal(root.get("status"), status));
+            if (colorId != null) predicates.add(builder.equal(root.get("color").get("colorId"), colorId));
+            if (keyword != null && !keyword.isBlank()) {
+                String term = "%" + keyword.strip().toLowerCase(java.util.Locale.ROOT) + "%";
+                predicates.add(builder.or(
+                        builder.like(builder.lower(root.get("sku")), term),
+                        builder.like(builder.lower(root.get("size").get("sizeName")), term),
+                        builder.like(builder.lower(root.get("color").get("colorName")), term)));
+            }
+            return builder.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+        var result = variants.findAll(filter, InventoryPagination.page(page, size,
                 org.springframework.data.domain.Sort.by(
                         org.springframework.data.domain.Sort.Order.asc("color.colorName"),
                         org.springframework.data.domain.Sort.Order.asc("color.colorId"),
+                        org.springframework.data.domain.Sort.Order.asc("status"),
                         org.springframework.data.domain.Sort.Order.asc("size.sizeName"),
                         org.springframework.data.domain.Sort.Order.asc("size.sizeId"),
                         org.springframework.data.domain.Sort.Order.asc("variantId"))));

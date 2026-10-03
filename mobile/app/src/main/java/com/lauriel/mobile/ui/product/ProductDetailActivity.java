@@ -37,6 +37,7 @@ public class ProductDetailActivity extends BaseActivity {
     private ProductRepository repository;
     private ProductImageAdapter imageAdapter;
     private RelatedProductAdapter relatedAdapter;
+    private boolean firstResume=true;
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -60,6 +61,13 @@ public class ProductDetailActivity extends BaseActivity {
         long id=getIntent().getLongExtra("productId",-1);
         if(id<=0){finish();return;}
         load(id);
+    }
+
+    @Override protected void onResume(){
+        super.onResume();
+        if(firstResume){firstResume=false;return;}
+        long id=getIntent().getLongExtra("productId",-1);
+        if(id>0)load(id);
     }
 
     private void load(long id){
@@ -149,6 +157,18 @@ public class ProductDetailActivity extends BaseActivity {
             BigDecimal price=variant==null?product.basePrice:
                     (variant.effectivePrice==null?variant.price:variant.effectivePrice);
             sheet.price.setText(Formatters.money(price));
+            boolean sale=variant!=null&&variant.promotion!=null&&variant.price!=null&&price!=null
+                    && price.compareTo(variant.price)<0;
+            if(sale){
+                sheet.originalPrice.setText(Formatters.money(variant.price));
+                sheet.originalPrice.setPaintFlags(sheet.originalPrice.getPaintFlags()|Paint.STRIKE_THRU_TEXT_FLAG);
+                sheet.originalPrice.setVisibility(View.VISIBLE);
+                sheet.promotion.setText("-"+variant.promotion.discountPercent.stripTrailingZeros().toPlainString()+"%");
+                sheet.promotion.setVisibility(View.VISIBLE);
+            }else{
+                sheet.originalPrice.setVisibility(View.GONE);
+                sheet.promotion.setVisibility(View.GONE);
+            }
             Glide.with(sheet.image).load(ApiClient.imageUrl(imageForColor(selection.colorId())))
                     .placeholder(R.drawable.image_placeholder).error(R.drawable.image_placeholder)
                     .centerCrop().into(sheet.image);

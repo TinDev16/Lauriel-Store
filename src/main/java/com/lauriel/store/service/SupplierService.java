@@ -20,8 +20,25 @@ public class SupplierService {
 
     @Transactional(readOnly = true)
     public PageResponse<SupplierResponse> list(int page, int size) {
-        return InventoryPagination.response(suppliers.findAll(InventoryPagination.page(page, size,
-                Sort.by("supplierId"))), InventoryMapper::supplier);
+        return list(page, size, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<SupplierResponse> list(int page, int size, String keyword,
+            com.lauriel.store.entity.enums.ActiveStatus status) {
+        String term = keyword == null || keyword.isBlank() ? null : "%" + keyword.strip().toLowerCase(java.util.Locale.ROOT) + "%";
+        org.springframework.data.jpa.domain.Specification<Supplier> filter = (root, query, builder) -> {
+            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (status != null) predicates.add(builder.equal(root.get("status"), status));
+            if (term != null) predicates.add(builder.or(
+                    builder.like(builder.lower(root.get("supplierName")), term),
+                    builder.like(builder.lower(root.get("phone")), term),
+                    builder.like(builder.lower(root.get("email")), term),
+                    builder.like(builder.lower(root.get("address")), term)));
+            return builder.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+        return InventoryPagination.response(suppliers.findAll(filter, InventoryPagination.page(page, size,
+                Sort.by(Sort.Order.asc("status"), Sort.Order.asc("supplierId")))), InventoryMapper::supplier);
     }
 
     @Transactional(readOnly = true)

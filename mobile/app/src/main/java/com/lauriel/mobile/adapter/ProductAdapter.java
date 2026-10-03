@@ -12,7 +12,7 @@ import com.lauriel.mobile.R;
 import com.lauriel.mobile.data.api.ApiClient;
 import com.lauriel.mobile.data.model.Models;
 import com.lauriel.mobile.databinding.ItemProductBinding;
-import com.lauriel.mobile.util.Formatters;
+import com.lauriel.mobile.util.ProductPriceView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,7 +28,7 @@ public final class ProductAdapter extends ListAdapter<Models.Product, ProductAda
     @Override public void onBindViewHolder(@NonNull Holder holder, int position) {
         Models.Product p = getItem(position);
         holder.b.name.setText(p.productName);
-        holder.b.price.setText(Formatters.money(p.price));
+        ProductPriceView.bind(p, holder.b.effectivePrice, holder.b.price, holder.b.promotion);
         Glide.with(holder.b.image).load(ApiClient.imageUrl(p.imgUrl)).placeholder(R.drawable.image_placeholder)
                 .error(R.drawable.image_placeholder).centerCrop().transition(DrawableTransitionOptions.withCrossFade(180)).into(holder.b.image);
         holder.b.image.setContentDescription(p.productName);
@@ -42,7 +42,10 @@ public final class ProductAdapter extends ListAdapter<Models.Product, ProductAda
         @Override public boolean areItemsTheSame(@NonNull Models.Product a, @NonNull Models.Product b) { return a.productId == b.productId; }
         @Override public boolean areContentsTheSame(@NonNull Models.Product a, @NonNull Models.Product b) {
             return Objects.equals(a.productName, b.productName) && Objects.equals(a.imgUrl, b.imgUrl)
-                    && Objects.equals(a.price, b.price) && Objects.equals(a.status, b.status);
+                    && Objects.equals(a.price, b.price) && Objects.equals(a.effectivePrice, b.effectivePrice)
+                    && Objects.equals(a.promotion == null ? null : a.promotion.promotionId,
+                            b.promotion == null ? null : b.promotion.promotionId)
+                    && Objects.equals(a.status, b.status);
         }
     };
 }

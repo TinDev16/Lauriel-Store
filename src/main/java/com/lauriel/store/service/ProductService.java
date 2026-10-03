@@ -54,7 +54,11 @@ public class ProductService {
         var result = productRepository.findBy(
                 ProductSpecifications.activeCatalog(keyword, categoryId, sizeId, colorId),
                 query -> query.as(ProductSummaryView.class).page(pageable));
-        var content = result.getContent().stream().map(this::summary).toList();
+        var basePrices = result.getContent().stream().collect(java.util.stream.Collectors.toMap(
+                ProductSummaryView::getProductId, ProductSummaryView::getPrice));
+        var prices = pricing.priceProducts(basePrices, pricing.now());
+        var content = result.getContent().stream().map(product -> summary(product,
+                prices.get(product.getProductId()))).toList();
         return new PageResponse<>(content, result.getNumber(), result.getSize(),
                 result.getTotalElements(), result.getTotalPages());
     }
@@ -82,9 +86,17 @@ public class ProductService {
         var current = productRepository.findByProductIdAndStatusAndCategory_Status(
                         productId, ActiveStatus.ACTIVE, ActiveStatus.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm"));
-        return productRepository.findRelated(productId, current.getCategory().getCategoryId(), ActiveStatus.ACTIVE,
-                        PageRequest.of(0, limit))
-                .stream().map(CatalogMapper::productSummary).toList();
+        var related = productRepository.findRelated(productId, current.getCategory().getCategoryId(),
+                ActiveStatus.ACTIVE, PageRequest.of(0, limit));
+        var basePrices = related.stream().collect(java.util.stream.Collectors.toMap(
+                Product::getProductId, Product::getPrice));
+        var prices = pricing.priceProducts(basePrices, pricing.now());
+        return related.stream().map(product -> {
+            var price = prices.get(product.getProductId());
+            return new ProductSummaryResponse(product.getProductId(), product.getProductName(),
+                    CatalogMapper.category(product.getCategory()), product.getPrice(), product.getImgUrl(),
+                    product.getStatus(), price.effectivePrice(), price.promotion());
+        }).toList();
     }
 
     @Transactional
@@ -128,7 +140,8 @@ public class ProductService {
             }
             return cb.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
         };
-        var pageable = InventoryPagination.page(page, size, Sort.by(Sort.Direction.DESC, "productId"));
+        var pageable = InventoryPagination.page(page, size, Sort.by(
+                Sort.Order.asc("status"), Sort.Order.desc("productId")));
         var result = productRepository.findBy(filter,
                 query -> query.as(ProductSummaryView.class).page(pageable));
         var content = result.getContent().stream().map(this::summary).toList();
@@ -136,6 +149,13 @@ public class ProductService {
                 result.getTotalElements(), result.getTotalPages());
     }
 
+    private ProductSummaryResponse summary(ProductSummaryView product, PriceCalculation price) {
+        var category = product.getCategory();
+        return new ProductSummaryResponse(product.getProductId(), product.getProductName(),
+                new CategorySummaryResponse(category.getCategoryId(), category.getCategoryName()),
+                product.getPrice(), product.getImgUrl(), product.getStatus(),
+                price.effectivePrice(), price.promotion());
+    }
     private ProductSummaryResponse summary(ProductSummaryView product) {
         var category = product.getCategory();
         return new ProductSummaryResponse(product.getProductId(), product.getProductName(),

@@ -29,6 +29,7 @@ import org.springframework.web.context.WebApplicationContext;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 class StatisticsServiceTest {
     @Autowired StatisticsService statistics;
+    @Autowired CustomerEngagementService engagement;
     @Autowired JdbcTemplate jdbc;
     @Autowired WebApplicationContext context;
     private MockMvc mvc;
@@ -49,7 +50,7 @@ class StatisticsServiceTest {
     void reset() {
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
         today = LocalDate.now(ZoneId.systemDefault());
-        for (String table : new String[] {"purchase_receipt_details", "purchase_receipts",
+        for (String table : new String[] {"customer_cart_items", "customer_activity", "purchase_receipt_details", "purchase_receipts",
                 "order_details", "orders", "product_variants", "products", "categories", "sizes", "colors",
                 "customers", "vouchers", "suppliers", "users"}) {
             jdbc.execute("DELETE FROM " + table);
@@ -193,5 +194,33 @@ class StatisticsServiceTest {
         mvc.perform(get("/admin/statistics").with(user("admin").roles("ADMIN"))
                 .param("fromDate", today.toString()).param("toDate", today.minusDays(1).toString()))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void tracksOnlineCustomersAndServerCartSnapshot() {
+        seed();
+        jdbc.update("INSERT INTO users(user_id,role_id,username,password_hash,full_name,status) "
+                + "SELECT 102,role_id,'online-customer','hash','Binh','ACTIVE' FROM roles WHERE role_name='CUSTOMER'");
+        jdbc.update("UPDATE customers SET user_id=102 WHERE customer_id=102");
+
+        engagement.syncCart(102, new com.lauriel.store.dto.request.CartSnapshotRequest(java.util.List.of(
+                new com.lauriel.store.dto.request.CheckoutItemRequest(201L, 2),
+                new com.lauriel.store.dto.request.CheckoutItemRequest(203L, 1))));
+
+        var result = report();
+        assertThat(result.engagement().onlineCustomers()).isEqualTo(1);
+        assertThat(result.engagement().customersWithCart()).isEqualTo(1);
+        assertThat(result.engagement().distinctProductsInCarts()).isEqualTo(1);
+        assertThat(result.engagement().cartQuantity()).isEqualTo(3);
+        assertThat(result.onlineCustomers()).singleElement()
+                .satisfies(customer -> assertThat(customer.username()).isEqualTo("online-customer"));
+        assertThat(result.cartInterest()).singleElement()
+                .satisfies(product -> {
+                    assertThat(product.customerCount()).isEqualTo(1);
+                    assertThat(product.quantity()).isEqualTo(3);
+                });
+
+        engagement.syncCart(102, new com.lauriel.store.dto.request.CartSnapshotRequest(java.util.List.of()));
+        assertThat(report().engagement().customersWithCart()).isZero();
     }
 }

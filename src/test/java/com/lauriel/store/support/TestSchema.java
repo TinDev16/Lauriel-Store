@@ -38,9 +38,11 @@ public final class TestSchema {
         definitions.put("products", products);
 
         String orders = definitions.get("orders");
-        orders = orders.replace("  `discount_amount` decimal(14,2) NOT NULL DEFAULT '0.00',",
-                "  `discount_amount` decimal(14,2) NOT NULL DEFAULT '0.00',\n"
-                        + "  `shipping_fee` decimal(14,2) NOT NULL DEFAULT '20000.00',");
+        if (!orders.contains("`shipping_fee`")) {
+            orders = orders.replace("  `discount_amount` decimal(14,2) NOT NULL DEFAULT '0.00',",
+                    "  `discount_amount` decimal(14,2) NOT NULL DEFAULT '0.00',\n"
+                            + "  `shipping_fee` decimal(14,2) NOT NULL DEFAULT '20000.00',");
+        }
         definitions.put("orders", orders);
 
         definitions.put("product_images", """

@@ -2,35 +2,50 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Lịch sử kho','inventory/transactions')}">
 <body>
 <section>
-<form class="row g-2 mb-3" method="get" th:action="@{/admin/inventory/transactions}">
-<div class="col-md-2">
-<label class="form-label">Loại</label>
-<select name="type" class="form-select">
-<option value="">Tất cả</option>
-<option th:each="s:${transactionTypes}" th:value="${s}" th:text="${@view.label(s)}" th:selected="${s == type}">
-</option>
-</select>
-</div>
-<div class="col-md-4">
-<label class="form-label" for="variantId">Sản phẩm / biến thể</label>
-<select id="variantId" class="form-select" name="variantId">
+<form class="card card-body mb-3" method="get" th:action="@{/admin/inventory/transactions}"
+      data-live-filter data-inventory-variant-filter>
+<div class="row g-3 align-items-end">
+<div class="col-lg-4"><label class="form-label" for="transaction-keyword">Tìm giao dịch</label>
+<input id="transaction-keyword" class="form-control" type="search" name="keyword"
+       placeholder="Tên sản phẩm, SKU, tham chiếu..." th:value="${keyword}"></div>
+<div class="col-lg-2"><label class="form-label" for="transaction-type">Loại giao dịch</label>
+<select id="transaction-type" name="type" class="form-select"><option value="">Tất cả</option>
+<option th:each="item:${transactionTypes}" th:value="${item}" th:text="${@view.label(item)}"
+        th:selected="${item == type}"></option></select></div>
+<div class="col-lg-6"><label class="form-label" for="transaction-product">Sản phẩm</label>
+<select id="transaction-product" class="form-select" data-product-select data-cascade-filter>
 <option value="">Tất cả sản phẩm</option>
-<option th:each="v:${variants}" th:value="${v.variantId}" th:selected="${v.variantId == variantId}"
-        th:text="|${v.productName} · Size ${v.size.sizeName} · ${v.color.colorName}|">
-</option>
-</select>
+<option th:each="item:${inventoryProducts}" th:value="${item.key}" th:text="${item.value}"></option>
+</select></div>
+
+<div class="col-12 mt-4"><div class="border-top pt-3"><h3 class="h6 mb-1">Chọn biến thể tương ứng</h3><p class="text-muted small mb-0">Kích cỡ và màu sắc chỉ hiển thị những tổ hợp đang có trong dữ liệu sản phẩm.</p></div></div>
+<div class="col-lg-4"><label class="form-label" for="transaction-size">Kích cỡ</label>
+<select id="transaction-size" class="form-select" data-size-select data-cascade-filter disabled>
+<option value="">Chọn sản phẩm trước</option></select></div>
+<div class="col-lg-4"><label class="form-label" for="transaction-color">Màu sắc</label>
+<select id="transaction-color" class="form-select" data-color-select data-cascade-filter disabled>
+<option value="">Chọn kích cỡ trước</option></select></div>
+<div class="col-lg-4">
+<input type="hidden" name="variantId" th:value="${variantId}" data-variant-id>
+<div class="border rounded px-3 py-2 bg-body-tertiary h-100">
+<span class="text-muted small d-block">Biến thể tương ứng</span>
+<strong class="small" data-variant-result>Chưa chọn biến thể</strong>
+</div></div>
+
+<div class="d-none" aria-hidden="true">
+<span th:each="variant:${variants}" data-variant-source
+      th:attr="data-variant-id=${variant.variantId},data-product-id=${variant.productId},
+               data-size-id=${variant.size.sizeId},data-size-name=${variant.size.sizeName},
+               data-color-id=${variant.color.colorId},data-color-name=${variant.color.colorName},
+               data-sku=${variant.sku}"></span>
 </div>
-<div class="col-md-3">
-<label class="form-label">Từ</label>
-<input class="form-control" type="datetime-local" name="from" th:value="${from}">
-</div>
-<div class="col-md-3">
-<label class="form-label">Đến</label>
-<input class="form-control" type="datetime-local" name="to" th:value="${to}">
-</div>
-<div class="col-auto">
-<button class="btn btn-primary">Lọc</button>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/inventory/transactions}">Đặt lại</a>
+
+<div class="col-md-4"><label class="form-label" for="transaction-from">Từ thời gian</label>
+<input id="transaction-from" class="form-control" type="datetime-local" name="from" th:value="${from}"></div>
+<div class="col-md-4"><label class="form-label" for="transaction-to">Đến thời gian</label>
+<input id="transaction-to" class="form-control" type="datetime-local" name="to" th:value="${to}"></div>
+<div class="col-md-4 d-flex gap-2"><button class="btn btn-primary flex-grow-1">Lọc lịch sử</button>
+<a class="btn btn-outline-secondary" th:href="@{/admin/inventory/transactions}">Đặt lại</a></div>
 </div>
 </form>
 <div class="card">
@@ -78,6 +93,7 @@
 </div>
 <div th:replace="~{fragments/pagination :: pagination}">
 </div>
+<script th:src="@{/assets/js/inventory-variant-filter.js(v=1)}"></script>
 </section>
 </body>
 </html>

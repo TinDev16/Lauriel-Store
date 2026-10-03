@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
  xmlns:app="http://schemas.android.com/apk/res-auto" style="@style/Card.Lauriel"
- android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/space_sm">
+ android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/space_sm"
+ android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackground">
  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="@dimen/space_12">
   <ImageView android:id="@+id/image" android:layout_width="88dp" android:layout_height="104dp" android:scaleType="centerCrop" android:src="@drawable/image_placeholder" android:contentDescription="@string/product_image"/>
   <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="@dimen/space_12" android:orientation="vertical">

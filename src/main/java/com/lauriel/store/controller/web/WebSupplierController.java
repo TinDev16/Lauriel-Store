@@ -13,8 +13,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class WebSupplierController {
     private final SupplierService suppliers;
     public WebSupplierController(SupplierService suppliers) { this.suppliers=suppliers; }
-    @GetMapping public String list(@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="12") int size,Model m) {
-        m.addAttribute("page",suppliers.list(page,size)); return "admin/suppliers/list";
+    @GetMapping public String list(@RequestParam(defaultValue="0") int page,
+            @RequestParam(defaultValue="12") int size,
+            @RequestParam(required=false) String keyword,
+            @RequestParam(required=false) ActiveStatus status, Model m) {
+        m.addAttribute("page",suppliers.list(page,size,keyword,status));
+        m.addAttribute("keyword",keyword); m.addAttribute("status",status);
+        return "admin/suppliers/list";
     }
     @GetMapping("/new") public String createForm(Model m) { m.addAttribute("form",new SupplierRequest("",null,null,null,ActiveStatus.ACTIVE)); return form(m,null); }
     @GetMapping("/{id}/edit") public String edit(@PathVariable Long id,Model m) {

@@ -155,12 +155,30 @@ UNLOCK TABLES;
 DROP TABLE IF EXISTS `orders`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `order_promotions` (
+  `order_promotion_id` bigint NOT NULL AUTO_INCREMENT,
+  `promotion_name` varchar(200) NOT NULL,
+  `description` text,
+  `min_order_amount` decimal(14,2) NOT NULL,
+  `discount_percent` decimal(5,2) NOT NULL,
+  `max_discount_amount` decimal(14,2) DEFAULT NULL,
+  `start_date` datetime NOT NULL,
+  `end_date` datetime NOT NULL,
+  `status` enum('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+  PRIMARY KEY (`order_promotion_id`),
+  KEY `idx_order_promotions_eligibility` (`status`,`start_date`,`end_date`,`min_order_amount`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `orders` (
   `order_id` bigint NOT NULL AUTO_INCREMENT,
   `customer_id` bigint NOT NULL,
   `voucher_id` bigint DEFAULT NULL,
+  `order_promotion_id` bigint DEFAULT NULL,
   `total_amount` decimal(14,2) NOT NULL DEFAULT '0.00',
   `discount_amount` decimal(14,2) NOT NULL DEFAULT '0.00',
+  `order_promotion_name` varchar(200) DEFAULT NULL,
+  `order_promotion_percent` decimal(5,2) DEFAULT NULL,
+  `order_promotion_discount` decimal(14,2) NOT NULL DEFAULT '0.00',
   `final_amount` decimal(14,2) NOT NULL DEFAULT '0.00',
   `status` enum('PENDING','CONFIRMED','PROCESSING','SHIPPING','DELIVERED','CANCELLED','RETURNED') NOT NULL DEFAULT 'PENDING',
   `shipping_address` text NOT NULL,
@@ -169,8 +187,10 @@ CREATE TABLE `orders` (
   PRIMARY KEY (`order_id`),
   KEY `fk_orders_customer` (`customer_id`),
   KEY `fk_orders_voucher` (`voucher_id`),
+  KEY `idx_orders_order_promotion` (`order_promotion_id`),
   CONSTRAINT `fk_orders_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`customer_id`),
   CONSTRAINT `fk_orders_voucher` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`voucher_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_orders_order_promotion` FOREIGN KEY (`order_promotion_id`) REFERENCES `order_promotions` (`order_promotion_id`),
   CONSTRAINT `chk_orders_discount` CHECK ((`discount_amount` >= 0)),
   CONSTRAINT `chk_orders_final` CHECK ((`final_amount` >= 0)),
   CONSTRAINT `chk_orders_total` CHECK ((`total_amount` >= 0))
@@ -313,6 +333,23 @@ LOCK TABLES `promotion_products` WRITE;
 /*!40000 ALTER TABLE `promotion_products` DISABLE KEYS */;
 /*!40000 ALTER TABLE `promotion_products` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `promotion_variants`
+--
+
+DROP TABLE IF EXISTS `promotion_variants`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `promotion_variants` (
+  `promotion_id` bigint NOT NULL,
+  `variant_id` bigint NOT NULL,
+  PRIMARY KEY (`promotion_id`,`variant_id`),
+  KEY `idx_promotion_variants_variant` (`variant_id`),
+  CONSTRAINT `fk_promotion_variants_promotion` FOREIGN KEY (`promotion_id`) REFERENCES `promotions` (`promotion_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_promotion_variants_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `promotions`
@@ -525,6 +562,36 @@ INSERT INTO `users` VALUES (1,3,'letutin','$2a$10$YAUinqJGXo09HJeTsa8KL.BjIo8RQf
 UNLOCK TABLES;
 
 --
+--
+-- Table structure for table `customer_activity`
+--
+
+DROP TABLE IF EXISTS `customer_activity`;
+CREATE TABLE `customer_activity` (
+  `user_id` bigint NOT NULL,
+  `last_seen_at` datetime NOT NULL,
+  PRIMARY KEY (`user_id`),
+  KEY `idx_customer_activity_last_seen` (`last_seen_at`),
+  CONSTRAINT `fk_customer_activity_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Table structure for table `customer_cart_items`
+--
+
+DROP TABLE IF EXISTS `customer_cart_items`;
+CREATE TABLE `customer_cart_items` (
+  `user_id` bigint NOT NULL,
+  `variant_id` bigint NOT NULL,
+  `quantity` int NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`user_id`,`variant_id`),
+  KEY `idx_customer_cart_variant` (`variant_id`),
+  CONSTRAINT `fk_customer_cart_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_customer_cart_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_customer_cart_quantity` CHECK (`quantity` > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- Table structure for table `vouchers`
 --
 

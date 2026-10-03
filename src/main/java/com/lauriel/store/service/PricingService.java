@@ -11,19 +11,50 @@ import java.time.*;
 import java.util.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 @Service
 public class PricingService {
     private static final BigDecimal HUNDRED = new BigDecimal("100");
     private static final BigDecimal MAX_AMOUNT = new BigDecimal("999999999999.99");
     private final PromotionProductRepository associations;
+    private final PromotionVariantRepository variantAssociations;
     private final ProductVariantRepository variants;
+    private final OrderPromotionRepository orderPromotions;
     private final Clock clock;
 
-    public PricingService(PromotionProductRepository associations, ProductVariantRepository variants, Clock clock) {
+    public PricingService(PromotionProductRepository associations, PromotionVariantRepository variantAssociations,
+            ProductVariantRepository variants, OrderPromotionRepository orderPromotions,
+            @Qualifier("pricingClock") Clock clock) {
         this.associations = associations;
+        this.variantAssociations = variantAssociations;
         this.variants = variants;
+        this.orderPromotions = orderPromotions;
         this.clock = clock;
+    }
+
+    public record OrderPromotionCalculation(OrderPromotion promotion, BigDecimal discount) {
+        public BigDecimal amountAfter(BigDecimal subtotal) { return subtotal.subtract(discount); }
+    }
+
+    @Transactional(readOnly = true)
+    public OrderPromotionCalculation orderPromotion(BigDecimal subtotal, LocalDateTime now) {
+        OrderPromotion best = null;
+        BigDecimal bestDiscount = BigDecimal.ZERO.setScale(2);
+        for (var promotion : orderPromotions.findEligible(ActiveStatus.ACTIVE, now, subtotal)) {
+            if (!active(promotion.getStatus(), promotion.getStartDate(), promotion.getEndDate(), now)
+                    || promotion.getMinOrderAmount().compareTo(subtotal) > 0) continue;
+            BigDecimal discount = percent(subtotal, promotion.getDiscountPercent()).min(subtotal);
+            if (promotion.getMaxDiscountAmount() != null) discount = discount.min(promotion.getMaxDiscountAmount());
+            discount = discount.max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+            int byDiscount = discount.compareTo(bestDiscount);
+            boolean betterTie = byDiscount == 0 && discount.signum() > 0 && (best == null
+                    || promotion.getMinOrderAmount().compareTo(best.getMinOrderAmount()) > 0
+                    || promotion.getMinOrderAmount().compareTo(best.getMinOrderAmount()) == 0
+                    && promotion.getOrderPromotionId() < best.getOrderPromotionId());
+            if (byDiscount > 0 || betterTie) { best = promotion; bestDiscount = discount; }
+        }
+        return new OrderPromotionCalculation(best, bestDiscount);
     }
 
     public LocalDateTime now() {
@@ -32,22 +63,53 @@ public class PricingService {
 
     @Transactional(readOnly = true)
     public Map<Long, PriceCalculation> priceVariants(Collection<ProductVariant> variants, LocalDateTime now) {
-        Map<Long, List<Promotion>> byProduct = new HashMap<>();
+        Map<Long, List<Promotion>> wholeProduct = new HashMap<>();
+        Map<Long, List<Promotion>> selectedVariant = new HashMap<>();
         var productIds = variants.stream().map(v -> v.getProduct().getProductId()).distinct().toList();
+        var variantIds = variants.stream().map(ProductVariant::getVariantId).toList();
+        Set<String> scoped = new HashSet<>();
         if (!productIds.isEmpty()) {
+            variantAssociations.findScopes(productIds).forEach(scope ->
+                    scoped.add(scope.getPromotionId() + ":" + scope.getProductId()));
             for (var association : associations.findActiveCandidates(productIds, ActiveStatus.ACTIVE, now)) {
-                byProduct.computeIfAbsent(association.getId().getProductId(), ignored -> new ArrayList<>())
+                Long productId = association.getId().getProductId();
+                Long promotionId = association.getId().getPromotionId();
+                if (!scoped.contains(promotionId + ":" + productId)) {
+                    wholeProduct.computeIfAbsent(productId, ignored -> new ArrayList<>())
+                            .add(association.getPromotion());
+                }
+            }
+        }
+        if (!variantIds.isEmpty()) {
+            for (var association : variantAssociations.findActiveCandidates(variantIds, ActiveStatus.ACTIVE, now)) {
+                selectedVariant.computeIfAbsent(association.getId().getVariantId(), ignored -> new ArrayList<>())
                         .add(association.getPromotion());
             }
         }
         Map<Long, PriceCalculation> prices = new LinkedHashMap<>();
         for (var variant : variants) {
-            prices.put(variant.getVariantId(), bestPrice(variant.getPrice(),
-                    byProduct.getOrDefault(variant.getProduct().getProductId(), List.of()), now));
+            List<Promotion> candidates = new ArrayList<>(
+                    wholeProduct.getOrDefault(variant.getProduct().getProductId(), List.of()));
+            candidates.addAll(selectedVariant.getOrDefault(variant.getVariantId(), List.of()));
+            prices.put(variant.getVariantId(), bestPrice(variant.getPrice(), candidates, now));
         }
         return prices;
     }
 
+    @Transactional(readOnly = true)
+    public Map<Long, PriceCalculation> priceProducts(Map<Long, BigDecimal> basePrices, LocalDateTime now) {
+        Map<Long, List<Promotion>> byProduct = new HashMap<>();
+        if (!basePrices.isEmpty()) {
+            for (var association : associations.findActiveCandidates(basePrices.keySet(), ActiveStatus.ACTIVE, now)) {
+                byProduct.computeIfAbsent(association.getId().getProductId(), ignored -> new ArrayList<>())
+                        .add(association.getPromotion());
+            }
+        }
+        Map<Long, PriceCalculation> prices = new LinkedHashMap<>();
+        basePrices.forEach((productId, basePrice) -> prices.put(productId,
+                bestPrice(basePrice, byProduct.getOrDefault(productId, List.of()), now)));
+        return prices;
+    }
     // One joined query fetches all public variants and promotion candidates, keeping detail query count constant.
     @Transactional(readOnly = true)
     public List<ProductVariantResponse> publicVariants(Long productId) {
@@ -57,8 +119,13 @@ public class PricingService {
         for (var row : variants.findPublicVariantsWithPromotions(productId, ActiveStatus.ACTIVE, now)) {
             var variant = row.getVariant();
             found.putIfAbsent(variant.getVariantId(), variant);
-            if (row.getPromotion() != null) {
-                candidates.computeIfAbsent(variant.getVariantId(), ignored -> new ArrayList<>()).add(row.getPromotion());
+            if (row.getProductPromotion() != null) {
+                candidates.computeIfAbsent(variant.getVariantId(), ignored -> new ArrayList<>())
+                        .add(row.getProductPromotion());
+            }
+            if (row.getVariantPromotion() != null) {
+                candidates.computeIfAbsent(variant.getVariantId(), ignored -> new ArrayList<>())
+                        .add(row.getVariantPromotion());
             }
         }
         return found.values().stream().map(variant -> response(variant,

@@ -8,7 +8,7 @@ import java.util.Optional;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.*;
 
-public interface PromotionRepository extends JpaRepository<Promotion, Long> {
+public interface PromotionRepository extends JpaRepository<Promotion, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Promotion> {
     Page<Promotion> findByStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
             ActiveStatus status, LocalDateTime start, LocalDateTime end, Pageable pageable);
 

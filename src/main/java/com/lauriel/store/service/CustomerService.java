@@ -24,7 +24,24 @@ public class CustomerService {
     }
 
     public PageResponse<CustomerResponse> list(int page, int size) {
-        return InventoryPagination.response(customers.findAll(InventoryPagination.page(page, size,
+        return list(page, size, null, null);
+    }
+
+    public PageResponse<CustomerResponse> list(int page, int size, String keyword,
+            com.lauriel.store.entity.enums.UserStatus status) {
+        String term = keyword == null || keyword.isBlank() ? null : "%" + keyword.strip().toLowerCase(java.util.Locale.ROOT) + "%";
+        org.springframework.data.jpa.domain.Specification<Customer> filter = (root, query, builder) -> {
+            var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
+            var user = root.join("user", jakarta.persistence.criteria.JoinType.LEFT);
+            if (status != null) predicates.add(builder.equal(user.get("status"), status));
+            if (term != null) predicates.add(builder.or(
+                    builder.like(builder.lower(root.get("customerName")), term),
+                    builder.like(builder.lower(root.get("phone")), term),
+                    builder.like(builder.lower(user.get("username")), term),
+                    builder.like(builder.lower(user.get("email")), term)));
+            return builder.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+        return InventoryPagination.response(customers.findAll(filter, InventoryPagination.page(page, size,
                 Sort.by(Sort.Direction.DESC, "customerId"))), CustomerService::response);
     }
 

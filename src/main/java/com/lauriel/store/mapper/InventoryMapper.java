@@ -21,6 +21,13 @@ public final class InventoryMapper {
                 actor(receipt.getUser()), receipt.getStatus(), receipt.getCreatedAt(), receipt.getTotalAmount());
     }
 
+    public static PurchaseReceiptListResponse listItem(PurchaseReceipt receipt,
+            List<PurchaseReceiptDetail> details) {
+        return new PurchaseReceiptListResponse(receipt.getReceiptId(), supplier(receipt.getSupplier()),
+                actor(receipt.getUser()), receipt.getStatus(), receipt.getCreatedAt(), receipt.getTotalAmount(),
+                details.stream().map(InventoryMapper::item).toList());
+    }
+
     public static PurchaseReceiptResponse receipt(PurchaseReceipt receipt, List<PurchaseReceiptDetail> details) {
         return new PurchaseReceiptResponse(receipt.getReceiptId(), supplier(receipt.getSupplier()),
                 actor(receipt.getUser()), receipt.getStatus(), receipt.getCreatedAt(), receipt.getTotalAmount(),
@@ -36,7 +43,7 @@ public final class InventoryMapper {
 
     public static InventoryResponse inventory(ProductVariant variant) {
         return new InventoryResponse(variant.getVariantId(), variant.getSku(), variant.getProduct().getProductId(),
-                variant.getProduct().getProductName(), CatalogMapper.size(variant.getSize()),
+                variant.getProduct().getProductName(), variant.getProduct().getPrice(), CatalogMapper.size(variant.getSize()),
                 CatalogMapper.color(variant.getColor()), variant.getPrice(), variant.getQuantity(), variant.getStatus());
     }
 

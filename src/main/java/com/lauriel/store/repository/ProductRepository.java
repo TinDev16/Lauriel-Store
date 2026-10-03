@@ -36,4 +36,17 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     Optional<Product> findByProductIdAndStatusAndCategory_Status(Long productId, ActiveStatus productStatus,
                                                                  ActiveStatus categoryStatus);
     boolean existsByProductIdAndStatus(Long productId, ActiveStatus status);
+
+    @EntityGraph(attributePaths = "category")
+    @Query("""
+            select p from Product p
+            where (:keyword is null or lower(p.productName) like lower(concat('%', :keyword, '%')))
+              and (:categoryId is null or p.category.categoryId = :categoryId)
+              and not exists (
+                  select pp.id.productId from PromotionProduct pp
+                  where pp.id.promotionId = :promotionId and pp.id.productId = p.productId
+              )
+            order by p.category.categoryName, p.productName, p.productId
+            """)
+    List<Product> findPromotionCandidates(Long promotionId, String keyword, Long categoryId, Pageable pageable);
 }

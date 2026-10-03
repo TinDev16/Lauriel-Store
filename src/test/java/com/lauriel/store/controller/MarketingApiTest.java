@@ -46,7 +46,9 @@ class MarketingApiTest {
     @Autowired private WebApplicationContext context;
     @MockitoSpyBean private VoucherRepository vouchers;
     @Autowired private PromotionRepository promotions;
+    @Autowired private OrderPromotionRepository orderPromotions;
     @Autowired private PromotionProductRepository associations;
+    @Autowired private PromotionVariantRepository variantPromotions;
     @MockitoSpyBean private ProductVariantRepository variants;
     @MockitoSpyBean private OrderRepository orders;
     @MockitoSpyBean private OrderDetailRepository details;
@@ -66,6 +68,7 @@ class MarketingApiTest {
     @Autowired private PlatformTransactionManager manager;
     @Autowired private EntityManagerFactory entityManagerFactory;
     @MockitoBean private Clock clock;
+    @MockitoBean(name = "pricingClock") private Clock pricingClock;
     private MockMvc mvc;
     private TransactionTemplate tx;
     private Product product;
@@ -92,14 +95,18 @@ class MarketingApiTest {
     void fixtures() {
         when(clock.getZone()).thenReturn(ZoneOffset.UTC);
         when(clock.instant()).thenReturn(NOW.toInstant(ZoneOffset.UTC));
+        when(pricingClock.getZone()).thenReturn(ZoneOffset.UTC);
+        when(pricingClock.instant()).thenReturn(NOW.toInstant(ZoneOffset.UTC));
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
         tx = new TransactionTemplate(manager);
         tx.executeWithoutResult(status -> {
             history.deleteAllInBatch();
             details.deleteAllInBatch();
             orders.deleteAllInBatch();
+            variantPromotions.deleteAllInBatch();
             associations.deleteAllInBatch();
             promotions.deleteAllInBatch();
+            orderPromotions.deleteAllInBatch();
             vouchers.deleteAllInBatch();
             variants.deleteAllInBatch();
             products.deleteAllInBatch();
@@ -248,6 +255,53 @@ class MarketingApiTest {
         assertThat(variants.findById(first.getVariantId()).orElseThrow().getPrice()).isEqualByComparingTo("300");
     }
 
+    @Test
+    void publicOrderPromotionEndpointReturnsOnlyCurrentlyActiveCampaigns() throws Exception {
+        tx.executeWithoutResult(status -> {
+            var active = new OrderPromotion();
+            active.setPromotionName("Đơn hàng từ một triệu");
+            active.setMinOrderAmount(new BigDecimal("1000000"));
+            active.setDiscountPercent(new BigDecimal("10"));
+            active.setMaxDiscountAmount(new BigDecimal("50000"));
+            active.setStartDate(NOW.minusHours(1)); active.setEndDate(NOW.plusHours(1));
+            active.setStatus(ActiveStatus.ACTIVE); orderPromotions.saveAndFlush(active);
+            var future = new OrderPromotion();
+            future.setPromotionName("Chưa bắt đầu");
+            future.setMinOrderAmount(BigDecimal.ZERO); future.setDiscountPercent(BigDecimal.TEN);
+            future.setStartDate(NOW.plusMinutes(1)); future.setEndDate(NOW.plusHours(2));
+            future.setStatus(ActiveStatus.ACTIVE); orderPromotions.saveAndFlush(future);
+        });
+
+        mvc.perform(get("/api/order-promotions/active"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].promotionName").value("Đơn hàng từ một triệu"))
+                .andExpect(jsonPath("$.content[0].maxDiscountAmount").value(50000));
+    }
+
+    @Test
+    void selectedVariantPromotionOnlyDiscountsChosenSizeColorInCatalogAndCheckout() throws Exception {
+        var promotion = promotion("Size M only", "20", true);
+        tx.executeWithoutResult(status -> {
+            var link = new PromotionVariant();
+            link.setId(new PromotionVariantId(promotion.getPromotionId(), first.getVariantId()));
+            link.setPromotion(promotions.findById(promotion.getPromotionId()).orElseThrow());
+            link.setVariant(variants.findById(first.getVariantId()).orElseThrow());
+            variantPromotions.saveAndFlush(link);
+        });
+
+        mvc.perform(get("/api/products/" + product.getProductId() + "/variants"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].effectivePrice").value(240))
+                .andExpect(jsonPath("$[0].promotion.promotionId").value(promotion.getPromotionId()))
+                .andExpect(jsonPath("$[1].effectivePrice").value(200))
+                .andExpect(jsonPath("$[1].promotion").isEmpty());
+
+        checkout(checkoutRequest(null, first, 1)).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.items[0].unitPrice").value(240));
+        checkout(checkoutRequest(null, second, 1)).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.items[0].unitPrice").value(200));
+    }
     @ParameterizedTest
     @ValueSource(strings = {"future", "expired", "inactive", "unlinked"})
     void unusablePromotionDoesNotAffectCatalogOrCheckout(String kind) throws Exception {

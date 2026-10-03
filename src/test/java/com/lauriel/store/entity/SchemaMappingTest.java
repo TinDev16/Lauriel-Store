@@ -25,7 +25,7 @@ class SchemaMappingTest {
     @Test
     void mappingsMatchAllTablesColumnsKeysAndEnumsInOriginalDump() throws Exception {
         Map<String, String> tableDefinitions = TestSchema.migratedTableDefinitions();
-        assertThat(tableDefinitions).hasSize(19);
+        assertThat(tableDefinitions).hasSize(23);
 
         var registry = new StandardServiceRegistryBuilder()
                 .applySetting("hibernate.dialect", "org.hibernate.dialect.MySQLDialect")

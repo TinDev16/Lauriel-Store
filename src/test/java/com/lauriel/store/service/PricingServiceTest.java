@@ -2,6 +2,7 @@ package com.lauriel.store.service;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.lauriel.store.dto.response.PriceCalculation;
 import com.lauriel.store.entity.*;
@@ -17,8 +18,74 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class PricingServiceTest {
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 9, 18, 10, 0);
-    private final PricingService pricing = new PricingService(mock(PromotionProductRepository.class),
-            mock(ProductVariantRepository.class), Clock.fixed(NOW.toInstant(ZoneOffset.UTC), ZoneOffset.UTC));
+    private final OrderPromotionRepository orderPromotions = mock(OrderPromotionRepository.class);
+    private final PricingService pricing = new PricingService(mock(PromotionProductRepository.class), mock(PromotionVariantRepository.class),
+            mock(ProductVariantRepository.class), orderPromotions, Clock.fixed(NOW.toInstant(ZoneOffset.UTC), ZoneOffset.UTC));
+
+    @Test
+    void choosesGreatestActualOrderPromotionDiscountThenThresholdThenLowestId() {
+        var capped = orderPromotion(1, "100000", "30", "20000");
+        var better = orderPromotion(2, "150000", "15", null);
+        when(orderPromotions.findEligible(ActiveStatus.ACTIVE, NOW, new BigDecimal("200000.00")))
+                .thenReturn(List.of(capped, better));
+
+        var result = pricing.orderPromotion(new BigDecimal("200000.00"), NOW);
+
+        assertThat(result.promotion()).isSameAs(better);
+        assertThat(result.discount()).isEqualByComparingTo("30000.00");
+        assertThat(result.amountAfter(new BigDecimal("200000.00"))).isEqualByComparingTo("170000.00");
+    }
+
+    private OrderPromotion orderPromotion(long id, String minimum, String percent, String cap) {
+        var promotion = new OrderPromotion(); promotion.setOrderPromotionId(id);
+        promotion.setMinOrderAmount(new BigDecimal(minimum)); promotion.setDiscountPercent(new BigDecimal(percent));
+        promotion.setMaxDiscountAmount(cap == null ? null : new BigDecimal(cap));
+        promotion.setStatus(ActiveStatus.ACTIVE); promotion.setStartDate(NOW.minusDays(1)); promotion.setEndDate(NOW.plusDays(1));
+        return promotion;
+    }
+
+    @Test
+    void capsOrderPromotionAndIgnoresInactiveFutureAndExpiredCandidates() {
+        var capped = orderPromotion(1, "0", "10", "150000");
+        var inactive = orderPromotion(2, "0", "90", null); inactive.setStatus(ActiveStatus.INACTIVE);
+        var future = orderPromotion(3, "0", "90", null); future.setStartDate(NOW.plusMinutes(1));
+        var expired = orderPromotion(4, "0", "90", null); expired.setEndDate(NOW.minusMinutes(1));
+        var subtotal = new BigDecimal("3000000.00");
+        when(orderPromotions.findEligible(ActiveStatus.ACTIVE, NOW, subtotal))
+                .thenReturn(List.of(inactive, future, expired, capped));
+
+        var result = pricing.orderPromotion(subtotal, NOW);
+
+        assertThat(result.promotion()).isSameAs(capped);
+        assertThat(result.discount()).isEqualByComparingTo("150000.00");
+    }
+
+    @Test
+    void thresholdPromotionCapsTenPercentOfOnePointTwoMillionAtFiftyThousand() {
+        var promotion = orderPromotion(9, "1000000", "10", "50000");
+        var subtotal = new BigDecimal("1200000.00");
+        when(orderPromotions.findEligible(ActiveStatus.ACTIVE, NOW, subtotal))
+                .thenReturn(List.of(promotion));
+
+        var result = pricing.orderPromotion(subtotal, NOW);
+
+        assertThat(result.discount()).isEqualByComparingTo("50000.00");
+        assertThat(result.amountAfter(subtotal)).isEqualByComparingTo("1150000.00");
+        assertThat(result.amountAfter(subtotal).add(new BigDecimal("20000")))
+                .isEqualByComparingTo("1170000.00");
+    }
+
+    @Test
+    void subtotalBelowThresholdHasNoOrderPromotionDiscount() {
+        var subtotal = new BigDecimal("999999.00");
+        when(orderPromotions.findEligible(ActiveStatus.ACTIVE, NOW, subtotal)).thenReturn(List.of());
+
+        var result = pricing.orderPromotion(subtotal, NOW);
+
+        assertThat(result.promotion()).isNull();
+        assertThat(result.discount()).isEqualByComparingTo("0.00");
+        assertThat(result.amountAfter(subtotal)).isEqualByComparingTo("999999.00");
+    }
 
     private Promotion promotion(long id, String percent) {
         var promotion = new Promotion();

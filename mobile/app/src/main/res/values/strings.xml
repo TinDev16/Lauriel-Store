@@ -21,8 +21,8 @@
     <string name="register_prompt">Chưa có tài khoản? Đăng ký</string><string name="order_detail">Chi tiết đơn hàng</string><string name="cancel_order">Hủy đơn</string>
     <string name="category_label">Danh mục</string><string name="size_label">Kích cỡ</string><string name="color_label">Màu sắc</string><string name="quantity_label">Số lượng</string><string name="plus">+</string><string name="minus">−</string><string name="one">1</string>
     <string name="checking_session">Đang kiểm tra phiên đăng nhập</string><string name="filter_products">Lọc sản phẩm</string><string name="sort_label">Sắp xếp</string><string name="sort_default">Mặc định</string><string name="sort_price_asc">Giá tăng</string><string name="sort_price_desc">Giá giảm</string>
-    <string name="proceed_checkout">Tiến hành đặt hàng</string><string name="hero_eyebrow">BỘ SƯU TẬP MỚI</string><string name="hero_title">Phong cách cho mỗi ngày</string><string name="hero_subtitle">Khám phá thiết kế tối giản và năng động từ LAURIEL.</string>
-    <string name="active_promotions">Khuyến mãi đang diễn ra</string><string name="featured_products">Sản phẩm nổi bật</string><string name="see_all">Xem tất cả</string><string name="avatar_placeholder">L</string><string name="order_detail_description">Mở chi tiết đơn hàng</string>    <string name="my_orders_title">Đơn hàng của tôi</string>
+    <string name="proceed_checkout">Tiến hành đặt hàng</string>
+    <string name="active_promotions">Ưu đãi dành cho bạn</string><string name="promotion_swipe_hint">Lướt ngang để xem ưu đãi · Chạm để xem chi tiết</string><string name="featured_products">Sản phẩm nổi bật</string><string name="see_all">Xem tất cả</string><string name="avatar_placeholder">L</string><string name="order_detail_description">Mở chi tiết đơn hàng</string>    <string name="my_orders_title">Đơn hàng của tôi</string>
     <string name="my_orders_subtitle">Theo dõi và quản lý các đơn hàng của bạn</string>
     <string name="empty_orders_filtered">Chưa có đơn hàng trong trạng thái này\nChạm để tải lại</string>
     <string name="load_more_orders">Xem thêm đơn hàng</string>
@@ -42,4 +42,14 @@
     <string name="discount_saved">Đã giảm %1$s</string>
     <string name="unknown_product">Sản phẩm</string>
     <string name="no_shipping_address">Chưa có địa chỉ giao hàng</string>
-    <string name="no_voucher">Không áp dụng</string></resources>
+    <string name="no_voucher">Không áp dụng</string>
+    <string name="payment_method_title">Chọn hình thức thanh toán</string>
+    <string name="payment_cod">Thanh toán khi nhận hàng (COD)</string>
+    <string name="payment_method_required">Vui lòng chọn hình thức thanh toán.</string>
+    <string name="choose_saved_voucher">Chọn mã giảm giá đã lưu</string>
+    <string name="choose_voucher_title">Mã giảm giá của tôi</string>
+    <string name="loading_vouchers">Đang tải mã giảm giá…</string>
+    <string name="no_saved_vouchers">Bạn chưa lưu mã giảm giá nào còn hiệu lực.</string>
+    <string name="copy_voucher">Sao chép</string>
+    <string name="voucher_copied">Đã sao chép mã %1$s</string>
+</resources>

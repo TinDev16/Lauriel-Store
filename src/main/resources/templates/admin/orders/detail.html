@@ -59,6 +59,8 @@
 </p>
 <p th:text="|Tổng sau khuyến mãi: ${@view.money(order.totalAmount)}|">
 </p>
+<p th:text="|Khuyến mãi đơn hàng${order.orderPromotionName == null ? '' : ' (' + order.orderPromotionName + ')'}: ${@view.money(order.orderPromotionDiscount)}|">
+</p>
 <p th:text="|Giảm bằng mã: ${@view.money(order.discountAmount)}|">
 </p>
 <h3 class="h5" th:text="|Số tiền phải trả: ${@view.money(order.finalAmount)}|">

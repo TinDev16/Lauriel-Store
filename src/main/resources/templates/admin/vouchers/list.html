@@ -5,6 +5,14 @@
 <div class="mb-3">
 <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/vouchers/new}">Thêm mã giảm giá</a>
 </div>
+<form class="card card-body mb-3" method="get" th:action="@{/admin/vouchers}" data-live-filter>
+<div class="row g-3 align-items-end"><div class="col-lg-5"><label class="form-label">Tìm mã giảm giá</label>
+<input class="form-control" type="search" name="keyword" placeholder="Mã hoặc tên mã giảm giá..." th:value="${keyword}"></div>
+<div class="col-lg-3"><label class="form-label">Loại giảm</label><select class="form-select" name="discountType"><option value="">Tất cả loại</option>
+<option th:each="item:${discountTypes}" th:value="${item}" th:text="${@view.label(item)}" th:selected="${item == discountType}"></option></select></div>
+<div class="col-lg-2"><label class="form-label">Trạng thái</label><select class="form-select" name="status"><option value="">Tất cả</option>
+<option th:each="item:${statuses}" th:value="${item}" th:text="${@view.label(item)}" th:selected="${item == status}"></option></select></div>
+<div class="col-lg-2"><a class="btn btn-outline-secondary w-100" th:href="@{/admin/vouchers}">Đặt lại</a></div></div></form>
 <div class="card">
 <div class="table-responsive">
 <table class="table table-hover align-middle mb-0">

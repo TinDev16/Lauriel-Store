@@ -541,3 +541,46 @@ mysql -u root -p lauriel_store < database/migrations/V4__add_product_images.sql
 V3 thêm `orders.shipping_fee` với giá trị mặc định 20.000 VNĐ, nên các đơn cũ cũng nhận giá trị này. V4 tạo `product_images` và sao chép `products.img_url` hiện có thành ảnh chính; cột `img_url` được giữ lại để tương thích ngược. Sau migration, Hibernate `ddl-auto=validate` sẽ kiểm tra schema khi khởi động.
 
 Phí giao hàng được cấu hình tập trung bằng `store.shipping-fee=20000.00`. Backend tính lại Promotion, Voucher, phí giao hàng và tổng thanh toán; Android chỉ hiển thị preview.
+
+## Thông báo đơn hàng mới qua Telegram
+
+Telegram là kênh thông báo ngoài luồng nghiệp vụ. Order được lưu, các dòng hàng được tạo và tồn kho
+được trừ trong transaction trước; hệ thống chỉ xử lý thông báo sau khi transaction commit. Lỗi mạng,
+timeout hoặc Telegram API từ chối request không rollback đơn hàng và không trả lỗi cho khách hàng.
+Mặc định tính năng tắt, nên local/test vẫn khởi động khi chưa có Bot Token hoặc Chat ID.
+
+Tạo bot:
+
+1. Mở Telegram và chat với **BotFather**.
+2. Gửi lệnh `/newbot`, đặt tên và username cho bot.
+3. Lưu Bot Token BotFather trả về ở nơi an toàn; không ghi token vào source code hoặc Git.
+4. Mở bot vừa tạo và gửi cho bot ít nhất một tin nhắn.
+
+Lấy Chat ID:
+
+1. Sau khi gửi tin nhắn cho bot, mở
+   `https://api.telegram.org/bot<BOT_TOKEN>/getUpdates` trên máy cá nhân.
+2. Tìm `message.chat.id` trong JSON. Chat nhóm thường có ID âm.
+3. Không đưa URL chứa token vào log, issue, ảnh chụp hoặc commit.
+
+Đặt biến môi trường trong Run Configuration của IntelliJ hoặc cùng PowerShell chạy backend:
+
+```powershell
+$env:TELEGRAM_ENABLED = 'true'
+$env:TELEGRAM_BOT_TOKEN = '<bot-token>'
+$env:TELEGRAM_CHAT_ID = '<chat-id>'
+.\mvnw.cmd spring-boot:run
+```
+
+Cấu hình mặc định:
+
+| Biến môi trường | Mặc định | Ý nghĩa |
+|---|---:|---|
+| `TELEGRAM_ENABLED` | `false` | Bật thông báo đơn hàng mới |
+| `TELEGRAM_BOT_TOKEN` | rỗng | Token do BotFather cấp |
+| `TELEGRAM_CHAT_ID` | rỗng | Chat cá nhân hoặc nhóm nhận thông báo |
+| `TELEGRAM_CONNECT_TIMEOUT` | `2s` | Thời gian tối đa thiết lập kết nối |
+| `TELEGRAM_READ_TIMEOUT` | `3s` | Thời gian tối đa chờ Telegram phản hồi |
+
+Khi thiếu token hoặc chat ID, ứng dụng bỏ qua thông báo dù `TELEGRAM_ENABLED=true`. Không commit
+token thật vào `application.properties`, README, file test hoặc `.env.example`.

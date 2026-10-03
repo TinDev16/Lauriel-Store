@@ -47,6 +47,8 @@ class CatalogApiTest {
     @Autowired private WebApplicationContext context;
     @Autowired private ProductRepository products;
     @Autowired private ProductImageRepository productImages;
+    @Autowired private PromotionRepository promotions;
+    @Autowired private PromotionProductRepository promotionProducts;
     @Autowired private CategoryRepository categories;
     @MockitoSpyBean private ProductVariantRepository variants;
     @Autowired private SizeRepository sizes;
@@ -613,7 +615,7 @@ class CatalogApiTest {
         statistics.clear();
         var page = productService.listPublic(0, 1, null, null, null, null, "price", "asc");
         assertThat(page.totalElements()).isEqualTo(3);
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(2); // Summary query + count.
+        assertThat(statistics.getPrepareStatementCount()).isEqualTo(3); // Summary + count + active promotions.
         entityManager.clear();
         statistics.clear();
         var detail = productService.getPublicDetail(shirt.getProductId());
@@ -736,4 +738,41 @@ class CatalogApiTest {
                 .andExpect(jsonPath("$[?(@.productId == " + hidden.getProductId() + ")]").isEmpty());
     }
 
+
+    @Test
+    void publicCatalogReturnsOriginalAndDiscountedPrices() throws Exception {
+        var promotion = new Promotion();
+        promotion.setPromotionName("Giảm giá áo");
+        promotion.setDiscountPercent(new BigDecimal("20"));
+        promotion.setStartDate(java.time.LocalDateTime.now().minusDays(1));
+        promotion.setEndDate(java.time.LocalDateTime.now().plusDays(1));
+        promotion.setStatus(ActiveStatus.ACTIVE);
+        promotion = promotions.saveAndFlush(promotion);
+
+        var link = new PromotionProduct();
+        link.setPromotion(promotion);
+        link.setProduct(shirt);
+        link.setId(new PromotionProductId(promotion.getPromotionId(), shirt.getProductId()));
+        promotionProducts.saveAndFlush(link);
+        entityManager.clear();
+
+        var page = productService.listPublic(0, 12, "Basic Shirt", null, null, null, "price", "asc");
+        assertThat(page.content()).singleElement().satisfies(product -> {
+            assertThat(product.price()).isEqualByComparingTo("100");
+            assertThat(product.effectivePrice()).isEqualByComparingTo("80");
+            assertThat(product.promotion()).isNotNull();
+            assertThat(product.promotion().discountPercent()).isEqualByComparingTo("20");
+        });
+
+        mvc.perform(get("/api/products/" + shirt.getProductId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.variants[0].price").value(120))
+                .andExpect(jsonPath("$.variants[0].effectivePrice").value(96))
+                .andExpect(jsonPath("$.variants[0].promotion.discountPercent").value(20));
+
+        mvc.perform(get("/api/products/" + pants.getProductId() + "/related"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].price").value(100))
+                .andExpect(jsonPath("$[0].effectivePrice").value(80));
+    }
 }

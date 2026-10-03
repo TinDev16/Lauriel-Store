@@ -8,6 +8,7 @@ import com.lauriel.store.entity.OrderDetail;
 import com.lauriel.store.entity.OrderDetailId;
 import com.lauriel.store.entity.Customer;
 import com.lauriel.store.entity.enums.OrderStatus;
+import com.lauriel.store.event.OrderCreatedEvent;
 import com.lauriel.store.exception.*;
 import com.lauriel.store.mapper.OrderMapper;
 import com.lauriel.store.repository.*;
@@ -15,6 +16,7 @@ import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -31,10 +33,11 @@ public class OrderService {
     private final PricingService pricing;
     private final VoucherService vouchers;
     private final StoreCommerceProperties commerce;
+    private final ApplicationEventPublisher events;
 
     public OrderService(OrderRepository orders, OrderDetailRepository details, CustomerRepository customers,
             UserRepository users, InventoryService inventory, PricingService pricing, VoucherService vouchers,
-            StoreCommerceProperties commerce) {
+            StoreCommerceProperties commerce, ApplicationEventPublisher events) {
         this.orders = orders;
         this.details = details;
         this.customers = customers;
@@ -43,6 +46,7 @@ public class OrderService {
         this.pricing = pricing;
         this.vouchers = vouchers;
         this.commerce = commerce;
+        this.events = events;
     }
 
     @Transactional
@@ -73,19 +77,27 @@ public class OrderService {
             total = pricing.checkedAmount(total.add(item.getSubtotal()));
             lines.add(item);
         }
-        var applied = vouchers.consume(request.voucherCode(), total, now);
+        var threshold = pricing.orderPromotion(total, now);
+        var amountAfterOrderPromotion = threshold.amountAfter(total);
+        var applied = vouchers.consume(request.voucherCode(), amountAfterOrderPromotion, now);
         order.setVoucher(applied.voucher());
+        order.setOrderPromotion(threshold.promotion());
+        order.setOrderPromotionName(threshold.promotion() == null ? null : threshold.promotion().getPromotionName());
+        order.setOrderPromotionPercent(threshold.promotion() == null ? null : threshold.promotion().getDiscountPercent());
+        order.setOrderPromotionDiscount(threshold.discount());
         order.setTotalAmount(total);
         order.setDiscountAmount(applied.discount());
         order.setShippingFee(pricing.checkedAmount(commerce.getShippingFee()));
-        order.setFinalAmount(pricing.checkedAmount(total.subtract(applied.discount()).add(order.getShippingFee())));
+        order.setFinalAmount(pricing.checkedAmount(amountAfterOrderPromotion.subtract(applied.discount()).add(order.getShippingFee())));
         orders.saveAndFlush(order);
         for (var item : lines) {
             item.setId(new OrderDetailId(order.getOrderId(), item.getProductVariant().getVariantId()));
             details.saveAndFlush(item);
         }
         inventory.decreaseForSale(order.getOrderId(), lines, customer.getUser());
-        return response(order);
+        var result = response(order);
+        events.publishEvent(OrderCreatedEvent.snapshot(order, lines));
+        return result;
     }
 
     @Transactional(readOnly = true)
@@ -114,6 +126,12 @@ public class OrderService {
     @Transactional(readOnly = true)
     public PageResponse<OrderSummaryResponse> staffList(int page, int size, OrderStatus status,
             LocalDateTime from, LocalDateTime to) {
+        return staffList(page, size, null, status, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<OrderSummaryResponse> staffList(int page, int size, String keyword,
+            OrderStatus status, LocalDateTime from, LocalDateTime to) {
         if (from != null && to != null && from.isAfter(to)) {
             throw new BadRequestException("from phải trước hoặc bằng to");
         }
@@ -122,6 +140,19 @@ public class OrderService {
             if (status != null) predicates.add(builder.equal(root.get("status"), status));
             if (from != null) predicates.add(builder.greaterThanOrEqualTo(root.get("createdAt"), from));
             if (to != null) predicates.add(builder.lessThanOrEqualTo(root.get("createdAt"), to));
+            if (keyword != null && !keyword.isBlank()) {
+                String term = "%" + keyword.strip().toLowerCase(java.util.Locale.ROOT) + "%";
+                var customer = root.join("customer");
+                var match = builder.or(
+                        builder.like(builder.lower(customer.get("customerName")), term),
+                        builder.like(builder.lower(customer.get("phone")), term));
+                try {
+                    match = builder.or(match, builder.equal(root.get("orderId"), Long.valueOf(keyword.strip().replace("#", ""))));
+                } catch (NumberFormatException ignored) {
+                    // The keyword is a customer name or phone.
+                }
+                predicates.add(match);
+            }
             return builder.and(predicates.toArray(Predicate[]::new));
         };
         return InventoryPagination.response(orders.findAll(filter, InventoryPagination.page(page, size,

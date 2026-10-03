@@ -10,7 +10,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 public class WebPaginationInterceptor implements HandlerInterceptor {
     private static final Set<String> FILTERS = Set.of(
-            "keyword", "status", "from", "to", "size", "threshold", "type", "variantId", "supplierId", "categoryId");
+            "keyword", "candidateKeyword", "status", "from", "to", "size", "threshold", "type",
+            "variantId", "supplierId", "categoryId");
 
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response,

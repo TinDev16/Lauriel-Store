@@ -81,6 +81,9 @@ public class OrderDetailActivity extends BaseActivity {
         itemAdapter.submit(order.items);
 
         b.subtotal.setText(Formatters.money(order.totalAmount));
+        BigDecimal orderPromotionDiscount = order.orderPromotionDiscount == null ? BigDecimal.ZERO : order.orderPromotionDiscount;
+        b.orderPromotionLabel.setText(order.orderPromotionName == null ? "Khuyến mãi đơn hàng" : order.orderPromotionName);
+        b.orderPromotionDiscount.setText(orderPromotionDiscount.signum() == 0 ? "0 ₫" : "−" + Formatters.money(orderPromotionDiscount));
         b.voucher.setText(order.voucherCode == null || order.voucherCode.isBlank() ? getString(R.string.no_voucher) : order.voucherCode);
         BigDecimal discount = order.discountAmount == null ? BigDecimal.ZERO : order.discountAmount;
         b.discount.setText(discount.signum() == 0 ? "0 ₫" : "−" + Formatters.money(discount));

@@ -17,11 +17,13 @@ public class WebOrderController {
     private final OrderService orders; private final CustomerService customers;
     public WebOrderController(OrderService orders,CustomerService customers) { this.orders=orders; this.customers=customers; }
     @GetMapping public String list(@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="12") int size,
+            @RequestParam(required=false) String keyword,
             @RequestParam(required=false) OrderStatus status,@RequestParam(required=false) LocalDateTime from,
             @RequestParam(required=false) LocalDateTime to,Model m) {
-        var result=orders.staffList(page,size,status,from,to); m.addAttribute("page",result);
+        var result=orders.staffList(page,size,keyword,status,from,to); m.addAttribute("page",result);
         m.addAttribute("customerNames",customers.names(result.content().stream().map(o -> o.customerId()).toList()));
-        m.addAttribute("status",status); m.addAttribute("from",from); m.addAttribute("to",to); return "admin/orders/list";
+        m.addAttribute("keyword",keyword); m.addAttribute("status",status);
+        m.addAttribute("from",from); m.addAttribute("to",to); return "admin/orders/list";
     }
     @GetMapping("/{id}") public String detail(@PathVariable Long id,Model m) {
         var order=orders.staffDetail(id); m.addAttribute("order",order); m.addAttribute("customer",customers.detail(order.customerId()));

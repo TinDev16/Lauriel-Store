@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+ th:replace="~{fragments/layout :: layout(~{::section},'Ph&#7841;m vi bi&#7871;n th&#7875;','promotions')}">
+<body><section>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+ <div><div class="text-muted small" th:text="${scope.promotion.promotionName}"></div>
+ <h2 class="h5 mb-1" th:text="${scope.product.productName}"></h2>
+ <p class="text-muted mb-0">Ch&#7885;n c&#225;c t&#7893; h&#7907;p k&#237;ch c&#7905; v&#224; m&#224;u &#273;&#432;&#7907;c gi&#7843;m <strong th:text="|${scope.promotion.discountPercent}%|"></strong>.</p></div>
+ <a class="btn btn-outline-secondary" th:href="@{/admin/promotions/{id}/products(id=${scope.promotion.promotionId})}">Quay l&#7841;i s&#7843;n ph&#7849;m</a>
+</div>
+<form class="card card-body" method="post" data-variant-scope
+ th:action="@{/admin/promotions/{id}/products/{p}/variants(id=${scope.promotion.promotionId},p=${scope.product.productId})}">
+ <h3 class="h6">Ph&#7841;m vi &#225;p d&#7909;ng</h3>
+ <div class="row g-3 mb-4">
+  <div class="col-md-6"><label class="card h-100 p-3 product-choice">
+   <span class="d-flex gap-3"><input class="form-check-input" type="radio" name="scope" value="ALL" th:checked="${scope.allVariants}">
+   <span><strong class="d-block">T&#7845;t c&#7843; bi&#7871;n th&#7875;</strong><small class="text-muted">M&#7885;i k&#237;ch c&#7905; v&#224; m&#224;u hi&#7879;n t&#7841;i, k&#7875; c&#7843; bi&#7871;n th&#7875; th&#234;m sau n&#224;y.</small></span></span>
+  </label></div>
+  <div class="col-md-6"><label class="card h-100 p-3 product-choice">
+   <span class="d-flex gap-3"><input class="form-check-input" type="radio" name="scope" value="SELECTED" th:checked="${!scope.allVariants}">
+   <span><strong class="d-block">Ch&#7881; bi&#7871;n th&#7875; &#273;&#432;&#7907;c ch&#7885;n</strong><small class="text-muted">Ch&#7885;n k&#237;ch c&#7905; tr&#432;&#7899;c, sau &#273;&#243; ch&#7885;n c&#225;c m&#224;u c&#7847;n gi&#7843;m gi&#225;.</small></span></span>
+  </label></div>
+ </div>
+ <div class="variant-picker" data-variant-picker th:if="${!#lists.isEmpty(scope.variants)}">
+  <div class="variant-picker-toolbar">
+   <div><h3 class="h6 mb-1">Ch&#7885;n bi&#7871;n th&#7875;</h3><small class="text-muted">Thao t&#225;c gi&#7889;ng tr&#234;n app: ch&#7885;n k&#237;ch c&#7905; r&#7891;i ch&#7885;n m&#224;u. Nh&#7845;n l&#7841;i m&#224;u &#273;&#7875; b&#7887;.</small></div>
+   <div class="d-flex align-items-center gap-2">
+    <span class="badge text-bg-primary"><span data-selected-count>0</span> &#273;&#227; ch&#7885;n</span>
+    <div class="btn-group"><button type="button" class="btn btn-outline-primary btn-sm" data-variant-select-all>Ch&#7885;n t&#7845;t c&#7843;</button><button type="button" class="btn btn-outline-secondary btn-sm" data-variant-clear-all>B&#7887; t&#7845;t c&#7843;</button></div>
+   </div>
+  </div>
+  <div class="variant-step">
+   <div class="variant-step-title"><span>1</span><strong>Ch&#7885;n k&#237;ch c&#7905;</strong></div>
+   <div class="variant-chip-group" role="group" aria-label="Ch&#7885;n k&#237;ch c&#7905;">
+    <button type="button" class="variant-chip" data-size-choice th:each="size:${scope.sizes}" th:attr="data-size-id=${size.sizeId}">
+     <span th:text="|Size ${size.sizeName}|"></span><small data-size-selected-count></small>
+    </button>
+   </div>
+  </div>
+  <div class="variant-step">
+   <div class="variant-step-title"><span>2</span><strong>Ch&#7885;n m&#224;u s&#7855;c t&#432;&#417;ng &#7913;ng</strong></div>
+   <div class="variant-chip-group" role="group" aria-label="Ch&#7885;n m&#224;u s&#7855;c">
+    <button type="button" class="variant-chip variant-color-chip" data-color-choice disabled
+      th:each="color:${scope.colors}" th:attr="data-color-id=${color.colorId}">
+     <span class="variant-color-dot"></span><span th:text="${color.colorName}"></span>
+    </button>
+   </div>
+   <small class="text-muted d-block mt-2" data-color-help>H&#227;y ch&#7885;n k&#237;ch c&#7905; &#273;&#7875; xem c&#225;c m&#224;u c&#243; s&#7861;n.</small>
+  </div>
+  <div class="d-none" aria-hidden="true">
+   <input type="checkbox" name="variantIds" data-variant-option th:each="variant:${scope.variants}"
+    th:value="${variant.variantId}" th:checked="${scope.selectedVariantIds.contains(variant.variantId)}"
+    th:attr="data-size-id=${variant.size.sizeId},data-color-id=${variant.color.colorId},
+             data-size-name=${variant.size.sizeName},data-color-name=${variant.color.colorName},
+             data-sku=${variant.sku},data-stock=${variant.quantity}">
+  </div>
+  <div class="selected-variant-panel">
+   <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+    <strong>C&#225;c t&#7893; h&#7907;p &#273;&#227; ch&#7885;n</strong><small class="text-muted">Nh&#7845;n &#215; &#273;&#7875; b&#7887;</small>
+   </div>
+   <div class="selected-variant-list" data-selected-variant-list></div>
+   <div class="selected-variant-empty" data-selected-variant-empty>Ch&#432;a ch&#7885;n t&#7893; h&#7907;p n&#224;o.</div>
+  </div>
+ </div>
+ <div class="alert alert-warning mt-3 mb-0" th:if="${#lists.isEmpty(scope.variants)}">S&#7843;n ph&#7849;m ch&#432;a c&#243; bi&#7871;n th&#7875;.</div>
+ <div class="d-flex justify-content-end mt-4"><button class="btn btn-primary" type="submit">L&#432;u ph&#7841;m vi gi&#7843;m gi&#225;</button></div>
+</form>
+</section></body></html>

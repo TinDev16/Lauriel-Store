@@ -6,7 +6,7 @@
    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingBottom="@dimen/space_xl">
     <FrameLayout android:layout_width="match_parent" android:layout_height="380dp">
      <androidx.viewpager2.widget.ViewPager2 android:id="@+id/gallery" android:layout_width="match_parent" android:layout_height="match_parent"/>
-     <com.google.android.material.button.MaterialButton android:id="@+id/back" style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+     <com.google.android.material.button.MaterialButton android:id="@+id/back" style="@style/BackButton"
       android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="top|start" android:layout_margin="@dimen/space_md"
       android:backgroundTint="@color/background" android:contentDescription="@string/back" app:cornerRadius="24dp"
       app:icon="@drawable/ic_back" app:iconGravity="textStart" app:iconPadding="0dp" app:iconTint="@color/ink"/>

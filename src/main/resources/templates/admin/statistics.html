@@ -1,152 +1,33 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thống kê','statistics')}">
-<body><section><div class="ceo-hero mb-3">
-  <div>
-    <span class="ceo-eyebrow">BẢNG ĐIỀU HÀNH</span>
-    <h1 class="ceo-title">Tổng quan kinh doanh</h1>
-    <p class="ceo-subtitle mb-0">Theo dõi doanh thu, khách hàng, nhu cầu mua và tồn kho trên một màn hình.</p>
-  </div>
-  <button type="button" class="btn btn-light ceo-refresh" onclick="window.location.reload()">
-    <i class="bi bi-arrow-clockwise me-1"></i>Làm mới dữ liệu
-  </button>
+<body><section class="stats-page">
+<div class="stats-hero"><div><span class="stats-eyebrow">BẢNG ĐIỀU HÀNH</span><h1>Tổng quan kinh doanh</h1><p>Nắm nhanh doanh thu, đơn hàng, khách hàng và tồn kho của Lauriel Store.</p></div><a class="btn btn-light" th:href="@{/admin/statistics}"><i class="bi bi-arrow-clockwise me-1"></i>Làm mới dữ liệu</a></div>
+<div th:replace="~{admin/statistics-fragments :: nav('overview')}"></div>
+<div th:replace="~{admin/statistics-fragments :: filters(${report},'/admin/statistics')}"></div>
+<div class="stats-kpi-grid" aria-label="Chỉ số kinh doanh chính">
+<a class="stats-kpi stats-kpi-revenue" th:href="@{/admin/orders(status='DELIVERED')}"><span class="stats-kpi-icon"><i class="bi bi-cash-stack"></i></span><span><small>Tổng doanh thu đã giao</small><strong th:text="${@view.money(report.kpis.revenueAllTime)}">0 ₫</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
+<a class="stats-kpi stats-kpi-revenue" th:href="@{/admin/statistics/sales(preset='THIS_MONTH')}"><span class="stats-kpi-icon"><i class="bi bi-graph-up-arrow"></i></span><span><small>Doanh thu tháng này</small><strong th:text="${@view.money(report.kpis.revenueMonth)}">0 ₫</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
+<a class="stats-kpi stats-kpi-orders" th:href="@{/admin/orders}"><span class="stats-kpi-icon"><i class="bi bi-receipt"></i></span><span><small>Đơn hàng tháng này</small><strong th:text="${report.kpis.ordersMonth}">0</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
+<a class="stats-kpi stats-kpi-orders" th:href="@{/admin/statistics/sales(preset=${report.range.preset})}"><span class="stats-kpi-icon"><i class="bi bi-basket2"></i></span><span><small>Giá trị đơn trung bình</small><strong th:text="${@view.money(report.sales.averageOrderValue)}">0 ₫</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
+<a class="stats-kpi stats-kpi-customers" th:href="@{/admin/customers}"><span class="stats-kpi-icon"><i class="bi bi-people"></i></span><span><small>Tổng khách hàng</small><strong th:text="${report.kpis.customers}">0</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
+<a class="stats-kpi stats-kpi-customers" href="#online-customers"><span class="stats-kpi-icon"><i class="bi bi-person-check"></i></span><span><small>Khách hàng đang online</small><strong th:text="${report.engagement.onlineCustomers}">0</strong></span><i class="bi bi-chevron-down stats-kpi-arrow"></i></a>
+<a class="stats-kpi stats-kpi-products" href="#cart-interest"><span class="stats-kpi-icon"><i class="bi bi-cart-check"></i></span><span><small>Khách đang có giỏ hàng</small><strong th:text="${report.engagement.customersWithCart}">0</strong></span><i class="bi bi-chevron-down stats-kpi-arrow"></i></a>
+<a class="stats-kpi stats-kpi-products" th:href="@{/admin/products(status='ACTIVE')}"><span class="stats-kpi-icon"><i class="bi bi-box-seam"></i></span><span><small>Sản phẩm đang bán</small><strong th:text="${report.kpis.activeProducts}">0</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
+<a class="stats-kpi stats-kpi-warning" th:href="@{/admin/statistics/inventory(threshold=${report.range.threshold})}"><span class="stats-kpi-icon"><i class="bi bi-exclamation-triangle"></i></span><span><small>Biến thể tồn thấp</small><strong th:text="${report.kpis.lowStock}">0</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
+<a class="stats-kpi stats-kpi-danger" th:href="@{/admin/statistics/sales(preset=${report.range.preset})} + '#cancel-rate'"><span class="stats-kpi-icon"><i class="bi bi-x-octagon"></i></span><span><small>Tỷ lệ hủy đơn</small><strong th:text="|${report.sales.cancelRate}%|">0%</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
 </div>
-
-<div class="card mb-3"><div class="card-body">
-<div class="d-flex flex-wrap gap-2 mb-3">
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/statistics(preset='TODAY')}">Hôm nay</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/statistics(preset='LAST_7')}">7 ngày qua</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/statistics(preset='LAST_30')}">30 ngày qua</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/statistics(preset='THIS_MONTH')}">Tháng này</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/statistics(preset='THIS_YEAR')}">Năm nay</a>
-</div>
-<form method="get" th:action="@{/admin/statistics}" class="row g-2 align-items-end">
-<div class="col-sm-6 col-lg-2"><label class="form-label" for="fromDate">Từ ngày</label><input class="form-control" id="fromDate" name="fromDate" type="date" required th:value="${report.range.fromDate}"></div>
-<div class="col-sm-6 col-lg-2"><label class="form-label" for="toDate">Đến ngày</label><input class="form-control" id="toDate" name="toDate" type="date" required th:value="${report.range.toDate}"></div>
-<div class="col-sm-6 col-lg-2"><label class="form-label" for="groupBy">Nhóm theo</label><select class="form-select" id="groupBy" name="groupBy">
-<option value="DAY" th:selected="${report.range.groupBy == 'DAY'}">Ngày</option><option value="MONTH" th:selected="${report.range.groupBy == 'MONTH'}">Tháng</option>
-<option value="QUARTER" th:selected="${report.range.groupBy == 'QUARTER'}">Quý</option><option value="YEAR" th:selected="${report.range.groupBy == 'YEAR'}">Năm</option>
-</select></div>
-<div class="col-sm-6 col-lg-2"><label class="form-label" for="threshold">Ngưỡng tồn thấp</label><input class="form-control" id="threshold" name="threshold" type="number" min="0" max="100000" th:value="${report.range.threshold}"></div>
-<div class="col-sm-6 col-lg-2"><label class="form-label" for="top">Số mục nổi bật</label><select class="form-select" id="top" name="top"><option value="5" th:selected="${report.range.top == 5}">Top 5</option><option value="10" th:selected="${report.range.top == 10}">Top 10</option></select></div>
-<div class="col-sm-6 col-lg-2"><button class="btn btn-primary w-100">Áp dụng</button></div>
-</form>
-<p class="text-muted small mb-0 mt-2">Khoảng xem: <span th:text="${report.range.fromDate}"></span> đến <span th:text="${report.range.toDate}"></span>. Doanh thu thực tế chỉ tính đơn đã giao.</p>
-</div></div>
-
 <div class="row g-3 mb-3">
-<div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="text-muted mb-1">Doanh thu hôm nay</p><h4 th:text="${@view.money(report.kpis.revenueToday)}"></h4></div></div></div>
-<div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="text-muted mb-1">Doanh thu tháng này</p><h4 th:text="${@view.money(report.kpis.revenueMonth)}"></h4></div></div></div>
-<div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="text-muted mb-1">Đơn tháng này</p><h4 th:text="${report.kpis.ordersMonth}"></h4></div></div></div>
-<div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="text-muted mb-1">Giá trị đơn trung bình đã giao</p><h4 th:text="${@view.money(report.sales.averageOrderValue)}"></h4></div></div></div>
-<div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="text-muted mb-1">Khách hàng</p><h4 th:text="${report.kpis.customers}"></h4></div></div></div>
-<div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="text-muted mb-1">Sản phẩm đang bán</p><h4 th:text="${report.kpis.activeProducts}"></h4></div></div></div>
-<div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="text-muted mb-1">Biến thể tồn thấp</p><h4 th:text="${report.kpis.lowStock}"></h4></div></div></div>
-<div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="text-muted mb-1">Tỷ lệ hủy đơn trong kỳ</p><h4 th:text="|${report.sales.cancelRate}%|"></h4></div></div></div>
-</div>
-
-<section class="mb-4" aria-labelledby="engagementTitle">
-<div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3"><div><span class="ceo-section-kicker">TÍN HIỆU THỜI GIAN THỰC</span><h2 class="h4 mb-1" id="engagementTitle">Khách đang quan tâm</h2><p class="text-muted mb-0">Khách được tính online khi app gửi hoạt động trong 5 phút gần nhất.</p></div><span class="live-pill"><span class="live-dot"></span>Đang cập nhật</span></div>
-<div class="row g-3 mb-3">
-<div class="col-sm-6 col-xl-3"><div class="ceo-metric ceo-metric-live"><div class="ceo-metric-icon"><i class="bi bi-broadcast"></i></div><div><p>Khách đang online</p><strong th:text="${report.engagement.onlineCustomers}">0</strong><small>trong 5 phút</small></div></div></div>
-<div class="col-sm-6 col-xl-3"><div class="ceo-metric"><div class="ceo-metric-icon"><i class="bi bi-people"></i></div><div><p>Khách có giỏ hàng</p><strong th:text="${report.engagement.customersWithCart}">0</strong><small>khách chưa đặt</small></div></div></div>
-<div class="col-sm-6 col-xl-3"><div class="ceo-metric"><div class="ceo-metric-icon"><i class="bi bi-bag-heart"></i></div><div><p>Sản phẩm được quan tâm</p><strong th:text="${report.engagement.distinctProductsInCarts}">0</strong><small>sản phẩm khác nhau</small></div></div></div>
-<div class="col-sm-6 col-xl-3"><div class="ceo-metric"><div class="ceo-metric-icon"><i class="bi bi-cart-check"></i></div><div><p>Số lượng trong giỏ</p><strong th:text="${report.engagement.cartQuantity}">0</strong><small>tổng sản phẩm</small></div></div></div>
+<div class="col-xl-8"><article class="stats-card h-100"><header><div><span class="stats-section-label">DOANH THU</span><h2>Xu hướng doanh thu</h2></div><a th:href="@{/admin/statistics/sales}">Xem chi tiết <i class="bi bi-arrow-right"></i></a></header><div id="revenueChart" class="statistics-chart" role="img" aria-label="Biểu đồ doanh thu"></div></article></div>
+<div class="col-xl-4"><article class="stats-card h-100"><header><div><span class="stats-section-label">ĐƠN HÀNG</span><h2>Cơ cấu trạng thái</h2></div></header><div id="statusChart" class="statistics-donut" role="img" aria-label="Biểu đồ trạng thái đơn hàng"></div><div class="stats-legend"><span th:each="s:${report.statuses}"><i></i><span th:text="${@view.label(s.status)}"></span><strong th:text="${s.count}"></strong></span></div></article></div>
 </div>
 <div class="row g-3">
-<div class="col-xl-6"><div class="card ceo-panel h-100"><div class="card-body"><div class="d-flex align-items-center justify-content-between mb-3"><h3 class="h5 mb-0">Khách đang online</h3><span class="text-muted small" th:text="|Top ${report.range.top}|"></span></div><div class="table-responsive"><table class="table ceo-table align-middle mb-0"><thead><tr><th>Khách hàng</th><th>Trạng thái</th><th class="text-end">Trong giỏ</th></tr></thead><tbody>
-<tr th:each="customer:${report.onlineCustomers}"><td><strong th:text="${customer.customerName}"></strong><small class="d-block text-muted" th:text="|@${customer.username}|"></small></td><td><span class="online-status"><span class="live-dot"></span>Online</span><small class="d-block text-muted mt-1" th:text="${#temporals.format(customer.lastSeenAt, 'HH:mm:ss')}"></small></td><td class="text-end"><strong th:text="${customer.quantity}"></strong><small class="d-block text-muted" th:text="|${customer.distinctItems} mặt hàng|"></small></td></tr>
-<tr th:if="${#lists.isEmpty(report.onlineCustomers)}"><td colspan="3" class="text-center text-muted py-4">Chưa có khách hoạt động trong 5 phút gần nhất.</td></tr>
-</tbody></table></div></div></div></div>
-<div class="col-xl-6"><div class="card ceo-panel h-100"><div class="card-body"><div class="d-flex align-items-center justify-content-between mb-3"><h3 class="h5 mb-0">Sản phẩm đang nằm trong giỏ</h3><span class="text-muted small">Xếp theo số khách</span></div><div class="table-responsive"><table class="table ceo-table align-middle mb-0"><thead><tr><th>Sản phẩm</th><th class="text-end">Khách quan tâm</th><th class="text-end">Số lượng</th></tr></thead><tbody>
-<tr th:each="item:${report.cartInterest}"><td><a th:href="@{/admin/products/{id}/edit(id=${item.productId})}" class="fw-semibold text-decoration-none" th:text="${item.productName}"></a></td><td class="text-end"><span class="interest-count" th:text="|${item.customerCount} người|"></span></td><td class="text-end fw-semibold" th:text="${item.quantity}"></td></tr>
-<tr th:if="${#lists.isEmpty(report.cartInterest)}"><td colspan="3" class="text-center text-muted py-4">Chưa có sản phẩm nào trong giỏ của khách.</td></tr>
-</tbody></table></div></div></div></div>
+<div class="col-xl-7"><article class="stats-card h-100"><header><div><span class="stats-section-label">SẢN PHẨM</span><h2>Sản phẩm bán chạy</h2></div><a th:href="@{/admin/statistics/products}">Xem tất cả <i class="bi bi-arrow-right"></i></a></header><div class="table-responsive"><table class="table stats-table align-middle mb-0"><thead><tr><th>Sản phẩm</th><th class="text-end">Đã bán</th><th class="text-end">Doanh thu</th></tr></thead><tbody><tr th:each="p:${report.topProducts}"><td><a th:href="@{/admin/products/{id}/edit(id=${p.productId})}" th:text="${p.productName}"></a></td><td class="text-end" th:text="${p.quantity}"></td><td class="text-end fw-semibold" th:text="${@view.money(p.revenue)}"></td></tr><tr th:if="${#lists.isEmpty(report.topProducts)}"><td colspan="3"><div class="stats-empty"><i class="bi bi-bar-chart"></i>Chưa có đơn đã giao trong kỳ.</div></td></tr></tbody></table></div></article></div>
+<div class="col-xl-5"><article class="stats-card h-100"><header><div><span class="stats-section-label">CẢNH BÁO KHO</span><h2>Biến thể tồn thấp</h2></div><a th:href="@{/admin/inventory(threshold=${report.range.threshold})}">Mở kho <i class="bi bi-arrow-right"></i></a></header><div class="table-responsive"><table class="table stats-table align-middle mb-0"><thead><tr><th>Sản phẩm / phân loại</th><th class="text-end">Tồn</th></tr></thead><tbody><tr th:each="v:${report.lowStock}"><td><a th:href="@{/admin/inventory}" th:text="|${v.productName} · ${v.size} · ${v.color}|"></a><small th:text="${v.sku}"></small></td><td class="text-end"><span class="stats-stock-badge" th:text="${v.quantity}"></span></td></tr><tr th:if="${#lists.isEmpty(report.lowStock)}"><td colspan="2"><div class="stats-empty stats-empty-success"><i class="bi bi-check-circle"></i>Không có biến thể tồn thấp.</div></td></tr></tbody></table></div></article></div>
 </div>
-</section>
-
-<div class="row g-3 mb-4">
-<div class="col-lg-8"><div class="card h-100"><div class="card-body"><h2 class="h5">Doanh thu theo thời gian</h2><div id="revenueChart" class="statistics-chart" role="img" aria-label="Biểu đồ doanh thu"></div></div></div></div>
-<div class="col-lg-4"><div class="card h-100"><div class="card-body"><h2 class="h5">Trạng thái đơn hàng</h2><div id="statusChart" class="statistics-donut" role="img" aria-label="Biểu đồ tỷ lệ trạng thái đơn"></div><div class="small mt-2" th:each="s:${report.statuses}"><span th:text="${@view.label(s.status)}"></span>: <strong th:text="${s.count}"></strong> (<span th:text="${s.percentage}"></span>%)</div></div></div></div>
+<div class="row g-3 mt-0">
+<div class="col-xl-6"><article id="online-customers" class="stats-card h-100"><header><div><span class="stats-section-label">HOẠT ĐỘNG GẦN ĐÂY</span><h2>Khách hàng đang online</h2></div><a th:href="@{/admin/statistics/customers}">Xem khách hàng <i class="bi bi-arrow-right"></i></a></header><div class="table-responsive"><table class="table stats-table align-middle mb-0"><thead><tr><th>Khách hàng</th><th>Hoạt động gần nhất</th><th class="text-end">Sản phẩm trong giỏ</th></tr></thead><tbody><tr th:each="c:${report.onlineCustomers}"><td><strong th:text="${c.customerName}"></strong><small th:text="|@${c.username}|"></small></td><td th:text="${#temporals.format(c.lastSeenAt,'HH:mm:ss dd/MM/yyyy')}"></td><td class="text-end"><strong th:text="${c.distinctItems}"></strong><small th:text="|${c.quantity} sản phẩm|"></small></td></tr><tr th:if="${#lists.isEmpty(report.onlineCustomers)}"><td colspan="3"><div class="stats-empty"><i class="bi bi-person-dash"></i>Chưa có khách hàng hoạt động trong 5 phút gần đây.</div></td></tr></tbody></table></div></article></div>
+<div class="col-xl-6"><article id="cart-interest" class="stats-card h-100"><header><div><span class="stats-section-label">NHU CẦU MUA SẮM</span><h2>Top sản phẩm đang nằm trong giỏ hàng</h2></div><a th:href="@{/admin/statistics/products}">Xem sản phẩm <i class="bi bi-arrow-right"></i></a></header><div class="table-responsive"><table class="table stats-table align-middle mb-0"><thead><tr><th>Sản phẩm</th><th class="text-end">Khách quan tâm</th><th class="text-end">Số lượng trong giỏ</th></tr></thead><tbody><tr th:each="p:${report.cartInterest}"><td><a th:href="@{/admin/products/{id}/edit(id=${p.productId})}" th:text="${p.productName}"></a></td><td class="text-end" th:text="|${p.customerCount} người|"></td><td class="text-end fw-semibold" th:text="${p.quantity}"></td></tr><tr th:if="${#lists.isEmpty(report.cartInterest)}"><td colspan="3"><div class="stats-empty"><i class="bi bi-cart-x"></i>Chưa có sản phẩm nào trong giỏ hàng của khách.</div></td></tr></tbody></table></div></article></div>
 </div>
-
-<div class="row g-3 mb-4">
-<div class="col-sm-6 col-lg-3"><div class="card h-100"><div class="card-body"><span class="text-muted">Doanh thu năm nay</span><h5 th:text="${@view.money(report.kpis.revenueYear)}"></h5></div></div></div>
-<div class="col-sm-6 col-lg-3"><div class="card h-100"><div class="card-body"><span class="text-muted">Đơn hôm nay / đã giao / đã hủy</span><h5 th:text="|${report.kpis.ordersToday} / ${report.kpis.deliveredAllTime} / ${report.kpis.cancelledAllTime}|"></h5></div></div></div>
-<div class="col-sm-6 col-lg-3"><div class="card h-100"><div class="card-body"><span class="text-muted">Biến thể đang bán / tổng tồn</span><h5 th:text="|${report.kpis.activeVariants} / ${report.kpis.totalStock}|"></h5></div></div></div>
-<div class="col-sm-6 col-lg-3"><div class="card h-100"><div class="card-body"><span class="text-muted">Phiếu nhập nháp / nhập tháng này</span><h5 th:text="|${report.kpis.draftReceipts} / ${@view.money(report.kpis.purchaseMonth)}|"></h5></div></div></div>
-</div>
-
-<div class="row g-3 mb-4">
-<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h5">Bán hàng trong kỳ</h2>
-<p>Đơn: <strong th:text="${report.sales.totalOrders}"></strong> · Đã giao: <strong th:text="${report.sales.delivered}"></strong> · Đã hủy: <strong th:text="${report.sales.cancelled}"></strong></p>
-<p>Doanh thu thực tế: <strong th:text="${@view.money(report.sales.revenue)}"></strong></p>
-<h3 class="h6">Sản phẩm bán chạy</h3><table class="table table-sm"><thead><tr><th>Sản phẩm</th><th>Đã bán</th><th>Doanh thu dòng hàng</th></tr></thead><tbody>
-<tr th:each="p:${report.topProducts}"><td th:text="${p.productName}"></td><td th:text="${p.quantity}"></td><td th:text="${@view.money(p.revenue)}"></td></tr>
-<tr th:if="${#lists.isEmpty(report.topProducts)}"><td colspan="3">Chưa có đơn đã giao.</td></tr>
-</tbody></table></div></div></div>
-<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h5">Sản phẩm doanh thu cao</h2><table class="table table-sm"><thead><tr><th>Sản phẩm</th><th>Đã bán</th><th>Doanh thu dòng hàng</th></tr></thead><tbody>
-<tr th:each="p:${report.topProductsByRevenue}"><td th:text="${p.productName}"></td><td th:text="${p.quantity}"></td><td th:text="${@view.money(p.revenue)}"></td></tr>
-<tr th:if="${#lists.isEmpty(report.topProductsByRevenue)}"><td colspan="3">Chưa có dữ liệu.</td></tr>
-</tbody></table><p class="small text-muted">Doanh thu dòng hàng sau khuyến mãi sản phẩm, trước voucher; tổng doanh thu dùng số tiền cuối cùng của đơn.</p></div></div></div>
-</div>
-
-<div class="row g-3 mb-4">
-<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h5">Biến thể bán chạy</h2><table class="table table-sm"><thead><tr><th>Mã hàng</th><th>Sản phẩm / cỡ / màu</th><th>Đã bán</th><th>Doanh thu</th></tr></thead><tbody>
-<tr th:each="v:${report.topVariants}"><td th:text="${v.sku}"></td><td th:text="|${v.productName} / ${v.size} / ${v.color}|"></td><td th:text="${v.quantity}"></td><td th:text="${@view.money(v.revenue)}"></td></tr>
-<tr th:if="${#lists.isEmpty(report.topVariants)}"><td colspan="4">Chưa có dữ liệu.</td></tr>
-</tbody></table></div></div></div>
-<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h5">Khách hàng mua nhiều</h2><p>Khách hàng mới tháng này: <strong th:text="${report.newCustomersThisMonth}"></strong></p><table class="table table-sm"><thead><tr><th>Khách hàng</th><th>Đơn đã giao</th><th>Đã chi</th></tr></thead><tbody>
-<tr th:each="c:${report.topCustomers}"><td th:text="${c.customerName}"></td><td th:text="${c.orderCount}"></td><td th:text="${@view.money(c.totalSpent)}"></td></tr>
-<tr th:if="${#lists.isEmpty(report.topCustomers)}"><td colspan="3">Chưa có dữ liệu.</td></tr>
-</tbody></table><h3 class="h6">Khách hàng mới theo thời gian</h3><div class="statistics-trend"><table class="table table-sm"><thead><tr><th>Kỳ</th><th>Khách mới</th></tr></thead><tbody>
-<tr th:each="p:${report.newCustomers}"><td th:text="${p.label}"></td><td th:text="${p.count}"></td></tr>
-</tbody></table></div></div></div></div>
-</div>
-
-<div class="row g-3 mb-4">
-<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h5">Tồn kho</h2>
-<p>Tổng số lượng: <strong th:text="${report.inventory.totalQuantity}"></strong> · Biến thể đang bán: <strong th:text="${report.inventory.activeVariants}"></strong></p>
-<p>Tồn thấp: <strong th:text="${report.inventory.lowStock}"></strong> · Hết hàng: <strong th:text="${report.inventory.outOfStock}"></strong></p>
-<p>Giá trị tồn kho theo giá bán: <strong th:text="${@view.money(report.inventory.valueBySellingPrice)}"></strong></p>
-<h3 class="h6">Biến thể tồn thấp</h3><table class="table table-sm"><thead><tr><th>Mã hàng</th><th>Sản phẩm</th><th>Tồn</th></tr></thead><tbody>
-<tr th:each="v:${report.lowStock}"><td th:text="${v.sku}"></td><td th:text="|${v.productName} / ${v.size} / ${v.color}|"></td><td th:text="${v.quantity}"></td></tr>
-<tr th:if="${#lists.isEmpty(report.lowStock)}"><td colspan="3">Không có biến thể tồn thấp.</td></tr>
-</tbody></table></div></div></div>
-<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h5">Nhập kho trong kỳ</h2>
-<p>Phiếu hoàn tất: <strong th:text="${report.purchases.receipts}"></strong> · Số lượng nhập: <strong th:text="${report.purchases.quantity}"></strong></p>
-<p>Giá trị nhập: <strong th:text="${@view.money(report.purchases.amount)}"></strong></p>
-<h3 class="h6">Nhà cung cấp nổi bật</h3><table class="table table-sm"><thead><tr><th>Nhà cung cấp</th><th>Phiếu hoàn tất</th><th>Giá trị nhập</th></tr></thead><tbody>
-<tr th:each="s:${report.topSuppliers}"><td th:text="${s.supplierName}"></td><td th:text="${s.receiptCount}"></td><td th:text="${@view.money(s.purchaseAmount)}"></td></tr>
-<tr th:if="${#lists.isEmpty(report.topSuppliers)}"><td colspan="3">Chưa có dữ liệu.</td></tr>
-</tbody></table>
-<h3 class="h6">Giá trị nhập theo thời gian</h3><div class="statistics-trend"><table class="table table-sm"><thead><tr><th>Kỳ</th><th>Phiếu</th><th>Số lượng</th><th>Giá trị</th></tr></thead><tbody>
-<tr th:each="p:${report.purchaseTrend}"><td th:text="${p.label}"></td><td th:text="${p.receipts}"></td><td th:text="${p.quantity}"></td><td th:text="${@view.money(p.amount)}"></td></tr>
-</tbody></table></div><h3 class="h6">Biến thể tồn kho cao</h3><table class="table table-sm"><tbody><tr th:each="v:${report.topStock}"><td th:text="${v.sku}"></td><td th:text="${v.productName}"></td><td th:text="${v.quantity}"></td></tr></tbody></table>
-</div></div></div>
-</div>
-
-<div class="row g-3 mb-4">
-<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h5">Giảm giá trong kỳ</h2>
-<p>Voucher: <strong th:text="${@view.money(report.discounts.voucher)}"></strong> · Đơn dùng voucher: <strong th:text="${report.discounts.voucherOrders}"></strong></p>
-<p>Khuyến mãi sản phẩm: <strong th:text="${@view.money(report.discounts.promotion)}"></strong> · Số lượng bán có giảm: <strong th:text="${report.discounts.promotedQuantity}"></strong></p>
-<p>Tổng giảm giá: <strong th:text="${@view.money(report.discounts.total)}"></strong></p>
-<p class="small text-muted">Chỉ tính đơn đã giao. Dòng đơn chỉ lưu số tiền giảm, không lưu mã khuyến mãi.</p>
-<h3 class="h6">Voucher dùng nhiều nhất</h3><table class="table table-sm"><thead><tr><th>Mã</th><th>Đơn</th><th>Đã giảm</th></tr></thead><tbody>
-<tr th:each="v:${report.topVouchersByUses}"><td th:text="${v.code}"></td><td th:text="${v.orderCount}"></td><td th:text="${@view.money(v.discount)}"></td></tr>
-<tr th:if="${#lists.isEmpty(report.topVouchersByUses)}"><td colspan="3">Chưa có dữ liệu.</td></tr>
-</tbody></table></div></div></div>
-<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h5">Giảm giá nổi bật</h2>
-<h3 class="h6">Voucher giảm nhiều nhất</h3><table class="table table-sm"><tbody><tr th:each="v:${report.topVouchersByDiscount}"><td th:text="${v.code}"></td><td th:text="${v.orderCount}"></td><td th:text="${@view.money(v.discount)}"></td></tr></tbody></table>
-<h3 class="h6">Sản phẩm được khuyến mãi nhiều nhất</h3><table class="table table-sm"><thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Đã giảm</th></tr></thead><tbody>
-<tr th:each="p:${report.topPromotionProducts}"><td th:text="${p.productName}"></td><td th:text="${p.quantity}"></td><td th:text="${@view.money(p.discount)}"></td></tr>
-<tr th:if="${#lists.isEmpty(report.topPromotionProducts)}"><td colspan="3">Chưa có dữ liệu.</td></tr>
-</tbody></table></div></div></div>
-</div>
-
-<div id="statisticsData" hidden>
-<span th:each="p:${report.revenue}" class="revenue-point" th:attr="data-label=${p.label},data-value=${p.revenue},data-count=${p.orderCount}"></span>
-<span th:each="s:${report.statuses}" class="status-point" th:attr="data-label=${s.status},data-value=${s.count}"></span>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/apexcharts@7.4.0/dist/apexcharts.min.js" defer></script>
-<script th:src="@{/js/statistics.js}" defer></script>
+<div th:replace="~{admin/statistics-fragments :: data(${report})}"></div>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@7.4.0/dist/apexcharts.min.js" defer></script><script th:src="@{/js/statistics.js}" defer></script>
 </section></body></html>

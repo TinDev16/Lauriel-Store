@@ -65,7 +65,7 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/login", "/error", "/403", "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/products/**").permitAll()
-                        .requestMatchers("/admin", "/admin/dashboard", "/admin/statistics", "/admin/products", "/admin/products/**",
+                        .requestMatchers("/admin", "/admin/dashboard", "/admin/statistics", "/admin/statistics/**", "/admin/products", "/admin/products/**",
                                 "/admin/categories", "/admin/categories/**",
                                 "/admin/sizes", "/admin/sizes/**", "/admin/colors", "/admin/colors/**",
                                 "/admin/inventory", "/admin/inventory/**", "/admin/suppliers", "/admin/suppliers/**",

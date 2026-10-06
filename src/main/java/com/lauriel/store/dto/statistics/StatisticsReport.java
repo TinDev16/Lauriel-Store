@@ -15,6 +15,7 @@ public record StatisticsReport(
         List<TopProduct> topProductsByRevenue,
         List<TopVariant> topVariants,
         List<TopCustomer> topCustomers,
+        List<TopCustomer> topCustomersByOrders,
         Inventory inventory,
         List<StockVariant> lowStock,
         List<StockVariant> topStock,
@@ -25,6 +26,10 @@ public record StatisticsReport(
         List<Voucher> topVouchersByUses,
         List<Voucher> topVouchersByDiscount,
         List<PromotionProduct> topPromotionProducts,
+        List<OrderPromotion> topOrderPromotionsByUses,
+        List<OrderPromotion> topOrderPromotionsByDiscount,
+        long soldQuantity,
+        long customersWithOrders,
         long newCustomersThisMonth,
         List<CustomerPoint> newCustomers,
         Engagement engagement,
@@ -32,7 +37,7 @@ public record StatisticsReport(
         List<CartInterest> cartInterest) {
 
     public record Range(String preset, LocalDate fromDate, LocalDate toDate, String groupBy, int threshold, int top) {}
-    public record Kpis(BigDecimal revenueToday, BigDecimal revenueMonth, BigDecimal revenueYear,
+    public record Kpis(BigDecimal revenueAllTime, BigDecimal revenueToday, BigDecimal revenueMonth, BigDecimal revenueYear,
                        long ordersToday, long ordersMonth, long deliveredAllTime, long cancelledAllTime,
                        long customers, long activeProducts, long activeVariants, long totalStock,
                        long lowStock, long draftReceipts, BigDecimal purchaseMonth) {}
@@ -51,10 +56,13 @@ public record StatisticsReport(
     public record Purchase(long receipts, BigDecimal amount, long quantity) {}
     public record PurchasePoint(String label, long receipts, BigDecimal amount, long quantity) {}
     public record Supplier(long supplierId, String supplierName, long receiptCount, BigDecimal purchaseAmount) {}
-    public record Discounts(BigDecimal voucher, BigDecimal promotion, BigDecimal total,
-                            long voucherOrders, long promotedQuantity) {}
+    public record Discounts(BigDecimal voucher, BigDecimal productPromotion,
+                            BigDecimal orderPromotion, BigDecimal total,
+                            long voucherOrders, long promotedQuantity,
+                            long orderPromotionOrders) {}
     public record Voucher(long voucherId, String code, long orderCount, BigDecimal discount) {}
     public record PromotionProduct(long productId, String productName, long quantity, BigDecimal discount) {}
+    public record OrderPromotion(Long promotionId, String promotionName, long orderCount, BigDecimal discount) {}
     public record CustomerPoint(String label, long count) {}
     public record Engagement(long onlineCustomers, long customersWithCart, long distinctProductsInCarts, long cartQuantity) {}
     public record OnlineCustomer(long customerId, String customerName, String username, java.time.LocalDateTime lastSeenAt, long distinctItems, long quantity) {}

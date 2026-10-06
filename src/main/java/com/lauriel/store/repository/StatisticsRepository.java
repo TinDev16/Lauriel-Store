@@ -18,7 +18,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class StatisticsRepository {
     public record OrderAggregate(long total, long delivered, long cancelled, BigDecimal revenue,
-                                 BigDecimal voucherDiscount, long voucherOrders) {}
+                                 BigDecimal voucherDiscount, long voucherOrders,
+                                 BigDecimal orderPromotionDiscount, long orderPromotionOrders) {}
     public record DailyRevenue(LocalDate date, BigDecimal revenue, long orders) {}
     public record DailyCustomers(LocalDate date, long count) {}
     public record DailyPurchase(LocalDate date, long receipts, BigDecimal amount, long quantity) {}
@@ -46,12 +47,15 @@ public class StatisticsRepository {
                   COALESCE(SUM(CASE WHEN status='CANCELLED' THEN 1 ELSE 0 END),0) cancelled,
                   COALESCE(SUM(CASE WHEN status='DELIVERED' THEN final_amount ELSE 0 END),0) revenue,
                   COALESCE(SUM(CASE WHEN status='DELIVERED' THEN discount_amount ELSE 0 END),0) voucher_discount,
-                  COALESCE(SUM(CASE WHEN status='DELIVERED' AND discount_amount>0 THEN 1 ELSE 0 END),0) voucher_orders
+                  COALESCE(SUM(CASE WHEN status='DELIVERED' AND discount_amount>0 THEN 1 ELSE 0 END),0) voucher_orders,
+                  COALESCE(SUM(CASE WHEN status='DELIVERED' THEN order_promotion_discount ELSE 0 END),0) order_promotion_discount,
+                  COALESCE(SUM(CASE WHEN status='DELIVERED' AND order_promotion_discount>0 THEN 1 ELSE 0 END),0) order_promotion_orders
                 FROM orders WHERE created_at >= :from AND created_at < :until
                 """;
         return jdbc.queryForObject(sql, range(from, until), (rs, n) ->
                 new OrderAggregate(rs.getLong("total"), rs.getLong("delivered"), rs.getLong("cancelled"),
-                        money(rs, "revenue"), money(rs, "voucher_discount"), rs.getLong("voucher_orders")));
+                        money(rs, "revenue"), money(rs, "voucher_discount"), rs.getLong("voucher_orders"),
+                        money(rs, "order_promotion_discount"), rs.getLong("order_promotion_orders")));
     }
 
     public Map<OrderStatus, Long> statuses(LocalDateTime from, LocalDateTime until) {
@@ -109,17 +113,36 @@ public class StatisticsRepository {
                         rs.getLong("quantity"), money(rs, "revenue")));
     }
 
-    public List<StatisticsReport.TopCustomer> topCustomers(LocalDateTime from, LocalDateTime until, int limit) {
+    public List<StatisticsReport.TopCustomer> topCustomers(LocalDateTime from, LocalDateTime until,
+                                                            int limit, boolean byOrders) {
         String sql = """
                 SELECT c.customer_id, c.customer_name, COUNT(*) order_count, SUM(o.final_amount) spent
                 FROM orders o JOIN customers c ON c.customer_id=o.customer_id
                 WHERE o.status='DELIVERED' AND o.created_at >= :from AND o.created_at < :until
                 GROUP BY c.customer_id, c.customer_name
-                ORDER BY spent DESC, order_count DESC, c.customer_id LIMIT :limit
-                """;
+                ORDER BY
+                """ + (byOrders ? " order_count DESC, spent DESC" : " spent DESC, order_count DESC")
+                + ", c.customer_id LIMIT :limit";
         return jdbc.query(sql, range(from, until).addValue("limit", limit), (rs, n) ->
                 new StatisticsReport.TopCustomer(rs.getLong("customer_id"), rs.getString("customer_name"),
                         rs.getLong("order_count"), money(rs, "spent")));
+    }
+
+    public long soldQuantity(LocalDateTime from, LocalDateTime until) {
+        Long value = jdbc.queryForObject("""
+                SELECT COALESCE(SUM(d.quantity),0) FROM order_details d
+                JOIN orders o ON o.order_id=d.order_id
+                WHERE o.status='DELIVERED' AND o.created_at >= :from AND o.created_at < :until
+                """, range(from, until), Long.class);
+        return value == null ? 0 : value;
+    }
+
+    public long customersWithOrders(LocalDateTime from, LocalDateTime until) {
+        Long value = jdbc.queryForObject("""
+                SELECT COUNT(DISTINCT customer_id) FROM orders
+                WHERE created_at >= :from AND created_at < :until
+                """, range(from, until), Long.class);
+        return value == null ? 0 : value;
     }
 
     public StatisticsReport.Inventory inventory(int threshold) {
@@ -237,6 +260,24 @@ public class StatisticsRepository {
         return jdbc.query(sql, range(from, until).addValue("limit", limit), (rs, n) ->
                 new StatisticsReport.PromotionProduct(rs.getLong("product_id"),
                         rs.getString("product_name"), rs.getLong("quantity"), money(rs, "discount")));
+    }
+
+    public List<StatisticsReport.OrderPromotion> topOrderPromotions(LocalDateTime from,
+                    LocalDateTime until, int limit, boolean byDiscount) {
+        String sql = """
+                SELECT order_promotion_id, order_promotion_name, COUNT(*) order_count,
+                       SUM(order_promotion_discount) discount
+                FROM orders
+                WHERE status='DELIVERED' AND order_promotion_discount>0
+                  AND created_at >= :from AND created_at < :until
+                GROUP BY order_promotion_id, order_promotion_name
+                ORDER BY
+                """ + (byDiscount ? " discount DESC, order_count DESC" : " order_count DESC, discount DESC")
+                + " LIMIT :limit";
+        return jdbc.query(sql, range(from, until).addValue("limit", limit), (rs, n) ->
+                new StatisticsReport.OrderPromotion((Long) rs.getObject("order_promotion_id"),
+                        rs.getString("order_promotion_name"), rs.getLong("order_count"),
+                        money(rs, "discount")));
     }
 
     public long customersCount() {

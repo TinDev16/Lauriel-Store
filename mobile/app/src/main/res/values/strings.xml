@@ -23,6 +23,10 @@
     <string name="checking_session">Đang kiểm tra phiên đăng nhập</string><string name="filter_products">Lọc sản phẩm</string><string name="sort_label">Sắp xếp</string><string name="sort_default">Mặc định</string><string name="sort_price_asc">Giá tăng</string><string name="sort_price_desc">Giá giảm</string>
     <string name="proceed_checkout">Tiến hành đặt hàng</string>
     <string name="active_promotions">Ưu đãi dành cho bạn</string><string name="promotion_swipe_hint">Lướt ngang để xem ưu đãi · Chạm để xem chi tiết</string><string name="featured_products">Sản phẩm nổi bật</string><string name="see_all">Xem tất cả</string><string name="avatar_placeholder">L</string><string name="order_detail_description">Mở chi tiết đơn hàng</string>    <string name="my_orders_title">Đơn hàng của tôi</string>
+    <string name="open_category_menu">Mở menu phân loại sản phẩm</string>
+    <string name="close_category_menu">Đóng menu phân loại sản phẩm</string>
+    <string name="product_categories">Phân loại sản phẩm</string>
+    <string name="all_products">Tất cả sản phẩm</string>
     <string name="my_orders_subtitle">Theo dõi và quản lý các đơn hàng của bạn</string>
     <string name="empty_orders_filtered">Chưa có đơn hàng trong trạng thái này\nChạm để tải lại</string>
     <string name="load_more_orders">Xem thêm đơn hàng</string>

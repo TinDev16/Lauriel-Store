@@ -117,6 +117,7 @@ class StatisticsServiceTest {
         assertThat(result.sales().delivered()).isEqualTo(2);
         assertThat(result.sales().cancelled()).isEqualTo(1);
         assertThat(result.sales().revenue()).isEqualByComparingTo("150");
+        assertThat(result.kpis().revenueAllTime()).isEqualByComparingTo("150");
         assertThat(result.sales().averageOrderValue()).isEqualByComparingTo("75");
         assertThat(result.sales().cancelRate()).isEqualByComparingTo("25");
         assertThat(result.statuses()).filteredOn(s -> s.status() == OrderStatus.DELIVERED)
@@ -131,6 +132,8 @@ class StatisticsServiceTest {
     @Test
     void productCustomerInventoryPurchaseAndDiscountAggregates() {
         seed();
+        jdbc.update("UPDATE orders SET order_promotion_name='Ưu đãi tháng', "
+                + "order_promotion_percent=5, order_promotion_discount=7 WHERE order_id=101");
         var result = report();
         assertThat(result.topProducts().get(0).productName()).isEqualTo("Ao");
         assertThat(result.topProducts().get(0).quantity()).isEqualTo(2);
@@ -152,11 +155,16 @@ class StatisticsServiceTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add)).isEqualByComparingTo("40");
         assertThat(result.topSuppliers().get(0).receiptCount()).isEqualTo(1);
         assertThat(result.discounts().voucher()).isEqualByComparingTo("10");
-        assertThat(result.discounts().promotion()).isEqualByComparingTo("10");
-        assertThat(result.discounts().total()).isEqualByComparingTo("20");
+        assertThat(result.discounts().productPromotion()).isEqualByComparingTo("10");
+        assertThat(result.discounts().orderPromotion()).isEqualByComparingTo("7");
+        assertThat(result.discounts().total()).isEqualByComparingTo("27");
+        assertThat(result.discounts().orderPromotionOrders()).isEqualTo(1);
         assertThat(result.discounts().voucherOrders()).isEqualTo(1);
         assertThat(result.topVouchersByUses().get(0).orderCount()).isEqualTo(1);
         assertThat(result.topPromotionProducts().get(0).discount()).isEqualByComparingTo("10");
+        assertThat(result.topOrderPromotionsByUses()).singleElement()
+                .satisfies(promotion -> assertThat(promotion.discount()).isEqualByComparingTo("7"));
+        assertThat(result.topOrderPromotionsByDiscount()).singleElement();
         assertThat(result.newCustomersThisMonth()).isGreaterThanOrEqualTo(1);
     }
 
@@ -194,6 +202,35 @@ class StatisticsServiceTest {
         mvc.perform(get("/admin/statistics").with(user("admin").roles("ADMIN"))
                 .param("fromDate", today.toString()).param("toDate", today.minusDays(1).toString()))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void allStatisticsRoutesRenderForStaffAndAdminButRejectCustomers() throws Exception {
+        seed();
+        for (String path : new String[] {"/admin/statistics/sales", "/admin/statistics/products",
+                "/admin/statistics/customers", "/admin/statistics/promotions", "/admin/statistics/inventory"}) {
+            mvc.perform(get(path).with(user("admin").roles("ADMIN")))
+                    .andExpect(status().isOk()).andExpect(model().attributeExists("report", "section"))
+                    .andExpect(content().string(containsString("stats-subnav")));
+            mvc.perform(get(path).with(user("staff").roles("STAFF"))).andExpect(status().isOk());
+            mvc.perform(get(path).with(user("buyer").roles("CUSTOMER"))).andExpect(status().isForbidden());
+        }
+    }
+
+    @Test
+    void overviewUsesRealDrillDownLinksAndQuarterPreset() throws Exception {
+        seed();
+        mvc.perform(get("/admin/statistics").with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Tổng doanh thu đã giao")))
+                .andExpect(content().string(containsString("Khách hàng đang online")))
+                .andExpect(content().string(containsString("Top sản phẩm đang nằm trong giỏ hàng")))
+                .andExpect(content().string(containsString("/admin/statistics/sales")))
+                .andExpect(content().string(containsString("/admin/statistics/inventory")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("href=\"#\""))));
+        var quarter = statistics.report("THIS_QUARTER", null, null, null, 5, 5);
+        assertThat(quarter.range().preset()).isEqualTo("THIS_QUARTER");
+        assertThat(quarter.range().fromDate().getMonthValue()).isIn(1, 4, 7, 10);
     }
 
     @Test

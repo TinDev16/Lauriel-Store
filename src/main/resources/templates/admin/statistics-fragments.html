@@ -1,0 +1,37 @@
+<!DOCTYPE html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><body>
+<nav class="stats-subnav" th:fragment="nav(active)" aria-label="Nhóm báo cáo thống kê">
+<a th:classappend="${active == 'overview'} ? 'active'" th:href="@{/admin/statistics}"><i class="bi bi-grid"></i>Tổng quan</a>
+<a th:classappend="${active == 'sales'} ? 'active'" th:href="@{/admin/statistics/sales}"><i class="bi bi-graph-up"></i>Doanh thu</a>
+<a th:classappend="${active == 'products'} ? 'active'" th:href="@{/admin/statistics/products}"><i class="bi bi-box-seam"></i>Sản phẩm</a>
+<a th:classappend="${active == 'customers'} ? 'active'" th:href="@{/admin/statistics/customers}"><i class="bi bi-people"></i>Khách hàng</a>
+<a th:classappend="${active == 'promotions'} ? 'active'" th:href="@{/admin/statistics/promotions}"><i class="bi bi-ticket-perforated"></i>Khuyến mãi</a>
+<a th:classappend="${active == 'inventory'} ? 'active'" th:href="@{/admin/statistics/inventory}"><i class="bi bi-boxes"></i>Kho hàng</a>
+</nav>
+<div class="stats-filter" th:fragment="filters(report,action)">
+<div class="stats-presets" aria-label="Khoảng thời gian nhanh">
+<a th:classappend="${report.range.preset == 'TODAY'} ? 'active'" th:href="@{${action}(preset='TODAY')}">Hôm nay</a>
+<a th:classappend="${report.range.preset == 'LAST_7'} ? 'active'" th:href="@{${action}(preset='LAST_7')}">7 ngày</a>
+<a th:classappend="${report.range.preset == 'LAST_30'} ? 'active'" th:href="@{${action}(preset='LAST_30')}">30 ngày</a>
+<a th:classappend="${report.range.preset == 'THIS_MONTH'} ? 'active'" th:href="@{${action}(preset='THIS_MONTH')}">Tháng này</a>
+<a th:classappend="${report.range.preset == 'THIS_QUARTER'} ? 'active'" th:href="@{${action}(preset='THIS_QUARTER')}">Quý này</a>
+<a th:classappend="${report.range.preset == 'THIS_YEAR'} ? 'active'" th:href="@{${action}(preset='THIS_YEAR')}">Năm nay</a>
+</div>
+<form method="get" th:attr="action=${action}" class="stats-filter-form">
+<label>Từ ngày<input class="form-control" name="fromDate" type="date" required th:value="${report.range.fromDate}"></label>
+<label>Đến ngày<input class="form-control" name="toDate" type="date" required th:value="${report.range.toDate}"></label>
+<label>Nhóm theo<select class="form-select" name="groupBy"><option value="DAY" th:selected="${report.range.groupBy == 'DAY'}">Ngày</option><option value="MONTH" th:selected="${report.range.groupBy == 'MONTH'}">Tháng</option><option value="QUARTER" th:selected="${report.range.groupBy == 'QUARTER'}">Quý</option><option value="YEAR" th:selected="${report.range.groupBy == 'YEAR'}">Năm</option></select></label>
+<label>Top<select class="form-select" name="top"><option value="5" th:selected="${report.range.top == 5}">Top 5</option><option value="10" th:selected="${report.range.top == 10}">Top 10</option></select></label>
+<label>Ngưỡng tồn<input class="form-control" name="threshold" type="number" min="0" max="100000" th:value="${report.range.threshold}"></label>
+<button class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Áp dụng</button>
+</form>
+<p><i class="bi bi-info-circle"></i> Dữ liệu từ <strong th:text="${#temporals.format(report.range.fromDate,'dd/MM/yyyy')}"></strong> đến <strong th:text="${#temporals.format(report.range.toDate,'dd/MM/yyyy')}"></strong>. Doanh thu chỉ tính đơn đã giao.</p>
+</div>
+<div id="statisticsData" hidden th:fragment="data(report)">
+<span th:each="p:${report.revenue}" class="revenue-point" th:attr="data-label=${p.label},data-value=${p.revenue},data-count=${p.orderCount}"></span>
+<span th:each="s:${report.statuses}" class="status-point" th:attr="data-label=${s.status},data-value=${s.count}"></span>
+<span th:each="p:${report.newCustomers}" class="customer-point" th:attr="data-label=${p.label},data-value=${p.count}"></span>
+<span th:each="p:${report.purchaseTrend}" class="purchase-point" th:attr="data-label=${p.label},data-value=${p.amount},data-count=${p.receipts}"></span>
+<span th:each="p:${report.topProducts}" class="product-point" th:attr="data-label=${p.productName},data-quantity=${p.quantity},data-revenue=${p.revenue}"></span>
+<span th:each="p:${report.topProductsByRevenue}" class="product-revenue-point" th:attr="data-label=${p.productName},data-value=${p.revenue}"></span>
+</div>
+</body></html>

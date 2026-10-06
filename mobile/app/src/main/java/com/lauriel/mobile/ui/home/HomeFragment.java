@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.chip.Chip;
 import com.lauriel.mobile.R;
 import com.lauriel.mobile.adapter.ProductAdapter;
 import com.lauriel.mobile.adapter.PromotionOfferAdapter;
@@ -45,6 +46,10 @@ public class HomeFragment extends Fragment {
             new EnumMap<>(PromotionOfferAdapter.Type.class);
     private int pendingPromotionRequests;
     private int refreshGeneration;
+    private int productRequestGeneration;
+    private Long selectedCategoryId;
+    private String selectedCategoryName;
+    private boolean buildingCategoryMenu;
 
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle state) {
@@ -77,6 +82,17 @@ public class HomeFragment extends Fragment {
         binding.promotions.setAdapter(promotionAdapter);
         new PagerSnapHelper().attachToRecyclerView(binding.promotions);
 
+        binding.categoriesToggle.setOnClickListener(item -> toggleCategoryMenu());
+        binding.categoryList.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (buildingCategoryMenu || checkedIds.isEmpty()) return;
+            View selected = group.findViewById(checkedIds.get(0));
+            Object tag = selected == null ? null : selected.getTag();
+            if (tag instanceof Models.Category category) {
+                selectCategory(category.categoryId, category.categoryName);
+            } else {
+                selectCategory(null, null);
+            }
+        });
         binding.shop.setOnClickListener(item ->
                 ((MainActivity) requireActivity()).showTab(R.id.nav_shop));
         binding.notifications.setOnClickListener(item ->
@@ -91,8 +107,89 @@ public class HomeFragment extends Fragment {
         if (binding == null || repository == null || adapter == null) return;
         int generation = ++refreshGeneration;
         binding.list.scrollToPosition(0);
-        loadProducts(generation);
+        loadProducts(++productRequestGeneration);
         loadPromotions(generation);
+        loadCategories(generation);
+    }
+
+    private void toggleCategoryMenu() {
+        boolean show = binding.categoryPanel.getVisibility() != View.VISIBLE;
+        binding.categoryPanel.setVisibility(show ? View.VISIBLE : View.GONE);
+        binding.categoriesToggle.setSelected(show);
+        binding.categoriesToggle.setContentDescription(getString(show
+                ? R.string.close_category_menu : R.string.open_category_menu));
+    }
+
+    private void loadCategories(int generation) {
+        repository.categories(new Callback<List<Models.Category>>() {
+            @Override public void onResponse(Call<List<Models.Category>> call,
+                    Response<List<Models.Category>> response) {
+                if (binding == null || generation != refreshGeneration) return;
+                if (!response.isSuccessful() || response.body() == null) return;
+                renderCategoryMenu(response.body());
+            }
+            @Override public void onFailure(Call<List<Models.Category>> call, Throwable error) {
+                // Product and promotion content remains usable when category loading fails.
+            }
+        });
+    }
+
+    private void renderCategoryMenu(List<Models.Category> categories) {
+        buildingCategoryMenu = true;
+        binding.categoryList.removeAllViews();
+        Chip all = categoryChip(getString(R.string.all_products), null,
+                selectedCategoryId == null);
+        binding.categoryList.addView(all);
+        boolean selectedStillExists = selectedCategoryId == null;
+        for (Models.Category category : categories) {
+            boolean checked = selectedCategoryId != null
+                    && selectedCategoryId == category.categoryId;
+            selectedStillExists |= checked;
+            binding.categoryList.addView(categoryChip(category.categoryName, category, checked));
+        }
+        if (!selectedStillExists) {
+            selectedCategoryId = null;
+            selectedCategoryName = null;
+            all.setChecked(true);
+            updateProductSectionTitle();
+            loadProducts(++productRequestGeneration);
+        }
+        buildingCategoryMenu = false;
+    }
+
+    private Chip categoryChip(String text, Models.Category category, boolean checked) {
+        Chip chip = new Chip(requireContext());
+        chip.setId(View.generateViewId());
+        chip.setText(text);
+        chip.setTag(category);
+        chip.setCheckable(true);
+        chip.setChecked(checked);
+        chip.setMinHeight(dp(48));
+        chip.setEnsureMinTouchTargetSize(true);
+        chip.setContentDescription("Lọc theo " + text);
+        return chip;
+    }
+
+    private void selectCategory(Long categoryId, String categoryName) {
+        if (java.util.Objects.equals(selectedCategoryId, categoryId)) {
+            binding.categoryPanel.setVisibility(View.GONE);
+            binding.categoriesToggle.setSelected(false);
+            binding.categoriesToggle.setContentDescription(getString(R.string.open_category_menu));
+            return;
+        }
+        selectedCategoryId = categoryId;
+        selectedCategoryName = categoryName;
+        updateProductSectionTitle();
+        binding.categoryPanel.setVisibility(View.GONE);
+        binding.categoriesToggle.setSelected(false);
+        binding.categoriesToggle.setContentDescription(getString(R.string.open_category_menu));
+        binding.list.scrollToPosition(0);
+        loadProducts(++productRequestGeneration);
+    }
+
+    private void updateProductSectionTitle() {
+        binding.productSectionTitle.setText(selectedCategoryName == null
+                ? getString(R.string.featured_products) : selectedCategoryName);
     }
 
     private void loadPromotions(int generation) {
@@ -225,21 +322,24 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadProducts(int generation) {
-        if (binding == null || generation != refreshGeneration) return;
+        if (binding == null || generation != productRequestGeneration) return;
         binding.loading.setVisibility(View.VISIBLE);
         binding.loadMore.setVisibility(View.GONE);
         binding.error.setText("");
         binding.empty.setVisibility(View.GONE);
         binding.stateIcon.setVisibility(View.GONE);
-        repository.list(0, null, null, null, null, new Callback<Models.Page<Models.Product>>() {
+        repository.list(0, null, selectedCategoryId, null, null, new Callback<Models.Page<Models.Product>>() {
             @Override public void onResponse(Call<Models.Page<Models.Product>> call,
                     Response<Models.Page<Models.Product>> response) {
-                if (binding == null || generation != refreshGeneration) return;
+                if (binding == null || generation != productRequestGeneration) return;
                 binding.loading.setVisibility(View.GONE);
                 if (response.isSuccessful() && response.body() != null) {
                     adapter.submit(response.body().content);
                     boolean empty = adapter.getItemCount() == 0;
                     binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
+                    binding.empty.setText(selectedCategoryName == null
+                            ? getString(R.string.empty_products)
+                            : "Chưa có sản phẩm thuộc " + selectedCategoryName + ".");
                     binding.stateIcon.setVisibility(empty ? View.VISIBLE : View.GONE);
                     binding.loadMore.setVisibility(response.body().totalPages > 1 ? View.VISIBLE : View.GONE);
                 } else {
@@ -248,7 +348,7 @@ public class HomeFragment extends Fragment {
                 }
             }
             @Override public void onFailure(Call<Models.Page<Models.Product>> call, Throwable error) {
-                if (binding != null && generation == refreshGeneration) {
+                if (binding != null && generation == productRequestGeneration) {
                     binding.loading.setVisibility(View.GONE);
                     binding.error.setText("Không thể kết nối máy chủ. Chạm để thử lại.");
                     binding.stateIcon.setVisibility(View.VISIBLE);

@@ -566,16 +566,28 @@ class WebAdminTest {
     }
 
     @Test void dashboardUsesActualCounts() throws Exception {
-        checkout(false);
+        Long first=checkout(false);
+        Long second=checkout(false);
+        BigDecimal expectedRevenue=tx.execute(s -> {
+            var one=orders.findById(first).orElseThrow();
+            var two=orders.findById(second).orElseThrow();
+            one.setStatus(OrderStatus.DELIVERED);
+            two.setStatus(OrderStatus.DELIVERED);
+            orders.saveAllAndFlush(List.of(one,two));
+            return one.getFinalAmount().add(two.getFinalAmount());
+        });
         receipt();
         var result=mvc.perform(staff(get("/admin"))).andExpect(status().isOk()).andReturn();
         var summary=(DashboardService.Summary)result.getModelAndView().getModel().get("summary");
         assertThat(summary.activeProducts()).isEqualTo(1);
-        assertThat(summary.pendingOrders()).isEqualTo(1);
-        assertThat(summary.todayOrders()).isEqualTo(1);
+        assertThat(summary.pendingOrders()).isZero();
+        assertThat(summary.todayOrders()).isEqualTo(2);
         assertThat(summary.customers()).isEqualTo(2);
         assertThat(summary.draftReceipts()).isEqualTo(1);
         assertThat(summary.lowStock()).isEqualTo(1);
+        assertThat(summary.deliveredOrders()).isEqualTo(2);
+        assertThat(summary.deliveredRevenue()).isEqualByComparingTo(expectedRevenue);
+        assertThat(result.getResponse().getContentAsString()).contains("Tổng doanh thu đã giao");
     }
 
     @Test void mappingErrorsKeepHtmlForWebAndJsonForApi() throws Exception {

@@ -4,6 +4,15 @@
 <section>
 <div class="row g-3">
 <div class="col-sm-6 col-xl-3">
+<a class="card h-100 text-decoration-none text-body" th:href="@{/admin/orders(status='DELIVERED')}">
+<div class="card-body">
+<p class="text-muted">Tổng doanh thu đã giao</p>
+<h2 th:text="${@view.money(summary.deliveredRevenue)}"></h2>
+<small class="text-muted" th:text="|${summary.deliveredOrders} đơn đã giao|"></small>
+</div>
+</a>
+</div>
+<div class="col-sm-6 col-xl-3">
 <div class="card h-100">
 <div class="card-body">
 <p class="text-muted">Sản phẩm đang bán</p>

@@ -3,7 +3,7 @@
  android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
  android:paddingHorizontal="@dimen/screen_padding">
  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:paddingVertical="@dimen/space_12">
-  <com.google.android.material.button.MaterialButton android:id="@+id/back" style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+  <com.google.android.material.button.MaterialButton android:id="@+id/back" style="@style/BackButton"
    android:layout_width="48dp" android:layout_height="48dp" android:contentDescription="@string/back"
    app:icon="@drawable/ic_back" app:iconPadding="0dp" app:iconTint="@color/ink"/>
   <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"

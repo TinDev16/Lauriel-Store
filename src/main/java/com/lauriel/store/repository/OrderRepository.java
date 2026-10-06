@@ -6,9 +6,12 @@ import java.util.Optional;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
 
 public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
     long countByStatus(com.lauriel.store.entity.enums.OrderStatus status);
+    @Query("select coalesce(sum(o.finalAmount), 0) from Order o where o.status = :status")
+    java.math.BigDecimal sumFinalAmountByStatus(@Param("status") com.lauriel.store.entity.enums.OrderStatus status);
     long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(java.time.LocalDateTime from, java.time.LocalDateTime to);
     @Override
     @EntityGraph(attributePaths = {"customer", "voucher"})

@@ -13,7 +13,7 @@
         android:paddingTop="@dimen/space_sm">
         <com.google.android.material.button.MaterialButton
             android:id="@+id/back"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+            style="@style/BackButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:contentDescription="@string/back"

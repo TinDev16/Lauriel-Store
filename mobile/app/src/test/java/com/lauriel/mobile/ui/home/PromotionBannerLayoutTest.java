@@ -19,6 +19,12 @@ public class PromotionBannerLayoutTest {
         assertTrue(source.contains("PagerSnapHelper"));
         assertTrue(source.contains("showPromotionDetail"));
         assertFalse(home.contains("@string/hero_title"));
+        assertTrue(home.contains("@+id/categories_toggle"));
+        assertTrue(home.contains("@+id/category_panel"));
+        assertTrue(home.contains("@+id/category_list"));
+        assertTrue(home.contains("@+id/product_section_title"));
+        assertTrue(source.contains("repository.categories"));
+        assertTrue(source.contains("selectedCategoryId"));
         assertFalse(source.contains("fake"));
     }
 }

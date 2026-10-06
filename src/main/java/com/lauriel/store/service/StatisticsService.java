@@ -58,15 +58,18 @@ public class StatisticsService {
         var yearOrders = repository.orders(yearStart.atStartOfDay(), today.plusDays(1).atStartOfDay());
         var allOrders = repository.orders(LocalDate.of(1970, 1, 1).atStartOfDay(), today.plusDays(1).atStartOfDay());
         var monthPurchase = repository.purchases(monthStart.atStartOfDay(), today.plusDays(1).atStartOfDay());
-        var kpis = new StatisticsReport.Kpis(todayOrders.revenue(), monthOrders.revenue(),
+        var kpis = new StatisticsReport.Kpis(allOrders.revenue(), todayOrders.revenue(), monthOrders.revenue(),
                 yearOrders.revenue(), todayOrders.total(), monthOrders.total(), allOrders.delivered(),
                 allOrders.cancelled(), repository.customersCount(), repository.activeProducts(),
                 inventory.activeVariants(), inventory.totalQuantity(), inventory.lowStock(),
                 repository.draftReceipts(), monthPurchase.amount());
 
         var promotion = repository.promotions(from, until);
+        var totalDiscount = orders.voucherDiscount().add(promotion.discount())
+                .add(orders.orderPromotionDiscount());
         var discounts = new StatisticsReport.Discounts(orders.voucherDiscount(), promotion.discount(),
-                orders.voucherDiscount().add(promotion.discount()), orders.voucherOrders(), promotion.quantity());
+                orders.orderPromotionDiscount(), totalDiscount, orders.voucherOrders(), promotion.quantity(),
+                orders.orderPromotionOrders());
         LocalDateTime onlineSince = LocalDateTime.now(clock).minusMinutes(5);
         long newCustomersThisMonth = repository.customersCreated(
                 monthStart.atStartOfDay(), today.plusDays(1).atStartOfDay());
@@ -77,7 +80,8 @@ public class StatisticsService {
                 repository.topProducts(from, until, top, false),
                 repository.topProducts(from, until, top, true),
                 repository.topVariants(from, until, top),
-                repository.topCustomers(from, until, top),
+                repository.topCustomers(from, until, top, false),
+                repository.topCustomers(from, until, top, true),
                 inventory,
                 repository.stockVariants(threshold, top, true),
                 repository.stockVariants(threshold, top, false),
@@ -88,6 +92,10 @@ public class StatisticsService {
                 repository.topVouchers(from, until, top, false),
                 repository.topVouchers(from, until, top, true),
                 repository.topPromotionProducts(from, until, top),
+                repository.topOrderPromotions(from, until, top, false),
+                repository.topOrderPromotions(from, until, top, true),
+                repository.soldQuantity(from, until),
+                repository.customersWithOrders(from, until),
                 newCustomersThisMonth,
                 customerSeries(range, repository.customersDaily(from, until)),
                 repository.engagement(onlineSince),
@@ -113,6 +121,10 @@ public class StatisticsService {
                 case "LAST_7" -> { from = today.minusDays(6); to = today; }
                 case "LAST_30" -> { from = today.minusDays(29); to = today; }
                 case "THIS_MONTH" -> { from = today.withDayOfMonth(1); to = today; }
+                case "THIS_QUARTER" -> {
+                    int firstMonth = ((today.getMonthValue() - 1) / 3) * 3 + 1;
+                    from = LocalDate.of(today.getYear(), firstMonth, 1); to = today;
+                }
                 case "THIS_YEAR" -> { from = today.withDayOfYear(1); to = today; }
                 default -> throw new BadRequestException("Bộ lọc thời gian không hợp lệ.");
             }

@@ -21,7 +21,34 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
--- SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '3b6d01a6-4b56-11f1-bebb-d03957e471cc:1-351';
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '3b6d01a6-4b56-11f1-bebb-d03957e471cc:1-975';
+
+--
+-- Table structure for table `categories`
+--
+
+DROP TABLE IF EXISTS `categories`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `categories` (
+  `category_id` bigint NOT NULL AUTO_INCREMENT,
+  `category_name` varchar(100) NOT NULL,
+  `status` enum('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`category_id`),
+  UNIQUE KEY `uq_category_name` (`category_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `categories`
+--
+
+LOCK TABLES `categories` WRITE;
+/*!40000 ALTER TABLE `categories` DISABLE KEYS */;
+INSERT INTO `categories` VALUES (1,'Áo','ACTIVE','2026-09-25 08:16:15'),(2,'Quần','ACTIVE','2026-09-25 08:16:15'),(3,'Giày dép','ACTIVE','2026-09-25 08:16:15'),(4,'Mũ','ACTIVE','2026-09-25 08:16:15'),(5,'Phụ kiện','ACTIVE','2026-09-25 08:16:15'),(6,'Áo khoác','INACTIVE','2026-09-25 08:16:15'),(7,'Váy','INACTIVE','2026-09-25 08:16:15'),(8,'Khác','ACTIVE','2026-09-25 08:16:15');
+/*!40000 ALTER TABLE `categories` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `colors`
@@ -35,7 +62,7 @@ CREATE TABLE `colors` (
   `color_name` varchar(50) NOT NULL,
   PRIMARY KEY (`color_id`),
   UNIQUE KEY `color_name` (`color_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -44,8 +71,64 @@ CREATE TABLE `colors` (
 
 LOCK TABLES `colors` WRITE;
 /*!40000 ALTER TABLE `colors` DISABLE KEYS */;
-INSERT INTO `colors` VALUES (4,'Đen'),(1,'Đỏ'),(5,'Trắng'),(3,'Vàng'),(2,'Xanh');
+INSERT INTO `colors` VALUES (4,'Đen'),(1,'Đỏ'),(6,'Tím'),(5,'Trắng'),(3,'Vàng'),(2,'Xanh'),(7,'Xanh navy');
 /*!40000 ALTER TABLE `colors` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `customer_activity`
+--
+
+DROP TABLE IF EXISTS `customer_activity`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `customer_activity` (
+  `user_id` bigint NOT NULL,
+  `last_seen_at` datetime NOT NULL,
+  PRIMARY KEY (`user_id`),
+  KEY `idx_customer_activity_last_seen` (`last_seen_at`),
+  CONSTRAINT `fk_customer_activity_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `customer_activity`
+--
+
+LOCK TABLES `customer_activity` WRITE;
+/*!40000 ALTER TABLE `customer_activity` DISABLE KEYS */;
+INSERT INTO `customer_activity` VALUES (3,'2026-10-02 13:48:06'),(1,'2026-10-09 15:41:53');
+/*!40000 ALTER TABLE `customer_activity` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `customer_cart_items`
+--
+
+DROP TABLE IF EXISTS `customer_cart_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `customer_cart_items` (
+  `user_id` bigint NOT NULL,
+  `variant_id` bigint NOT NULL,
+  `quantity` int NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`user_id`,`variant_id`),
+  KEY `idx_customer_cart_variant` (`variant_id`),
+  CONSTRAINT `fk_customer_cart_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_customer_cart_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_customer_cart_quantity` CHECK ((`quantity` > 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `customer_cart_items`
+--
+
+LOCK TABLES `customer_cart_items` WRITE;
+/*!40000 ALTER TABLE `customer_cart_items` DISABLE KEYS */;
+INSERT INTO `customer_cart_items` VALUES (1,5,2,'2026-10-09 15:41:53'),(3,3,1,'2026-10-02 13:48:06'),(3,6,1,'2026-10-02 13:48:06');
+/*!40000 ALTER TABLE `customer_cart_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -65,7 +148,7 @@ CREATE TABLE `customers` (
   PRIMARY KEY (`customer_id`),
   UNIQUE KEY `user_id` (`user_id`),
   CONSTRAINT `fk_customers_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -74,7 +157,7 @@ CREATE TABLE `customers` (
 
 LOCK TABLES `customers` WRITE;
 /*!40000 ALTER TABLE `customers` DISABLE KEYS */;
-INSERT INTO `customers` VALUES (1,1,'Le Tin tin','0935991480',NULL,'2026-09-19 13:46:19');
+INSERT INTO `customers` VALUES (1,1,'Le Tin','0935991480','Tòa D1, Vinhomes Q9 TPHCM','2026-09-19 13:46:19'),(2,3,'Thi','0325986656','Long An, VietNam','2026-10-02 13:46:43');
 /*!40000 ALTER TABLE `customers` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -101,7 +184,7 @@ CREATE TABLE `inventory_transactions` (
   CONSTRAINT `fk_inventory_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_inventory_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`),
   CONSTRAINT `chk_inventory_quantity` CHECK ((`quantity` > 0))
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -110,7 +193,7 @@ CREATE TABLE `inventory_transactions` (
 
 LOCK TABLES `inventory_transactions` WRITE;
 /*!40000 ALTER TABLE `inventory_transactions` DISABLE KEYS */;
-INSERT INTO `inventory_transactions` VALUES (1,1,2,'IMPORT',100,'PURCHASE_RECEIPT',1,NULL,'2026-09-19 22:17:11');
+INSERT INTO `inventory_transactions` VALUES (7,1,2,'IMPORT',100,'PURCHASE_RECEIPT',7,NULL,'2026-09-25 08:33:14'),(8,3,2,'IMPORT',2000,'PURCHASE_RECEIPT',8,NULL,'2026-09-25 08:33:44'),(9,3,1,'SALE',3,'ORDER',2,NULL,'2026-09-25 08:34:24'),(10,5,2,'IMPORT',10000,'PURCHASE_RECEIPT',10,NULL,'2026-09-25 14:58:23'),(11,6,2,'IMPORT',10000,'PURCHASE_RECEIPT',13,NULL,'2026-09-28 14:29:52'),(12,7,2,'IMPORT',10000,'PURCHASE_RECEIPT',13,NULL,'2026-09-28 14:29:52'),(13,8,2,'IMPORT',10000,'PURCHASE_RECEIPT',13,NULL,'2026-09-28 14:29:52'),(14,7,1,'SALE',3,'ORDER',3,NULL,'2026-09-28 14:30:59'),(15,8,1,'SALE',2,'ORDER',4,NULL,'2026-09-30 20:55:34'),(16,1,1,'SALE',2,'ORDER',5,NULL,'2026-09-30 21:00:08'),(17,8,1,'SALE',3,'ORDER',6,NULL,'2026-09-30 21:36:04');
 /*!40000 ALTER TABLE `inventory_transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -145,7 +228,44 @@ CREATE TABLE `order_details` (
 
 LOCK TABLES `order_details` WRITE;
 /*!40000 ALTER TABLE `order_details` DISABLE KEYS */;
+INSERT INTO `order_details` VALUES (1,1,2,100000.00,0.00,200000.00),(2,3,3,200000.00,0.00,600000.00),(3,7,3,900000.00,0.00,2700000.00),(4,8,2,900000.00,0.00,1800000.00),(5,1,2,100000.00,0.00,200000.00),(6,8,3,900000.00,0.00,2700000.00);
 /*!40000 ALTER TABLE `order_details` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `order_promotions`
+--
+
+DROP TABLE IF EXISTS `order_promotions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `order_promotions` (
+  `order_promotion_id` bigint NOT NULL AUTO_INCREMENT,
+  `promotion_name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `min_order_amount` decimal(14,2) NOT NULL,
+  `discount_percent` decimal(5,2) NOT NULL,
+  `max_discount_amount` decimal(14,2) DEFAULT NULL,
+  `start_date` datetime NOT NULL,
+  `end_date` datetime NOT NULL,
+  `status` enum('ACTIVE','INACTIVE') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ACTIVE',
+  PRIMARY KEY (`order_promotion_id`),
+  KEY `idx_order_promotions_eligibility` (`status`,`start_date`,`end_date`,`min_order_amount`),
+  CONSTRAINT `chk_order_promotions_cap` CHECK (((`max_discount_amount` is null) or (`max_discount_amount` > 0))),
+  CONSTRAINT `chk_order_promotions_dates` CHECK ((`start_date` < `end_date`)),
+  CONSTRAINT `chk_order_promotions_min` CHECK ((`min_order_amount` >= 0)),
+  CONSTRAINT `chk_order_promotions_percent` CHECK (((`discount_percent` > 0) and (`discount_percent` <= 100)))
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `order_promotions`
+--
+
+LOCK TABLES `order_promotions` WRITE;
+/*!40000 ALTER TABLE `order_promotions` DISABLE KEYS */;
+INSERT INTO `order_promotions` VALUES (1,'Voucher 10% cho đơn từ 1tr đồng','Giảm giá 10% cho đơn hàng từ 1.000.000đ tối đa 50k',1000000.00,10.00,50000.00,'2026-10-03 11:43:00','2027-11-11 11:44:00','ACTIVE');
+/*!40000 ALTER TABLE `order_promotions` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -155,20 +275,6 @@ UNLOCK TABLES;
 DROP TABLE IF EXISTS `orders`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `order_promotions` (
-  `order_promotion_id` bigint NOT NULL AUTO_INCREMENT,
-  `promotion_name` varchar(200) NOT NULL,
-  `description` text,
-  `min_order_amount` decimal(14,2) NOT NULL,
-  `discount_percent` decimal(5,2) NOT NULL,
-  `max_discount_amount` decimal(14,2) DEFAULT NULL,
-  `start_date` datetime NOT NULL,
-  `end_date` datetime NOT NULL,
-  `status` enum('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
-  PRIMARY KEY (`order_promotion_id`),
-  KEY `idx_order_promotions_eligibility` (`status`,`start_date`,`end_date`,`min_order_amount`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE `orders` (
   `order_id` bigint NOT NULL AUTO_INCREMENT,
   `customer_id` bigint NOT NULL,
@@ -179,6 +285,7 @@ CREATE TABLE `orders` (
   `order_promotion_name` varchar(200) DEFAULT NULL,
   `order_promotion_percent` decimal(5,2) DEFAULT NULL,
   `order_promotion_discount` decimal(14,2) NOT NULL DEFAULT '0.00',
+  `shipping_fee` decimal(14,2) NOT NULL DEFAULT '20000.00',
   `final_amount` decimal(14,2) NOT NULL DEFAULT '0.00',
   `status` enum('PENDING','CONFIRMED','PROCESSING','SHIPPING','DELIVERED','CANCELLED','RETURNED') NOT NULL DEFAULT 'PENDING',
   `shipping_address` text NOT NULL,
@@ -189,12 +296,14 @@ CREATE TABLE `orders` (
   KEY `fk_orders_voucher` (`voucher_id`),
   KEY `idx_orders_order_promotion` (`order_promotion_id`),
   CONSTRAINT `fk_orders_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`customer_id`),
-  CONSTRAINT `fk_orders_voucher` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`voucher_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_orders_order_promotion` FOREIGN KEY (`order_promotion_id`) REFERENCES `order_promotions` (`order_promotion_id`),
+  CONSTRAINT `fk_orders_voucher` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`voucher_id`) ON DELETE SET NULL,
   CONSTRAINT `chk_orders_discount` CHECK ((`discount_amount` >= 0)),
   CONSTRAINT `chk_orders_final` CHECK ((`final_amount` >= 0)),
+  CONSTRAINT `chk_orders_order_promotion_discount` CHECK ((`order_promotion_discount` >= 0)),
+  CONSTRAINT `chk_orders_shipping_fee` CHECK ((`shipping_fee` >= 0)),
   CONSTRAINT `chk_orders_total` CHECK ((`total_amount` >= 0))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -203,6 +312,7 @@ CREATE TABLE `orders` (
 
 LOCK TABLES `orders` WRITE;
 /*!40000 ALTER TABLE `orders` DISABLE KEYS */;
+INSERT INTO `orders` VALUES (1,1,NULL,NULL,200000.00,0.00,NULL,NULL,0.00,20000.00,200000.00,'CANCELLED','q2','2026-09-24 11:41:30','2026-09-24 11:43:53'),(2,1,1,NULL,600000.00,90000.00,NULL,NULL,0.00,20000.00,530000.00,'DELIVERED','q2','2026-09-25 08:34:24','2026-09-25 15:21:58'),(3,1,1,NULL,2700000.00,405000.00,NULL,NULL,0.00,20000.00,2315000.00,'PENDING','Tòa D1, Vinhomes Q9 TPHCM','2026-09-28 14:30:59','2026-09-28 14:30:59'),(4,1,NULL,NULL,1800000.00,0.00,NULL,NULL,0.00,20000.00,1820000.00,'PROCESSING','Tòa D1, Vinhomes Q9 TPHCM','2026-09-30 20:55:34','2026-10-02 13:32:45'),(5,1,NULL,NULL,200000.00,0.00,NULL,NULL,0.00,20000.00,220000.00,'DELIVERED','Tòa D1, Vinhomes Q9 TPHCM','2026-09-30 21:00:07','2026-09-30 21:05:08'),(6,1,1,NULL,2700000.00,405000.00,NULL,NULL,0.00,20000.00,2315000.00,'CONFIRMED','Tòa D1, Vinhomes Q9 TPHCM','2026-09-30 21:36:04','2026-10-02 13:32:17');
 /*!40000 ALTER TABLE `orders` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -239,6 +349,40 @@ LOCK TABLES `payments` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `product_images`
+--
+
+DROP TABLE IF EXISTS `product_images`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `product_images` (
+  `product_image_id` bigint NOT NULL AUTO_INCREMENT,
+  `product_id` bigint NOT NULL,
+  `color_id` bigint DEFAULT NULL,
+  `image_url` text NOT NULL,
+  `is_primary` tinyint(1) NOT NULL DEFAULT '0',
+  `display_order` int NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`product_image_id`),
+  KEY `idx_product_images_product_order` (`product_id`,`display_order`,`product_image_id`),
+  KEY `idx_product_images_color` (`color_id`),
+  CONSTRAINT `fk_product_images_color` FOREIGN KEY (`color_id`) REFERENCES `colors` (`color_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_product_images_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_product_images_order` CHECK ((`display_order` >= 0))
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `product_images`
+--
+
+LOCK TABLES `product_images` WRITE;
+/*!40000 ALTER TABLE `product_images` DISABLE KEYS */;
+INSERT INTO `product_images` VALUES (2,2,NULL,'/uploads/products/2/218c37b8-07c6-4331-b6aa-2c95b0baf743.webp',1,0,'2026-09-25 08:21:42'),(3,2,NULL,'/uploads/products/2/e72b2b77-f983-4c78-ab28-689c4e3c9f01.jpg',0,1,'2026-09-25 08:22:00'),(4,1,NULL,'/uploads/products/1/1490a805-41e0-45a0-93d2-a761e9c1c581.webp',1,0,'2026-09-25 14:02:31'),(5,1,NULL,'/uploads/products/1/aff66bf8-36a3-4e7b-bf2e-64b608d323c3.webp',0,1,'2026-09-25 14:03:11'),(6,1,NULL,'/uploads/products/1/e7d0910e-297b-49c6-8462-89699e54ad1d.webp',0,2,'2026-09-25 14:03:19'),(7,3,NULL,'/uploads/products/3/9de2b66f-8a52-46c0-b15f-1f64f9941ee4.webp',1,0,'2026-09-26 11:05:42'),(8,3,NULL,'/uploads/products/3/a7386932-88f9-4f84-a832-8049bd15feaa.webp',0,1,'2026-09-26 11:05:42'),(9,3,NULL,'/uploads/products/3/90871733-3763-4d74-86b8-c8f494653bf3.webp',0,2,'2026-09-26 11:05:42'),(10,3,NULL,'/uploads/products/3/4e6b73d0-e2ec-4c60-a01a-ad0aad560d85.webp',0,3,'2026-09-26 11:05:42');
+/*!40000 ALTER TABLE `product_images` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `product_variants`
 --
 
@@ -264,7 +408,7 @@ CREATE TABLE `product_variants` (
   CONSTRAINT `fk_variants_size` FOREIGN KEY (`size_id`) REFERENCES `sizes` (`size_id`),
   CONSTRAINT `chk_variants_price` CHECK ((`price` >= 0)),
   CONSTRAINT `chk_variants_quantity` CHECK ((`quantity` >= 0))
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -273,7 +417,7 @@ CREATE TABLE `product_variants` (
 
 LOCK TABLES `product_variants` WRITE;
 /*!40000 ALTER TABLE `product_variants` DISABLE KEYS */;
-INSERT INTO `product_variants` VALUES (1,1,3,4,'1',10000.00,100,'ACTIVE');
+INSERT INTO `product_variants` VALUES (1,1,3,5,'2',100000.00,318,'ACTIVE'),(2,1,4,5,'3',100000.00,0,'ACTIVE'),(3,2,3,4,'1',900000.00,1997,'ACTIVE'),(4,2,1,2,'SP-2-S1-C2',900000.00,0,'ACTIVE'),(5,2,2,5,'SP-2-S2-C5',900000.00,10000,'ACTIVE'),(6,3,4,2,'SP-3-S4-C2',900000.00,10000,'ACTIVE'),(7,3,3,2,'SP-3-S3-C2',900000.00,9997,'ACTIVE'),(8,3,2,2,'SP-3-S2-C2',900000.00,9995,'ACTIVE'),(9,3,5,2,'SP-3-S5-C2',900000.00,0,'ACTIVE'),(10,3,4,5,'SP-3-S4-C5',900000.00,0,'ACTIVE'),(11,3,3,5,'SP-3-S3-C5',900000.00,0,'ACTIVE'),(12,3,2,5,'SP-3-S2-C5',900000.00,0,'ACTIVE'),(13,3,5,5,'SP-3-S5-C5',900000.00,0,'ACTIVE'),(14,3,1,5,'SP-3-S1-C5',900000.00,0,'ACTIVE'),(15,3,1,2,'SP-3-S1-C2',900000.00,0,'ACTIVE');
 /*!40000 ALTER TABLE `product_variants` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -286,6 +430,7 @@ DROP TABLE IF EXISTS `products`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `products` (
   `product_id` bigint NOT NULL AUTO_INCREMENT,
+  `category_id` bigint DEFAULT NULL,
   `product_name` varchar(200) NOT NULL,
   `description` text,
   `price` decimal(12,2) NOT NULL,
@@ -295,7 +440,7 @@ CREATE TABLE `products` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`product_id`),
   CONSTRAINT `chk_products_price` CHECK ((`price` >= 0))
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -304,7 +449,7 @@ CREATE TABLE `products` (
 
 LOCK TABLES `products` WRITE;
 /*!40000 ALTER TABLE `products` DISABLE KEYS */;
-INSERT INTO `products` VALUES (1,'Quần đùi nam','bàn',100000.00,'/uploads/products/eb9c6c38-1fd7-4af0-872f-6549f15d01db.png','ACTIVE','2026-09-19 22:08:06','2026-09-19 22:55:46');
+INSERT INTO `products` VALUES (1,2,'OVERHEAT STICKER KNIT SHORT','Material:\r\nAngora Blend\r\n\r\nStyle:\r\nShort\r\n\r\nMikenco’s Tips for Keeping Clothes Looking New:\r\n\r\nHand wash if possible (this is great for your clothes; however, if you’re short on time, you can machine wash on a gentle cycle at a temperature no higher than 35°C).\r\nAlways turn clothes inside out when washing to prevent friction with other items that can damage prints and effects.\r\nAbsolutely do not iron on the print!\r\nMikenco offers exchanges within one week (for unwashed items with original tags) and a one-month warranty for any manufacturing defects. Thank you',800000.00,'/uploads/products/1/1490a805-41e0-45a0-93d2-a761e9c1c581.webp','ACTIVE','2026-09-19 22:08:06','2026-09-25 14:18:03'),(2,2,'Quần đùi nam','Material:\r\nDenim\r\n\r\nStyle:\r\nShort\r\n\r\nMikenco’s Tips for Keeping Clothes Looking New:\r\n\r\nHand wash if possible (this is great for your clothes; however, if you’re short on time, you can machine wash on a gentle cycle at a temperature no higher than 35°C).\r\nAlways turn clothes inside out when washing to prevent friction with other items that can damage prints and effects.\r\nAbsolutely do not iron on the print!\r\nMikenco offers exchanges within one week (for unwashed items with original tags) and a one-month warranty for any manufacturing defects. Thank you\r\n\r\n ',900000.00,'/uploads/products/2/218c37b8-07c6-4331-b6aa-2c95b0baf743.webp','ACTIVE','2026-09-25 08:21:42','2026-09-25 14:18:14'),(3,1,'CHECKER STATE JERSEY','Material:\r\nPolyester\r\n\r\nStyle:\r\nJersey\r\n\r\nMikenco’s Tips for Keeping Clothes Looking New:\r\n\r\nHand wash if possible (this is great for your clothes; however, if you’re short on time, you can machine wash on a gentle cycle at a temperature no higher than 35°C).\r\nAlways turn clothes inside out when washing to prevent friction with other items that can damage prints and effects.\r\nAbsolutely do not iron on the print!\r\nMikenco offers exchanges within one week (for unwashed items with original tags) and a one-month warranty for any manufacturing defects. Thank you',900000.00,'/uploads/products/3/9de2b66f-8a52-46c0-b15f-1f64f9941ee4.webp','ACTIVE','2026-09-26 11:05:42','2026-09-26 11:05:42');
 /*!40000 ALTER TABLE `products` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -331,6 +476,7 @@ CREATE TABLE `promotion_products` (
 
 LOCK TABLES `promotion_products` WRITE;
 /*!40000 ALTER TABLE `promotion_products` DISABLE KEYS */;
+INSERT INTO `promotion_products` VALUES (1,1),(1,3);
 /*!40000 ALTER TABLE `promotion_products` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -348,8 +494,18 @@ CREATE TABLE `promotion_variants` (
   KEY `idx_promotion_variants_variant` (`variant_id`),
   CONSTRAINT `fk_promotion_variants_promotion` FOREIGN KEY (`promotion_id`) REFERENCES `promotions` (`promotion_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_promotion_variants_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `promotion_variants`
+--
+
+LOCK TABLES `promotion_variants` WRITE;
+/*!40000 ALTER TABLE `promotion_variants` DISABLE KEYS */;
+INSERT INTO `promotion_variants` VALUES (1,1),(1,2);
+/*!40000 ALTER TABLE `promotion_variants` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `promotions`
@@ -369,7 +525,7 @@ CREATE TABLE `promotions` (
   PRIMARY KEY (`promotion_id`),
   CONSTRAINT `chk_promotions_date` CHECK ((`end_date` > `start_date`)),
   CONSTRAINT `chk_promotions_discount` CHECK (((`discount_percent` >= 0) and (`discount_percent` <= 100)))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -378,6 +534,7 @@ CREATE TABLE `promotions` (
 
 LOCK TABLES `promotions` WRITE;
 /*!40000 ALTER TABLE `promotions` DISABLE KEYS */;
+INSERT INTO `promotions` VALUES (1,'Black Fridays','',10.00,'2026-09-24 11:40:00','2026-12-01 23:59:59','ACTIVE');
 /*!40000 ALTER TABLE `promotions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -410,7 +567,7 @@ CREATE TABLE `purchase_receipt_details` (
 
 LOCK TABLES `purchase_receipt_details` WRITE;
 /*!40000 ALTER TABLE `purchase_receipt_details` DISABLE KEYS */;
-INSERT INTO `purchase_receipt_details` VALUES (1,1,100,60000.00,6000000.00);
+INSERT INTO `purchase_receipt_details` VALUES (1,1,100,60000.00,6000000.00),(4,1,10,200000.00,2000000.00),(5,1,10,200000.00,2000000.00),(6,1,100,200000.00,20000000.00),(7,1,100,200000.00,20000000.00),(8,3,2000,200000.00,400000000.00),(10,5,10000,600000.00,6000000000.00),(13,6,10000,900000.00,9000000000.00),(13,7,10000,900000.00,9000000000.00),(13,8,10000,900000.00,9000000000.00);
 /*!40000 ALTER TABLE `purchase_receipt_details` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -434,7 +591,7 @@ CREATE TABLE `purchase_receipts` (
   CONSTRAINT `fk_receipts_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`supplier_id`),
   CONSTRAINT `fk_receipts_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
   CONSTRAINT `chk_receipts_total` CHECK ((`total_amount` >= 0))
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -443,7 +600,7 @@ CREATE TABLE `purchase_receipts` (
 
 LOCK TABLES `purchase_receipts` WRITE;
 /*!40000 ALTER TABLE `purchase_receipts` DISABLE KEYS */;
-INSERT INTO `purchase_receipts` VALUES (1,1,2,6000000.00,'COMPLETED','2026-09-19 22:16:14');
+INSERT INTO `purchase_receipts` VALUES (1,1,2,6000000.00,'COMPLETED','2026-09-19 22:16:14'),(2,1,2,0.00,'DRAFT','2026-09-24 11:38:32'),(3,2,2,0.00,'CANCELLED','2026-09-24 11:39:05'),(4,2,2,2000000.00,'COMPLETED','2026-09-25 08:22:45'),(5,2,2,2000000.00,'COMPLETED','2026-09-25 08:24:16'),(6,2,2,20000000.00,'COMPLETED','2026-09-25 08:30:16'),(7,2,2,20000000.00,'COMPLETED','2026-09-25 08:32:46'),(8,2,2,400000000.00,'COMPLETED','2026-09-25 08:33:33'),(9,2,2,0.00,'CANCELLED','2026-09-25 14:26:51'),(10,2,2,6000000000.00,'COMPLETED','2026-09-25 14:57:51'),(11,2,2,0.00,'CANCELLED','2026-09-28 13:20:12'),(12,2,2,0.00,'CANCELLED','2026-09-28 13:34:53'),(13,2,2,27000000000.00,'COMPLETED','2026-09-28 14:17:06'),(14,2,2,0.00,'DRAFT','2026-09-28 14:38:32');
 /*!40000 ALTER TABLE `purchase_receipts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -484,7 +641,7 @@ CREATE TABLE `sizes` (
   `size_name` varchar(20) NOT NULL,
   PRIMARY KEY (`size_id`),
   UNIQUE KEY `size_name` (`size_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -493,7 +650,7 @@ CREATE TABLE `sizes` (
 
 LOCK TABLES `sizes` WRITE;
 /*!40000 ALTER TABLE `sizes` DISABLE KEYS */;
-INSERT INTO `sizes` VALUES (4,'L'),(3,'M'),(2,'S'),(5,'XL'),(1,'XS');
+INSERT INTO `sizes` VALUES (4,'L'),(3,'M'),(2,'S'),(5,'XL'),(1,'XS'),(6,'XXL');
 /*!40000 ALTER TABLE `sizes` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -513,7 +670,7 @@ CREATE TABLE `suppliers` (
   `status` enum('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`supplier_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -522,7 +679,7 @@ CREATE TABLE `suppliers` (
 
 LOCK TABLES `suppliers` WRITE;
 /*!40000 ALTER TABLE `suppliers` DISABLE KEYS */;
-INSERT INTO `suppliers` VALUES (1,'MuJi','0123456789','muji@gmail.com','Go Vap, TpHCM','ACTIVE','2026-09-19 22:16:07');
+INSERT INTO `suppliers` VALUES (1,'MUJI','0123456789','muji@gmail.com','Go Vap, TpHCM','ACTIVE','2026-09-19 22:16:07'),(2,'MIKENCO','0935991480','MIKENCO@gmail.com','Go Vap, TpHCM\r\nQ5, TPHCM','ACTIVE','2026-09-24 11:38:54');
 /*!40000 ALTER TABLE `suppliers` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -548,7 +705,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `email` (`email`),
   KEY `fk_users_role` (`role_id`),
   CONSTRAINT `fk_users_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`role_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -557,41 +714,11 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,3,'letutin','$2a$10$YAUinqJGXo09HJeTsa8KL.BjIo8RQfnzWwncY8UrmyAe9OkStDWCq','Le Tin tin','0935991480','letutin@gmail.com','ACTIVE','2026-09-19 13:46:19'),(2,1,'admin','$2a$10$RxksS16sZo0dhdosZQAbpedSk/cawNn0XSbOWM2PFjvGcg0u5nNKK','Administrator',NULL,NULL,'ACTIVE','2026-09-19 14:05:41');
+INSERT INTO `users` VALUES (1,3,'letutin','$2a$10$YAUinqJGXo09HJeTsa8KL.BjIo8RQfnzWwncY8UrmyAe9OkStDWCq','Le Tin','0935991480','letutin@gmail.com','ACTIVE','2026-09-19 13:46:19'),(2,1,'admin','$2a$10$RxksS16sZo0dhdosZQAbpedSk/cawNn0XSbOWM2PFjvGcg0u5nNKK','Administrator',NULL,NULL,'ACTIVE','2026-09-19 14:05:41'),(3,3,'thibro','$2a$10$l.2SEHkKaquOpTi8RTTpP.5XDwvQ.IU.JXhhRtoDb1pwZdi7sKIE2','Thi','0325986656','thibro@gmail.com','ACTIVE','2026-10-02 13:46:43');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
---
--- Table structure for table `customer_activity`
---
-
-DROP TABLE IF EXISTS `customer_activity`;
-CREATE TABLE `customer_activity` (
-  `user_id` bigint NOT NULL,
-  `last_seen_at` datetime NOT NULL,
-  PRIMARY KEY (`user_id`),
-  KEY `idx_customer_activity_last_seen` (`last_seen_at`),
-  CONSTRAINT `fk_customer_activity_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Table structure for table `customer_cart_items`
---
-
-DROP TABLE IF EXISTS `customer_cart_items`;
-CREATE TABLE `customer_cart_items` (
-  `user_id` bigint NOT NULL,
-  `variant_id` bigint NOT NULL,
-  `quantity` int NOT NULL,
-  `updated_at` datetime NOT NULL,
-  PRIMARY KEY (`user_id`,`variant_id`),
-  KEY `idx_customer_cart_variant` (`variant_id`),
-  CONSTRAINT `fk_customer_cart_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_customer_cart_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE,
-  CONSTRAINT `chk_customer_cart_quantity` CHECK (`quantity` > 0)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
 -- Table structure for table `vouchers`
 --
 
@@ -617,7 +744,7 @@ CREATE TABLE `vouchers` (
   CONSTRAINT `chk_vouchers_max_discount` CHECK (((`max_discount_amount` is null) or (`max_discount_amount` >= 0))),
   CONSTRAINT `chk_vouchers_min_order` CHECK ((`min_order_amount` >= 0)),
   CONSTRAINT `chk_vouchers_quantity` CHECK ((`quantity` >= 0))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -626,6 +753,7 @@ CREATE TABLE `vouchers` (
 
 LOCK TABLES `vouchers` WRITE;
 /*!40000 ALTER TABLE `vouchers` DISABLE KEYS */;
+INSERT INTO `vouchers` VALUES (1,'SINHNHAT','VOUCHER SINHNHAT','PERCENT',15.00,200000.00,NULL,28,'2026-09-24 21:30:00','2026-10-30 21:30:00','ACTIVE');
 /*!40000 ALTER TABLE `vouchers` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -639,4 +767,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-09-20 16:36:16
+-- Dump completed on 2026-10-09 15:42:26

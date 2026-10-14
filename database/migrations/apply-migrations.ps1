@@ -33,7 +33,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Could not connect to MySQL with the supplied administrator account.' }
 
     switch ($state) {
-        '1:1:1:1:0:1:1:1:1:1' { Write-Host 'V2-V9 are already fully applied. No changes were made.' -ForegroundColor Green; exit 0 }
+        '1:1:1:1:0:1:1:1:1:1' { $pendingMigrations = @() }
         '1:1:1:1:0:1:1:1:1:0' { $pendingMigrations = @('V9__add_order_promotions.sql') }
         '1:1:1:1:0:1:1:1:0:0' { $pendingMigrations = @('V8__add_promotion_variants.sql','V9__add_order_promotions.sql') }
         '1:1:1:1:0:1:0:0:0:0' { $pendingMigrations = @('V7__add_customer_engagement.sql','V8__add_promotion_variants.sql','V9__add_order_promotions.sql') }
@@ -50,11 +50,22 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Migration failed: $name" }
     }
 
+    $superAdminRole = & $mysql @commonArguments --batch --skip-column-names --execute="SELECT COUNT(*) FROM roles WHERE role_name='SUPER_ADMIN';"
+    if ($LASTEXITCODE -ne 0) { throw 'Could not inspect the SUPER_ADMIN role.' }
+    if ($superAdminRole -eq '0') {
+        $name = 'V10__add_super_admin_role.sql'
+        Write-Host "Applying $name..."
+        Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $PSScriptRoot $name) | & $mysql @commonArguments
+        if ($LASTEXITCODE -ne 0) { throw "Migration failed: $name" }
+    }
+
     $verified = & $mysql @commonArguments --batch --skip-column-names --execute=$stateQuery
     if ($LASTEXITCODE -ne 0 -or $verified -ne '1:1:1:1:0:1:1:1:1:1') {
         throw "Could not verify schema after migration: $verified"
     }
-    Write-Host 'V2-V9 are fully applied.' -ForegroundColor Green
+    $verifiedRole = & $mysql @commonArguments --batch --skip-column-names --execute="SELECT COUNT(*) FROM roles WHERE role_name='SUPER_ADMIN';"
+    if ($LASTEXITCODE -ne 0 -or $verifiedRole -ne '1') { throw 'Could not verify V10 SUPER_ADMIN role.' }
+    Write-Host 'V2-V10 are fully applied.' -ForegroundColor Green
 }
 finally {
     Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue

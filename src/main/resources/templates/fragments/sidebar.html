@@ -129,6 +129,17 @@
 </a>
 </li></ul>
 </div>
+<div class="sidebar-menu-section" th:if="${isSuperAdmin}">
+<div class="sidebar-menu-title">Hệ thống</div>
+<ul class="sidebar-menu-list">
+<li class="sidebar-menu-item">
+<a class="sidebar-menu-link" th:classappend="${menu == 'accounts'} ? 'active'" th:href="@{/admin/accounts}">
+<i class="bi bi-shield-lock"></i>
+<span>Quản lý tài khoản</span>
+</a>
+</li>
+</ul>
+</div>
 </div>
 <div class="sidebar-profile">
 <i class="bi bi-person-circle fs-3">
@@ -136,7 +147,7 @@
 <div class="sidebar-profile-info">
 <div class="sidebar-profile-name" th:text="${username}">
 </div>
-<div class="sidebar-profile-email" th:text="${isAdmin ? 'Quản trị viên' : 'Nhân viên'}">
+<div class="sidebar-profile-email" th:text="${isSuperAdmin ? 'Quản trị viên cao nhất' : (isAdmin ? 'Quản trị viên' : 'Nhân viên')}">
 </div>
 </div>
 </div>

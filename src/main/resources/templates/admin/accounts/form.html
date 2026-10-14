@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},${title},'accounts')}">
+<body><section class="account-page">
+<nav class="account-breadcrumb"><a th:href="@{/admin/accounts}">Quản lý tài khoản</a><i class="bi bi-chevron-right"></i><span th:text="${title}"></span></nav>
+<form class="account-form" method="post" th:action="${action}" th:object="${form}">
+  <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="error:${#fields.globalErrors()}" th:text="${error}"></div>
+  <section class="account-form-section">
+    <header><span class="account-section-icon"><i class="bi bi-person-vcard"></i></span><div><h2>Thông tin tài khoản</h2><p>Thông tin nhận diện và liên hệ của người dùng.</p></div></header>
+    <div class="row g-3">
+      <div class="col-md-6" th:if="${!editing}"><label class="form-label">Tên đăng nhập</label><input class="form-control" th:field="*{username}" maxlength="100" autocomplete="username" required><div class="text-danger small" th:errors="*{username}"></div></div>
+      <div class="col-md-6" th:if="${editing}"><label class="form-label">Tên đăng nhập</label><input class="form-control" th:value="${account.username}" disabled></div>
+      <div class="col-md-6"><label class="form-label">Họ và tên</label><input class="form-control" th:field="*{fullName}" maxlength="150" required><div class="text-danger small" th:errors="*{fullName}"></div></div>
+      <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" th:field="*{email}" maxlength="150"><div class="text-danger small" th:errors="*{email}"></div></div>
+      <div class="col-md-6"><label class="form-label">Số điện thoại</label><input class="form-control" th:field="*{phone}" maxlength="20"><div class="text-danger small" th:errors="*{phone}"></div></div>
+    </div>
+  </section>
+  <section class="account-form-section" th:if="${!editing}">
+    <header><span class="account-section-icon"><i class="bi bi-key"></i></span><div><h2>Bảo mật</h2><p>Mật khẩu được mã hóa BCrypt trước khi lưu.</p></div></header>
+    <div class="row g-3"><div class="col-md-6"><label class="form-label">Mật khẩu</label><input class="form-control" type="password" th:field="*{password}" minlength="8" maxlength="72" autocomplete="new-password" required><div class="text-danger small" th:errors="*{password}"></div></div><div class="col-md-6"><label class="form-label">Xác nhận mật khẩu</label><input class="form-control" type="password" th:field="*{confirmPassword}" minlength="8" maxlength="72" autocomplete="new-password" required><div class="text-danger small" th:errors="*{confirmPassword}"></div></div></div>
+  </section>
+  <section class="account-form-section">
+    <header><span class="account-section-icon"><i class="bi bi-shield-check"></i></span><div><h2>Quyền truy cập</h2><p th:text="${editing ? 'Vai trò và trạng thái được thay đổi tại trang chi tiết để có bước xác nhận.' : 'Chỉ tạo ADMIN hoặc STAFF; SUPER_ADMIN chỉ được bootstrap bằng môi trường.'}"></p></div></header>
+    <div class="row g-3" th:if="${!editing}"><div class="col-md-6"><label class="form-label">Vai trò</label><select class="form-select" th:field="*{role}"><option th:each="item:${managementRoles}" th:value="${item}" th:text="${item}"></option></select></div><div class="col-md-6"><label class="form-label">Trạng thái</label><select class="form-select" th:field="*{status}"><option th:each="item:${accountStatuses}" th:value="${item}" th:text="${item}"></option></select></div></div>
+    <div class="account-readonly-access" th:if="${editing}"><div><small>Vai trò</small><strong th:text="${account.role}"></strong></div><div><small>Trạng thái</small><strong th:text="${account.status}"></strong></div><input type="hidden" th:field="*{role}"><input type="hidden" th:field="*{status}"></div>
+  </section>
+  <div class="d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" th:href="${editing ? '/admin/accounts/' + account.userId : '/admin/accounts'}">Hủy</a><button class="btn btn-primary"><i class="bi bi-check2"></i> Lưu tài khoản</button></div>
+</form>
+</section></body></html>

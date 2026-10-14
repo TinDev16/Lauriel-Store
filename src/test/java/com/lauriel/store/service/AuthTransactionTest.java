@@ -98,7 +98,7 @@ class AuthTransactionTest {
         assertThat(roles.findAll().stream().map(role -> role.getRoleId()).toList())
                 .containsExactlyInAnyOrderElementsOf(existingRoles);
         assertThat(roles.findAll().stream().map(role -> role.getRoleName()).toList())
-                .containsExactlyInAnyOrder("ADMIN", "STAFF", "CUSTOMER");
+                .containsExactlyInAnyOrder("SUPER_ADMIN", "ADMIN", "STAFF", "CUSTOMER");
         assertThat(users.count()).isEqualTo(usersBefore);
     }
 }

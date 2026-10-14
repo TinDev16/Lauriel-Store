@@ -1,0 +1,9 @@
+<article xmlns:th="http://www.thymeleaf.org" th:fragment="card(product)" class="store-product-card">
+  <a class="store-product-image" th:href="@{/shop/products/{id}(id=${product.productId})}">
+    <img loading="lazy" th:src="${product.imgUrl != null and !#strings.isEmpty(product.imgUrl)} ? ${product.imgUrl} : @{/assets/images/product-placeholder.svg}" th:alt="${product.productName}">
+    <span class="store-sale-badge" th:if="${product.promotion != null}" th:text="|-${@view.number(product.promotion.discountPercent)}%|">-20%</span>
+  </a>
+  <div class="store-product-info"><small th:text="${product.category.categoryName}"></small><a th:href="@{/shop/products/{id}(id=${product.productId})}" th:text="${product.productName}"></a>
+    <div class="store-price"><strong th:text="${@view.money(product.effectivePrice)}"></strong><del th:if="${product.effectivePrice.compareTo(product.price) < 0}" th:text="${@view.money(product.price)}"></del></div>
+  </div>
+</article>

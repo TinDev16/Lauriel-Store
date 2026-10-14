@@ -23,7 +23,14 @@ public class WebModelAdvice {
     @ModelAttribute("isAdmin")
     boolean isAdmin(Authentication auth) {
         return auth != null && auth.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN")
+                        || authority.getAuthority().equals("ROLE_SUPER_ADMIN"));
+    }
+
+    @ModelAttribute("isSuperAdmin")
+    boolean isSuperAdmin(Authentication auth) {
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_SUPER_ADMIN"));
     }
 
     @ModelAttribute("username")

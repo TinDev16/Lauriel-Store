@@ -87,7 +87,20 @@ Sao chép chuỗi được in ra vào `JWT_SECRET` trong Run Configuration; khô
 không ghi secret vào `application.properties` hoặc commit lên Git. Biến đặt trong một
 PowerShell khác sẽ không tự truyền vào IDE đang mở. Nếu dùng `mvnw spring-boot:run`
 ngay trong PowerShell, đặt `$env:JWT_SECRET = '<chuỗi vừa tạo>'` trong chính cửa sổ đó.
-Server mặc định chạy cổng 8080. Mở `/login` để đăng nhập bằng tài khoản ADMIN/STAFF có sẵn trong database; đăng nhập thành công chuyển `/admin`. `/` chuyển về dashboard. Startup thành công được xác nhận qua log `Started LaurielStoreApplication`.
+Ứng dụng mở đồng thời hai cổng. Web admin và API mobile chạy tại `http://localhost:8080`; web khách hàng chạy tại `http://localhost:8081/shop`. Mở nhầm `/shop` trên cổng 8080 hoặc `/admin` trên cổng 8081 sẽ tự chuyển sang cổng đúng. Có thể đổi cổng bằng hai biến môi trường `ADMIN_PORT` và `STOREFRONT_PORT`. Startup thành công được xác nhận qua log `Tomcat started on ports 8080 (http), 8081 (http)` và `Started LaurielStoreApplication`.
+
+### Khởi tạo SUPER_ADMIN
+
+Chạy migration `database/migrations/V10__add_super_admin_role.sql` hoặc script `database/migrations/apply-migrations.ps1`, sau đó khai báo tài khoản chủ hệ thống trước khi khởi động lần đầu:
+
+```powershell
+$env:SUPER_ADMIN_USERNAME="owner"
+$env:SUPER_ADMIN_PASSWORD="Owner@123"
+$env:SUPER_ADMIN_EMAIL="owner@lauriel.local"
+$env:SUPER_ADMIN_FULL_NAME="Lauriel Owner"
+```
+
+Khi database chưa có tài khoản `SUPER_ADMIN` và cả bốn biến hợp lệ, ứng dụng tạo tài khoản với mật khẩu BCrypt. Nếu đã có `SUPER_ADMIN`, bootstrap không tạo bản ghi trùng. Không ghi mật khẩu này vào `application.properties` hoặc commit lên Git. Sau khi đăng nhập, mở `http://localhost:8080/admin/accounts` để quản lý CUSTOMER, STAFF và ADMIN.
 
 ## Build và test
 

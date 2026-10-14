@@ -1,0 +1,8 @@
+<aside xmlns:th="http://www.thymeleaf.org" th:fragment="summary(pricing)" class="store-summary-card">
+  <h2>Chi tiết thanh toán</h2><div><span>Tạm tính</span><strong th:text="${@view.money(pricing.subtotal)}"></strong></div>
+  <div th:if="${pricing.productPromotionDiscount.signum() > 0}"><span>Khuyến mãi sản phẩm</span><strong class="store-discount" th:text="|-${@view.money(pricing.productPromotionDiscount)}|"></strong></div>
+  <div th:if="${pricing.orderPromotionDiscount.signum() > 0}"><span th:text="${pricing.orderPromotionName ?: 'Khuyến mãi đơn hàng'}"></span><strong class="store-discount" th:text="|-${@view.money(pricing.orderPromotionDiscount)}|"></strong></div>
+  <div th:if="${pricing.discountAmount.signum() > 0}"><span>Voucher</span><strong class="store-discount" th:text="|-${@view.money(pricing.discountAmount)}|"></strong></div>
+  <div><span>Phí giao hàng</span><strong th:text="${@view.money(pricing.shippingFee)}"></strong></div>
+  <div class="store-summary-total"><span>Tổng thanh toán</span><strong th:text="${@view.money(pricing.finalAmount)}"></strong></div>
+</aside>

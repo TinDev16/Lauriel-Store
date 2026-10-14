@@ -353,6 +353,16 @@ class AuthSecurityTest {
     }
 
     @Test
+    void superAdminCanUseAdminAndStaffEndpoints() throws Exception {
+        customerRole.setRoleName("SUPER_ADMIN");
+        String value = token();
+        mvc.perform(get("/api/admin/probe").header("Authorization", "Bearer " + value))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/staff/probe").header("Authorization", "Bearer " + value))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void apiDoesNotAcceptWebSessionAuthentication() throws Exception {
         customerRole.setRoleName("ADMIN");
         var principal = new StoreUserDetails(account);

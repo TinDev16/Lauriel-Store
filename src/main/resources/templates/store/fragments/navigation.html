@@ -1,0 +1,19 @@
+<nav xmlns:th="http://www.thymeleaf.org" th:fragment="navigation" class="store-nav container-xl">
+  <a class="store-brand" th:href="@{/shop}">LAURIEL</a>
+  <button class="store-menu-toggle" type="button" aria-label="Mở menu" data-store-menu><i class="bi bi-list"></i></button>
+  <div class="store-nav-links" data-store-nav>
+    <a th:href="@{/shop}">Trang chủ</a>
+    <a th:href="@{/shop/products}">Sản phẩm</a>
+    <a th:if="${storeLoggedIn}" th:href="@{/shop/orders}">Đơn hàng</a>
+  </div>
+  <form class="store-search" method="get" th:action="@{/shop/products}">
+    <i class="bi bi-search"></i>
+    <input name="keyword" placeholder="Tìm sản phẩm" th:value="${keyword}">
+    <button th:if="${keyword != null and !#strings.isEmpty(keyword)}" type="button" aria-label="Xóa" data-clear-search><i class="bi bi-x"></i></button>
+  </form>
+  <div class="store-actions">
+    <a th:href="@{/shop/cart}" aria-label="Giỏ hàng"><i class="bi bi-bag"></i><span class="store-cart-badge" th:if="${cartCount > 0}" th:text="${cartCount}">0</span></a>
+    <a th:if="${storeLoggedIn}" th:href="@{/shop/profile}" aria-label="Tài khoản"><i class="bi bi-person"></i></a>
+    <a th:unless="${storeLoggedIn}" th:href="@{/login}" class="store-login-link">Đăng nhập</a>
+  </div>
+</nav>

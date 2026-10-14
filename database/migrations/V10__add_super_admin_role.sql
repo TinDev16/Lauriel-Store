@@ -1,0 +1,5 @@
+INSERT INTO roles (role_name)
+SELECT 'SUPER_ADMIN'
+WHERE NOT EXISTS (
+    SELECT 1 FROM roles WHERE role_name = 'SUPER_ADMIN'
+);

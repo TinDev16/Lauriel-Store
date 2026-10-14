@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(content,title)">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="LAURIEL Store - thời trang tối giản cho mỗi ngày">
+  <title th:text="${title} + ' · LAURIEL'">LAURIEL</title>
+  <link rel="icon" th:href="@{/assets/images/favicon.ico}">
+  <link rel="stylesheet" th:href="@{/assets/libs/bootstrap/css/bootstrap.min.css}">
+  <link rel="stylesheet" th:href="@{/assets/libs/bootstrap-icons/bootstrap-icons.css}">
+  <link rel="stylesheet" th:href="@{/assets/css/store.css}">
+</head>
+<body class="store-body">
+<header th:replace="~{store/fragments/header :: header}"></header>
+<div class="container-xl store-alerts" th:replace="~{store/fragments/alerts :: alerts}"></div>
+<main th:replace="${content}"></main>
+<footer th:replace="~{store/fragments/footer :: footer}"></footer>
+<script th:src="@{/assets/libs/bootstrap/js/bootstrap.bundle.min.js}"></script><script th:src="@{/assets/js/store.js}"></script>
+</body></html>

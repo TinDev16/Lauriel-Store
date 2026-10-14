@@ -16,10 +16,13 @@ public final class TestSchema {
     }
 
     public static Map<String, String> migratedTableDefinitions() throws Exception {
-        String dump = Files.readString(Path.of("database/lauriel.sql"));
+        String dump = Files.readString(Path.of("database/lariel.sql"));
         Map<String, String> definitions = new LinkedHashMap<>();
         var tables = Pattern.compile("CREATE TABLE `(\\w+)` \\((.*?)\\) ENGINE=", Pattern.DOTALL).matcher(dump);
-        while (tables.find()) definitions.put(tables.group(1), tables.group(2));
+        while (tables.find()) {
+            String definition = tables.group(2).replaceAll("\\s+COLLATE\\s+utf8mb4_unicode_ci", "");
+            definitions.put(tables.group(1), definition);
+        }
 
         definitions.put("categories", """
                   `category_id` bigint NOT NULL AUTO_INCREMENT,
@@ -30,11 +33,17 @@ public final class TestSchema {
                   UNIQUE KEY `uq_category_name` (`category_name`)
                 """);
         String products = definitions.get("products");
-        products = products.replace("  `product_id` bigint NOT NULL AUTO_INCREMENT,",
-                "  `product_id` bigint NOT NULL AUTO_INCREMENT,\n  `category_id` bigint NOT NULL,");
-        products = products.replace("  PRIMARY KEY (`product_id`),",
-                "  PRIMARY KEY (`product_id`),\n  KEY `idx_products_category` (`category_id`),\n"
-                        + "  CONSTRAINT `fk_products_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`),");
+        if (!products.contains("`category_id`")) {
+            products = products.replace("  `product_id` bigint NOT NULL AUTO_INCREMENT,",
+                    "  `product_id` bigint NOT NULL AUTO_INCREMENT,\n  `category_id` bigint NOT NULL,");
+        } else {
+            products = products.replace("`category_id` bigint DEFAULT NULL", "`category_id` bigint NOT NULL");
+        }
+        if (!products.contains("fk_products_category")) {
+            products = products.replace("  PRIMARY KEY (`product_id`),",
+                    "  PRIMARY KEY (`product_id`),\n  KEY `idx_products_category` (`category_id`),\n"
+                            + "  CONSTRAINT `fk_products_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`),");
+        }
         definitions.put("products", products);
 
         String orders = definitions.get("orders");

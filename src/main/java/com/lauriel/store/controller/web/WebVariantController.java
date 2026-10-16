@@ -78,7 +78,7 @@ public class WebVariantController {
         if (!WebActions.save(() -> result[0] = variants.createBulk(productId, form), errors)) {
             return bulkForm(productId, model);
         }
-        String message = "Đã tạo " + result[0].created() + " biến thể.";
+        String message = "Đã tạo " + result[0].created() + " thuộc tính.";
         if (result[0].skipped() > 0) {
             message += " Bỏ qua " + result[0].skipped() + " tổ hợp đã tồn tại.";
         }

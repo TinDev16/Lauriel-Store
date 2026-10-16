@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{fragments/layout :: layout(~{::section},'Chi tiết kho hàng','inventory')}">
+      th:replace="~{fragments/layout :: layout(~{::section},'Chi tiết tồn hàng','inventory')}">
 <body><section>
 <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
 <div>
 <a class="btn btn-light border shadow-sm d-inline-flex align-items-center gap-2 mb-3"
    th:href="@{/admin/inventory}">
 <i class="bi bi-arrow-left" aria-hidden="true"></i>
-<span>Quay lại kho hàng</span>
+<span>Quay lại danh sách tồn hàng</span>
 </a>
 <h2 class="h4 mt-2 mb-1" th:text="${detail.summary.productName}"></h2>
-<p class="text-muted mb-0">Tồn kho được phân nhóm theo màu sắc và kích cỡ.</p></div>
+<p class="text-muted mb-0">Số lượng còn lại được phân nhóm theo màu sắc và kích cỡ.</p></div>
 <div class="card card-body py-2 px-4 text-center"><span class="text-muted small">Tổng hàng còn</span>
 <strong class="fs-3" th:text="${detail.summary.totalQuantity}"></strong></div></div>
 <div class="row g-3 mb-4">
-<div class="col-md-4"><div class="card card-body"><span class="text-muted small">Số biến thể</span><strong class="fs-4" th:text="${detail.summary.variantCount}"></strong></div></div>
-<div class="col-md-4"><div class="card card-body"><span class="text-muted small">Biến thể hết hàng</span><strong class="fs-4" th:classappend="${detail.summary.outOfStockCount > 0} ? ' text-danger'" th:text="${detail.summary.outOfStockCount}"></strong></div></div>
+<div class="col-md-4"><div class="card card-body"><span class="text-muted small">Số thuộc tính</span><strong class="fs-4" th:text="${detail.summary.variantCount}"></strong></div></div>
+<div class="col-md-4"><div class="card card-body"><span class="text-muted small">Thuộc tính hết hàng</span><strong class="fs-4" th:classappend="${detail.summary.outOfStockCount > 0} ? ' text-danger'" th:text="${detail.summary.outOfStockCount}"></strong></div></div>
 <div class="col-md-4"><div class="card card-body"><span class="text-muted small">Nhóm màu</span><strong class="fs-4" th:text="${#maps.size(variantGroups)}"></strong></div></div>
 </div>
 <div class="card mb-4 overflow-hidden" th:each="group:${variantGroups}">

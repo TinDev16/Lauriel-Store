@@ -56,4 +56,11 @@
     <string name="no_saved_vouchers">Bạn chưa lưu mã giảm giá nào còn hiệu lực.</string>
     <string name="copy_voucher">Sao chép</string>
     <string name="voucher_copied">Đã sao chép mã %1$s</string>
+    <string name="saved_voucher_sheet_title">Chọn mã giảm giá</string>
+    <string name="saved_voucher_summary">%1$d mã đã lưu · %2$d mã dùng được</string>
+    <string name="tap_voucher_to_select">Chạm vào một mã phù hợp để chọn</string>
+    <string name="selected_voucher_hint">Đã chọn %1$s · Nhấn áp dụng để tiếp tục</string>
+    <string name="apply_selected_voucher">Áp dụng mã đã chọn</string>
+    <string name="voucher_selected">Mã giảm giá đang được chọn</string>
+    <string name="close">Đóng</string>
 </resources>

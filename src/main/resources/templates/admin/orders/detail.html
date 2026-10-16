@@ -67,7 +67,7 @@
 </h3>
 </div>
 </div>
-<form class="d-flex gap-2 mb-3" method="post" th:if="${!#lists.isEmpty(transitions)}" th:action="@{/admin/orders/{id}/status(id=${order.orderId})}" data-confirm="Cập nhật trạng thái đơn? Hủy đơn sẽ hoàn kho và voucher.">
+<form class="d-flex gap-2 mb-3" method="post" th:if="${!#lists.isEmpty(transitions)}" th:action="@{/admin/orders/{id}/status(id=${order.orderId})}" data-confirm="Cập nhật trạng thái đơn? Hủy đơn sẽ hoàn lại số lượng hàng và voucher.">
 <select name="status" class="form-select w-auto">
 <option th:each="s:${transitions}" th:value="${s}" th:text="${@view.label(s)}">
 </option>

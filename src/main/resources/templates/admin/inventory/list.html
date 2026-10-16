@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{fragments/layout :: layout(~{::section},'Kho hàng','inventory')}">
+      th:replace="~{fragments/layout :: layout(~{::section},'Tồn hàng','inventory')}">
 <body><section>
 <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-<div><h2 class="h4 mb-1">Tổng quan kho hàng</h2>
+<div><h2 class="h4 mb-1">Tổng quan tồn hàng</h2>
 <p class="text-muted mb-0">Theo dõi tổng tồn của từng sản phẩm và mở chi tiết để xem màu, kích cỡ.</p></div>
-<a class="btn btn-outline-primary" th:href="@{/admin/inventory/transactions}">Lịch sử kho</a>
+<a class="btn btn-outline-primary" th:href="@{/admin/inventory/transactions}">Lịch sử điều chỉnh</a>
 </div>
 <form class="card card-body mb-4" method="get" data-live-filter th:action="@{/admin/inventory}">
 <div class="row g-3 align-items-end">
@@ -22,12 +22,12 @@
 <div class="row g-3 mb-3">
 <div class="col-sm-6"><div class="card card-body h-100"><span class="text-muted small">Sản phẩm phù hợp</span>
 <strong class="fs-4" th:text="${page.totalElements}"></strong></div></div>
-<div class="col-sm-6"><div class="card card-body h-100"><span class="text-muted small">Quản lý tồn kho</span>
+<div class="col-sm-6"><div class="card card-body h-100"><span class="text-muted small">Quản lý tồn hàng</span>
 <strong class="fs-6 mt-1">Cập nhật tự động theo nhập hàng và đơn hàng</strong></div></div>
 </div>
 <div class="card overflow-hidden"><div class="table-responsive">
 <table class="table table-hover align-middle mb-0"><thead class="table-light"><tr>
-<th>Sản phẩm</th><th class="text-center">Biến thể</th><th class="text-center">Tổng hàng còn</th>
+<th>Sản phẩm</th><th class="text-center">Thuộc tính</th><th class="text-center">Tổng hàng còn</th>
 <th>Trạng thái</th><th class="text-end">Chi tiết</th>
 </tr></thead><tbody>
 <tr th:each="item:${page.content}">

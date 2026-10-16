@@ -10,15 +10,15 @@
 </form>
 <div class="card"><div class="table-responsive">
 <table class="table table-hover align-middle mb-0">
-<thead><tr><th>Hình ảnh</th><th>Sản phẩm</th><th>Danh mục</th><th>Giá cơ bản</th><th>Trạng thái</th><th>Biến thể</th><th>Thao tác</th></tr></thead>
+<thead><tr><th>Hình ảnh</th><th>Sản phẩm</th><th>Danh mục</th><th>Giá cơ bản</th><th>Trạng thái</th><th class="text-center">Thuộc tính</th><th class="text-center">Tồn hàng</th><th>Thao tác</th></tr></thead>
 <tbody>
 <tr th:each="r:${page.content}">
 <td><img th:if="${r.imgUrl != null and !#strings.isEmpty(r.imgUrl)}" th:src="${r.imgUrl}" class="product-thumbnail" alt="Sản phẩm" loading="lazy"></td>
-<td th:text="${r.productName}"></td><td th:text="${r.category.categoryName}"></td><td th:text="${@view.money(r.price)}"></td><td th:text="${@view.label(r.status)}"></td><td th:text="${counts.getOrDefault(r.productId,0L)}"></td>
-<td class="text-nowrap"><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{id}/edit(id=${r.productId})}">Sửa</a> <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{id}/variants(id=${r.productId})}">Biến thể</a>
+<td th:text="${r.productName}"></td><td th:text="${r.category.categoryName}"></td><td th:text="${@view.money(r.price)}"></td><td th:text="${@view.label(r.status)}"></td><td class="text-center" th:text="${counts.getOrDefault(r.productId,0L)}"></td><td class="text-center"><strong th:classappend="${stockTotals.getOrDefault(r.productId,0L) == 0} ? ' text-danger' : (${stockTotals.getOrDefault(r.productId,0L) <= 5} ? ' text-warning' : ' text-success')" th:text="${stockTotals.getOrDefault(r.productId,0L)}"></strong></td>
+<td class="text-nowrap"><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{id}/edit(id=${r.productId})}">Sửa</a> <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{id}/variants(id=${r.productId})}">Thuộc tính</a>
 <form class="d-inline" method="post" th:action="@{/admin/products/{id}/status(id=${r.productId})}" data-confirm="Thay đổi trạng thái?"><input type="hidden" name="status" th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}"><button class="btn btn-outline-secondary btn-sm" th:text="${r.status.name() == 'ACTIVE' ? 'Ngừng hoạt động' : 'Kích hoạt'}"></button></form></td>
 </tr>
-<tr th:if="${#lists.isEmpty(page.content)}"><td colspan="7" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td></tr>
+<tr th:if="${#lists.isEmpty(page.content)}"><td colspan="8" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td></tr>
 </tbody></table>
 </div></div>
 <div th:replace="~{fragments/pagination :: pagination}"></div>

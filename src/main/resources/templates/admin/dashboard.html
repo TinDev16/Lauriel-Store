@@ -60,7 +60,7 @@
 <div class="col-sm-6 col-xl-3">
 <div class="card h-100">
 <div class="card-body">
-<p class="text-muted">Tồn kho thấp (≤ 5)</p>
+<p class="text-muted">Tồn hàng thấp (≤ 5)</p>
 <h2 th:text="${summary.lowStock}">
 </h2>
 </div>
@@ -69,7 +69,7 @@
 </div>
 <div class="mt-4 d-flex gap-2">
 <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/orders}">Xem đơn hàng</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/inventory?threshold=5}">Kiểm tra tồn thấp</a>
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Mở danh sách sản phẩm</a>
 <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/purchase-receipts/new}">Tạo phiếu nhập</a>
 </div>
 </section>

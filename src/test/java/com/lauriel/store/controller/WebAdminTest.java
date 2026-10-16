@@ -296,7 +296,9 @@ class WebAdminTest {
     @Test void productSearchStatusAndPaginationKeepFilters() throws Exception {
         mvc.perform(staff(get("/admin/products").param("keyword","Web").param("status","INACTIVE").param("size","1")))
                 .andExpect(status().isOk()).andExpect(content().string(containsString("Web shirt")))
-                .andExpect(content().string(containsString("INACTIVE")));
+                .andExpect(content().string(containsString("INACTIVE")))
+                .andExpect(content().string(containsString("Tồn hàng")))
+                .andExpect(model().attribute("stockTotals", org.hamcrest.Matchers.hasEntry(product.getProductId(), 5L)));
         tx.executeWithoutResult(s -> {var p=new Product();p.setCategory(category);p.setProductName("Web second");p.setPrice(BigDecimal.TEN);p.setStatus(ActiveStatus.INACTIVE);products.saveAndFlush(p);});
         var result=mvc.perform(admin(get("/admin/products").param("keyword","Web").param("status","INACTIVE").param("size","1")))
                 .andExpect(status().isOk()).andReturn();
@@ -374,7 +376,7 @@ class WebAdminTest {
                         .param("colorIds",variant.getColor().getColorId().toString(),blue.getColorId().toString())
                         .param("price","275000").param("status","ACTIVE")))
                 .andExpect(redirectedUrl(productPath()+"/variants"))
-                .andExpect(flash().attribute("successMessage",containsString("Đã tạo 3 biến thể")))
+                .andExpect(flash().attribute("successMessage",containsString("Đã tạo 3 thuộc tính")))
                 .andExpect(flash().attribute("successMessage",containsString("Bỏ qua 1")));
 
         var all=variants.findAll();

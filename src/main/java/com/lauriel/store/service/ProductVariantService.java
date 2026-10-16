@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ProductVariantService {
     public record BulkCreateResult(int created, int skipped) {}
+    public record ProductMetrics(java.util.Map<Long, Long> attributeCounts,
+            java.util.Map<Long, Long> stockTotals) {}
     private final ProductVariantRepository variants;
     private final ProductRepository products;
     private final SizeRepository sizes;
@@ -103,16 +105,26 @@ public class ProductVariantService {
     @Transactional
     public ProductVariantResponse update(Long variantId, ProductVariantRequest request) {
         var variant = variants.findById(variantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy biến thể"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thuộc tính"));
         apply(variant, request);
         return pricing.variantResponse(variants.saveAndFlush(variant));
     }
 
     @Transactional(readOnly = true)
     public java.util.Map<Long,Long> counts(java.util.Collection<Long> ids) {
-        var result = new java.util.HashMap<Long,Long>();
-        if (!ids.isEmpty()) variants.countForProducts(ids).forEach(c -> result.put(c.getProductId(),c.getVariants()));
-        return result;
+        return metrics(ids).attributeCounts();
+    }
+    @Transactional(readOnly = true)
+    public ProductMetrics metrics(java.util.Collection<Long> ids) {
+        var counts = new java.util.HashMap<Long, Long>();
+        var stocks = new java.util.HashMap<Long, Long>();
+        if (!ids.isEmpty()) {
+            variants.countForProducts(ids).forEach(item -> {
+                counts.put(item.getProductId(), item.getVariants());
+                stocks.put(item.getProductId(), item.getTotalQuantity());
+            });
+        }
+        return new ProductMetrics(counts, stocks);
     }
     @Transactional(readOnly = true)
     public com.lauriel.store.dto.response.PageResponse<ProductVariantResponse> listAdmin(Long productId,int page,int size) {
@@ -153,8 +165,8 @@ public class ProductVariantService {
     }
     @Transactional(readOnly = true)
     public ProductVariantResponse detail(Long productId,Long variantId) {
-        var variant=variants.findById(variantId).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy biến thể"));
-        if (!variant.getProduct().getProductId().equals(productId)) throw new ResourceNotFoundException("Không tìm thấy biến thể");
+        var variant=variants.findById(variantId).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thuộc tính"));
+        if (!variant.getProduct().getProductId().equals(productId)) throw new ResourceNotFoundException("Không tìm thấy thuộc tính");
         return pricing.variantResponse(variant);
     }
     @Transactional
@@ -177,7 +189,7 @@ public class ProductVariantService {
                     variant.getProduct().getProductId(), request.sizeId(), request.colorId(), variant.getVariantId());
         }
         if (duplicateAttributes) {
-            throw new DuplicateResourceException("Biến thể với size và màu này đã tồn tại.");
+            throw new DuplicateResourceException("Thuộc tính với size và màu này đã tồn tại.");
         }
         variant.setSize(size);
         variant.setColor(color);

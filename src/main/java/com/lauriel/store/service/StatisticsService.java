@@ -106,7 +106,7 @@ public class StatisticsService {
     public StatisticsReport.Range resolve(String preset, LocalDate from, LocalDate to, String groupBy,
                                           int threshold, int top, LocalDate today) {
         if (threshold < 0 || threshold > 100000) {
-            throw new BadRequestException("Ngưỡng tồn kho phải từ 0 đến 100.000.");
+            throw new BadRequestException("Ngưỡng tồn hàng phải từ 0 đến 100.000.");
         }
         if (top != 5 && top != 10) {
             throw new BadRequestException("Chỉ hỗ trợ Top 5 hoặc Top 10.");

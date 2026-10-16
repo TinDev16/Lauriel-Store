@@ -15,7 +15,7 @@ final class CheckoutItems {
         for (var item : items) {
             if (item == null || item.variantId() == null || item.variantId() <= 0
                     || item.quantity() == null || item.quantity() <= 0) {
-                throw new BadRequestException("Biến thể hoặc số lượng không hợp lệ");
+                throw new BadRequestException("Thuộc tính hoặc số lượng không hợp lệ");
             }
             try {
                 merged.merge(item.variantId(), item.quantity(), Math::addExact);

@@ -53,7 +53,7 @@
     if (match) {
       result.textContent = `${match.sku} · Kích cỡ ${match.sizeName} · ${match.colorName}`;
     } else if (!productSelect.value) {
-      result.textContent = 'Tất cả biến thể';
+      result.textContent = 'Tất cả thuộc tính';
     } else if (!sizeSelect.value) {
       result.textContent = 'Hãy chọn kích cỡ';
     } else {

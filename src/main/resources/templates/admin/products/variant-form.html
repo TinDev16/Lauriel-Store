@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thông tin biến thể','products')}">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thông tin thuộc tính','products')}">
 <body>
 <section>
 <h2 class="h5" th:text="${product.productName}">
@@ -9,13 +9,13 @@
 <form method="post" th:action="@{${action}}" th:object="${form}">
 <div th:replace="~{fragments/fields :: errors}">
 </div>
-<div class="alert alert-info">Số lượng chỉ xem. Nhập kho bằng phiếu nhập kho.</div>
+<div class="alert alert-info">Số lượng chỉ xem. Cập nhật bằng phiếu nhập hàng.</div>
 <p th:if="${quantity != null}" th:text="|Số lượng: ${quantity}|">
 </p>
 <div class="mb-3">
 <label class="form-label">Mã SKU</label>
 <input th:if="${id != null}" class="form-control" th:value="${sku}" readonly>
-<div th:if="${id == null}" class="form-text border rounded p-2 bg-light">Hệ thống sẽ tự tạo SKU sau khi lưu biến thể.</div>
+<div th:if="${id == null}" class="form-text border rounded p-2 bg-light">Hệ thống sẽ tự tạo SKU sau khi lưu thuộc tính.</div>
 </div>
 <div class="mb-3">
 <label class="form-label" for="sizeId">Kích cỡ</label>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Lịch sử kho','inventory/transactions')}">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Lịch sử điều chỉnh','inventory/transactions')}">
 <body>
 <section>
 <form class="card card-body mb-3" method="get" th:action="@{/admin/inventory/transactions}"
@@ -18,7 +18,7 @@
 <option th:each="item:${inventoryProducts}" th:value="${item.key}" th:text="${item.value}"></option>
 </select></div>
 
-<div class="col-12 mt-4"><div class="border-top pt-3"><h3 class="h6 mb-1">Chọn biến thể tương ứng</h3><p class="text-muted small mb-0">Kích cỡ và màu sắc chỉ hiển thị những tổ hợp đang có trong dữ liệu sản phẩm.</p></div></div>
+<div class="col-12 mt-4"><div class="border-top pt-3"><h3 class="h6 mb-1">Chọn thuộc tính tương ứng</h3><p class="text-muted small mb-0">Kích cỡ và màu sắc chỉ hiển thị những tổ hợp đang có trong dữ liệu sản phẩm.</p></div></div>
 <div class="col-lg-4"><label class="form-label" for="transaction-size">Kích cỡ</label>
 <select id="transaction-size" class="form-select" data-size-select data-cascade-filter disabled>
 <option value="">Chọn sản phẩm trước</option></select></div>
@@ -28,8 +28,8 @@
 <div class="col-lg-4">
 <input type="hidden" name="variantId" th:value="${variantId}" data-variant-id>
 <div class="border rounded px-3 py-2 bg-body-tertiary h-100">
-<span class="text-muted small d-block">Biến thể tương ứng</span>
-<strong class="small" data-variant-result>Chưa chọn biến thể</strong>
+<span class="text-muted small d-block">Thuộc tính tương ứng</span>
+<strong class="small" data-variant-result>Chưa chọn thuộc tính</strong>
 </div></div>
 
 <div class="d-none" aria-hidden="true">

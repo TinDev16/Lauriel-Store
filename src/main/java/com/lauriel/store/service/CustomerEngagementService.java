@@ -46,7 +46,7 @@ public class CustomerEngagementService {
             throw new BadRequestException("Số lượng sản phẩm trong giỏ không hợp lệ.");
         }
         if (!normalized.isEmpty() && variants.findByVariantIdIn(normalized.keySet()).size() != normalized.size()) {
-            throw new BadRequestException("Giỏ hàng chứa biến thể không tồn tại.");
+            throw new BadRequestException("Giỏ hàng chứa thuộc tính không tồn tại.");
         }
         jdbc.update("DELETE FROM customer_cart_items WHERE user_id=?", userId);
         LocalDateTime now = LocalDateTime.now(clock);

@@ -43,7 +43,7 @@ public class InventoryService {
     public PageResponse<ProductInventorySummaryResponse> listProducts(
             int page, int size, String keyword, Integer threshold) {
         if (threshold != null && threshold < 0) {
-            throw new BadRequestException("Ngưỡng tồn kho phải không âm");
+            throw new BadRequestException("Ngưỡng tồn hàng phải không âm");
         }
         String normalizedKeyword = keyword == null || keyword.isBlank() ? null : keyword.strip();
         var result = variants.findInventoryProducts(normalizedKeyword, threshold,
@@ -56,7 +56,7 @@ public class InventoryService {
     public ProductInventoryDetailResponse productDetail(Long productId) {
         var items = variants.findByProduct_ProductIdOrderByColor_ColorNameAscSize_SizeNameAscVariantIdAsc(productId);
         if (items.isEmpty()) {
-            throw new ResourceNotFoundException("Không tìm thấy dữ liệu kho của sản phẩm");
+            throw new ResourceNotFoundException("Không tìm thấy dữ liệu tồn hàng của sản phẩm");
         }
         long total = items.stream().mapToLong(ProductVariant::getQuantity).sum();
         long outOfStock = items.stream().filter(item -> item.getQuantity() == 0).count();
@@ -132,7 +132,7 @@ public class InventoryService {
                     .orElseThrow(() -> new ResourceNotFoundException("KhÃ´ng tÃ¬m tháº¥y biáº¿n thá»ƒ"));
             long updated = (long) variant.getQuantity() + detail.getQuantity();
             if (detail.getQuantity() <= 0 || updated > Integer.MAX_VALUE || variant.getQuantity() < 0) {
-                throw new ResourceConflictException("Sá»‘ lÆ°á»£ng tá»“n kho vÆ°á»£t giá»›i háº¡n há»£p lá»‡");
+                throw new ResourceConflictException("Số lượng tồn hàng vượt giới hạn hợp lệ");
             }
             locked.put(id, variant);
         }
@@ -174,7 +174,7 @@ public class InventoryService {
             var variant = detail.getProductVariant();
             if (!entityManager.contains(variant)
                     || entityManager.getLockMode(variant) != LockModeType.PESSIMISTIC_WRITE) {
-                throw new IllegalStateException("KhÃ´ng thá»ƒ thay Ä‘á»•i tá»“n kho khi biáº¿n thá»ƒ chÆ°a Ä‘Æ°á»£c khÃ³a Ä‘á»ƒ cáº­p nháº­t");
+                throw new IllegalStateException("Không thể thay đổi tồn hàng khi thuộc tính chưa được khóa để cập nhật");
             }
             requireSaleQuantity(variant, detail.getQuantity());
         }
@@ -196,7 +196,7 @@ public class InventoryService {
                     .orElseThrow(() -> new ResourceNotFoundException("KhÃ´ng tÃ¬m tháº¥y biáº¿n thá»ƒ"));
             long restored = (long) variant.getQuantity() + detail.getQuantity();
             if (detail.getQuantity() <= 0 || variant.getQuantity() < 0 || restored > Integer.MAX_VALUE) {
-                throw new ResourceConflictException("Sá»‘ lÆ°á»£ng tá»“n kho vÆ°á»£t giá»›i háº¡n há»£p lá»‡");
+                throw new ResourceConflictException("Số lượng tồn hàng vượt giới hạn hợp lệ");
             }
             locked.put(id, variant);
         }
@@ -220,7 +220,7 @@ public class InventoryService {
             throw new ResourceConflictException("Lá»‹ch sá»­ SALE cá»§a Ä‘Æ¡n hÃ ng khÃ´ng há»£p lá»‡");
         }
         if (!expected.equals(sold)) {
-            throw new ResourceConflictException("KhÃ´ng thá»ƒ hoÃ n kho khi Ä‘Æ¡n hÃ ng chÆ°a cÃ³ lá»‹ch sá»­ SALE Ä‘áº§y Ä‘á»§");
+            throw new ResourceConflictException("Không thể hoàn lại số lượng khi đơn hàng chưa có lịch sử SALE đầy đủ");
         }
     }
     private void requireSaleQuantity(ProductVariant variant, int requested) {
@@ -228,7 +228,7 @@ public class InventoryService {
             throw new BadRequestException("Sá»‘ lÆ°á»£ng mua pháº£i dÆ°Æ¡ng");
         }
         if (variant.getQuantity() < requested) {
-            throw new ResourceConflictException("Sáº£n pháº©m khÃ´ng Ä‘á»§ tá»“n kho.");
+            throw new ResourceConflictException("Sản phẩm không đủ số lượng tồn hàng.");
         }
     }
 

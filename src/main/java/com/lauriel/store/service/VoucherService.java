@@ -105,7 +105,7 @@ public class VoucherService {
     private VoucherValidationResponse previewAmounts(List<CheckoutItemRequest> requestedItems, String requestedCode) {
         var quantities = CheckoutItems.normalize(requestedItems);
         var found = variants.findByVariantIdIn(quantities.keySet());
-        if (found.size() != quantities.size()) throw new ResourceNotFoundException("Không tìm thấy biến thể");
+        if (found.size() != quantities.size()) throw new ResourceNotFoundException("Không tìm thấy thuộc tính");
         if (found.stream().anyMatch(v -> v.getStatus() != ActiveStatus.ACTIVE
                 || v.getProduct().getStatus() != ActiveStatus.ACTIVE)) {
             throw new BadRequestException("Sản phẩm không còn hoạt động");

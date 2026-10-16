@@ -203,10 +203,10 @@ public class PromotionService {
         var ids = requestedVariantIds == null ? new java.util.LinkedHashSet<Long>()
                 : requestedVariantIds.stream().filter(java.util.Objects::nonNull)
                         .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
-        if (ids.isEmpty()) throw new BadRequestException("Hãy chọn ít nhất một biến thể");
+        if (ids.isEmpty()) throw new BadRequestException("Hãy chọn ít nhất một thuộc tính");
         var found = variants.findByVariantIdIn(ids);
         if (found.size()!=ids.size() || found.stream().anyMatch(v -> !v.getProduct().getProductId().equals(productId))) {
-            throw new BadRequestException("Biến thể được chọn không thuộc sản phẩm");
+            throw new BadRequestException("Thuộc tính được chọn không thuộc sản phẩm");
         }
         var links = found.stream().map(variant -> {
             var link = new PromotionVariant();

@@ -195,7 +195,7 @@ public class OrderService {
         OrderStatePolicy.requireCancellable(order.getStatus(), customerAction);
         var items = details.findItemsForCancellation(order.getOrderId());
         if (items.isEmpty()) {
-            throw new ResourceConflictException("Đơn hàng không có dòng hàng để hoàn kho");
+            throw new ResourceConflictException("Đơn hàng không có dòng hàng để hoàn lại số lượng");
         }
         var actor = users.findById(actorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));

@@ -3,10 +3,14 @@ package com.lauriel.mobile.ui.checkout;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.lauriel.mobile.R;
 import com.lauriel.mobile.adapter.CheckoutProductAdapter;
+import com.lauriel.mobile.adapter.SavedVoucherAdapter;
 import com.lauriel.mobile.data.api.ApiClient;
 import com.lauriel.mobile.data.local.CartStore;
 import com.lauriel.mobile.data.local.VoucherStore;
@@ -15,6 +19,7 @@ import com.lauriel.mobile.data.repository.CheckoutUseCase;
 import com.lauriel.mobile.data.repository.OrderRepository;
 import com.lauriel.mobile.data.repository.VoucherRepository;
 import com.lauriel.mobile.databinding.ActivityCheckoutBinding;
+import com.lauriel.mobile.databinding.DialogSavedVouchersBinding;
 import com.lauriel.mobile.ui.BaseActivity;
 import com.lauriel.mobile.ui.MainActivity;
 import com.lauriel.mobile.ui.order.OrderDetailActivity;
@@ -186,6 +191,11 @@ public class CheckoutActivity extends BaseActivity {
 
     private void chooseSavedVoucher(){
         if(vouchersLoading)return;
+        if(automaticPreview==null){
+            b.error.setText("Đang tính giá đơn hàng. Vui lòng thử lại sau ít giây.");
+            loadAutomaticPreview();
+            return;
+        }
         vouchersLoading=true;
         b.chooseSavedVoucher.setEnabled(false);
         b.chooseSavedVoucher.setText(R.string.loading_vouchers);
@@ -211,26 +221,7 @@ public class CheckoutActivity extends BaseActivity {
                             .setPositiveButton(android.R.string.ok,null).show();
                     return;
                 }
-                CharSequence[] labels=new CharSequence[available.size()];
-                for(int index=0;index<available.size();index++){
-                    labels[index]=savedVoucherLabel(available.get(index));
-                }
-                new MaterialAlertDialogBuilder(CheckoutActivity.this)
-                        .setTitle("Mã giảm giá đã lưu")
-                        .setIcon(R.drawable.ic_bookmark)
-                        .setItems(labels,(dialog,index)->{
-                            Models.Voucher selected=available.get(index);
-                            BigDecimal shortfall=amount(selected.minOrderAmount).subtract(voucherEligibleAmount());
-                            if(shortfall.signum()>0){
-                                b.error.setText("Thêm "+Formatters.money(shortfall)+" để sử dụng mã "+selected.code);
-                                return;
-                            }
-                            b.voucher.setText(selected.code);
-                            b.voucher.setSelection(b.voucher.length());
-                            b.chooseSavedVoucher.setText("Đã chọn mã đã lưu: "+selected.code);
-                            validateVoucher();
-                        })
-                        .setNegativeButton("Đóng",null).show();
+                showSavedVoucherSheet(available);
             }
             @Override public void onFailure(Call<Models.Page<Models.Voucher>> call,Throwable error){
                 finishVoucherLoading();
@@ -239,25 +230,48 @@ public class CheckoutActivity extends BaseActivity {
         });
     }
 
-    private String savedVoucherLabel(Models.Voucher voucher){
-        String benefit;
-        if("PERCENT".equals(voucher.discountType)){
-            String percent=voucher.discountValue==null?"0":voucher.discountValue.stripTrailingZeros().toPlainString();
-            benefit="Giảm "+percent+"%";
-            if(voucher.maxDiscountAmount!=null)benefit+=" · tối đa "+Formatters.money(voucher.maxDiscountAmount);
-        }else{
-            benefit="Giảm "+Formatters.money(voucher.discountValue);
+    private void showSavedVoucherSheet(List<Models.Voucher> vouchers){
+        DialogSavedVouchersBinding sheet=DialogSavedVouchersBinding.inflate(getLayoutInflater());
+        BottomSheetDialog dialog=new BottomSheetDialog(this);
+        dialog.setContentView(sheet.getRoot());
+
+        SavedVoucherAdapter adapter=new SavedVoucherAdapter(selected->{
+            sheet.applyVoucher.setEnabled(true);
+            sheet.selectedHint.setText(getString(R.string.selected_voucher_hint,selected.code));
+        });
+        adapter.submit(vouchers,voucherEligibleAmount(),b.voucher.getText().toString().trim());
+        sheet.list.setLayoutManager(new LinearLayoutManager(this));
+        sheet.list.setAdapter(adapter);
+        sheet.summary.setText(getString(R.string.saved_voucher_summary,
+                vouchers.size(),adapter.eligibleCount()));
+
+        Models.Voucher current=adapter.selected();
+        if(current!=null){
+            sheet.applyVoucher.setEnabled(true);
+            sheet.selectedHint.setText(getString(R.string.selected_voucher_hint,current.code));
         }
-        BigDecimal minimum=voucher.minOrderAmount==null?BigDecimal.ZERO:voucher.minOrderAmount;
-        String condition=minimum.signum()<=0?"Mọi đơn hàng":"Đơn từ "+Formatters.money(minimum);
-        BigDecimal shortfall=minimum.subtract(voucherEligibleAmount());
-        String eligibility=shortfall.signum()>0
-                ? "\nChưa đủ điều kiện · Thêm "+Formatters.money(shortfall)
-                : "\nCó thể sử dụng";
-        String expiry=voucher.endDate==null?"":" · HSD "+voucher.endDate.substring(0,Math.min(10,voucher.endDate.length()));
-        return "✓ ĐÃ LƯU  "+voucher.code+"\n"
-                +voucher.voucherName+"\n"
-                +benefit+" · "+condition+expiry+eligibility;
+        sheet.close.setOnClickListener(view->dialog.dismiss());
+        sheet.applyVoucher.setOnClickListener(view->{
+            Models.Voucher selected=adapter.selected();
+            if(selected==null)return;
+            b.voucher.setText(selected.code);
+            b.voucher.setSelection(b.voucher.length());
+            b.chooseSavedVoucher.setText("Đã chọn: "+selected.code);
+            b.error.setText("");
+            dialog.dismiss();
+            validateVoucher();
+        });
+        dialog.setOnShowListener(ignored->{
+            View bottomSheet=dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if(bottomSheet!=null){
+                bottomSheet.getLayoutParams().height=ViewGroup.LayoutParams.MATCH_PARENT;
+                bottomSheet.requestLayout();
+                BottomSheetBehavior<View> behavior=BottomSheetBehavior.from(bottomSheet);
+                behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                behavior.setSkipCollapsed(true);
+            }
+        });
+        dialog.show();
     }
 
     private BigDecimal voucherEligibleAmount(){

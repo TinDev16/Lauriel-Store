@@ -34,7 +34,7 @@ public class WebViewSupport {
             case "LOCKED" -> "Đã khóa";
             case "PERCENT" -> "Theo phần trăm";
             case "FIXED" -> "Số tiền cố định";
-            case "IMPORT" -> "Nhập kho";
+            case "IMPORT" -> "Nhập hàng";
             case "SALE" -> "Bán hàng";
             case "RETURN" -> "Hoàn hàng";
             case "ADJUSTMENT" -> "Điều chỉnh";
@@ -53,7 +53,7 @@ public class WebViewSupport {
             case "COD" -> "Thanh toán khi nhận hàng";
             case "BANKING" -> "Chuyển khoản";
             case "ORDER" -> "Đơn hàng";
-            case "PURCHASE_RECEIPT" -> "Phiếu nhập kho";
+            case "PURCHASE_RECEIPT" -> "Phiếu nhập hàng";
             case "ADMIN" -> "Quản trị viên";
             case "STAFF" -> "Nhân viên";
             case "CUSTOMER" -> "Khách hàng";

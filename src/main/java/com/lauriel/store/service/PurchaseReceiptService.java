@@ -117,10 +117,10 @@ public class PurchaseReceiptService {
         var receipt = lockDraft(id);
         var key = new PurchaseReceiptDetailId(id, request.variantId());
         if (items.existsById(key)) {
-            throw new DuplicateResourceException("Biến thể đã có trong phiếu nhập");
+            throw new DuplicateResourceException("Thuộc tính đã có trong phiếu nhập");
         }
         var variant = variants.findById(request.variantId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy biến thể"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thuộc tính"));
         var item = new PurchaseReceiptDetail();
         item.setId(key);
         item.setPurchaseReceipt(receipt);

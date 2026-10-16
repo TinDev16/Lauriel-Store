@@ -122,9 +122,9 @@ public class StoreCartService {
     }
 
     private ProductVariant requirePurchasable(Long variantId) {
-        if (variantId == null || variantId <= 0) throw new BadRequestException("Biến thể không hợp lệ.");
+        if (variantId == null || variantId <= 0) throw new BadRequestException("Thuộc tính không hợp lệ.");
         ProductVariant variant = variants.findById(variantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy biến thể sản phẩm."));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thuộc tính sản phẩm."));
         if (variant.getStatus() != ActiveStatus.ACTIVE || variant.getProduct().getStatus() != ActiveStatus.ACTIVE) {
             throw new BadRequestException("Sản phẩm không còn hoạt động.");
         }

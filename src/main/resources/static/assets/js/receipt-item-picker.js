@@ -47,7 +47,7 @@
     }
     productResult.textContent = term
       ? visible + " sản phẩm phù hợp"
-      : productOptions.length + " sản phẩm có biến thể";
+      : productOptions.length + " sản phẩm có thuộc tính";
   }
 
   function uniqueById(items, idKey, nameKey) {

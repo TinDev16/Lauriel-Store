@@ -54,9 +54,15 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     List<ProductVariant> findByProduct_ProductIdOrderByColor_ColorNameAscSize_SizeNameAscVariantIdAsc(Long productId);
 
     long countByQuantityLessThanEqual(int quantity);
-    @Query("select v.product.productId as productId, count(v) as variants from ProductVariant v where v.product.productId in :ids group by v.product.productId")
+    @Query("select v.product.productId as productId, count(v) as variants, "
+            + "coalesce(sum(v.quantity), 0) as totalQuantity from ProductVariant v "
+            + "where v.product.productId in :ids group by v.product.productId")
     List<VariantCount> countForProducts(java.util.Collection<Long> ids);
-    interface VariantCount { Long getProductId(); long getVariants(); }
+    interface VariantCount {
+        Long getProductId();
+        long getVariants();
+        long getTotalQuantity();
+    }
     @EntityGraph(attributePaths = {"product", "size", "color"})
     org.springframework.data.domain.Page<ProductVariant> findByProduct_ProductId(Long productId, org.springframework.data.domain.Pageable pageable);
     @EntityGraph(attributePaths = {"product", "size", "color"})

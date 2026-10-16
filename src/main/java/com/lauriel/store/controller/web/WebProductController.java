@@ -47,8 +47,10 @@ public class WebProductController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) ActiveStatus status, Model model) {
         var result = products.listAdmin(page, size, keyword, categoryId, status);
+        var metrics = variants.metrics(result.content().stream().map(p -> p.productId()).toList());
         model.addAttribute("page", result);
-        model.addAttribute("counts", variants.counts(result.content().stream().map(p -> p.productId()).toList()));
+        model.addAttribute("counts", metrics.attributeCounts());
+        model.addAttribute("stockTotals", metrics.stockTotals());
         model.addAttribute("categories", categories.listAdmin());
         model.addAttribute("keyword", keyword);
         model.addAttribute("categoryId", categoryId);

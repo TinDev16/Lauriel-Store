@@ -54,27 +54,20 @@
 </ul>
 </div>
 <div class="sidebar-menu-section">
-<div class="sidebar-menu-title">Kho hàng</div>
+<div class="sidebar-menu-title">Vận hành</div>
 <ul class="sidebar-menu-list">
-<li class="sidebar-menu-item">
-<a class="sidebar-menu-link" th:classappend="${menu == 'inventory'} ? 'active'" th:href="@{/admin/inventory}">
-<i class="bi bi-boxes">
-</i>
-<span>Kho hàng</span>
-</a>
-</li>
 <li class="sidebar-menu-item">
 <a class="sidebar-menu-link" th:classappend="${menu == 'inventory/transactions'} ? 'active'" th:href="@{/admin/inventory/transactions}">
 <i class="bi bi-clock-history">
 </i>
-<span>Lịch sử kho</span>
+<span>Lịch sử điều chỉnh</span>
 </a>
 </li>
 <li class="sidebar-menu-item">
 <a class="sidebar-menu-link" th:classappend="${menu == 'purchase-receipts'} ? 'active'" th:href="@{/admin/purchase-receipts}">
 <i class="bi bi-receipt">
 </i>
-<span>Phiếu nhập kho</span>
+<span>Phiếu nhập hàng</span>
 </a>
 </li>
 <li class="sidebar-menu-item">

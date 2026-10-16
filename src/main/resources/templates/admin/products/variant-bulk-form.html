@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{fragments/layout :: layout(~{::section},'Thêm nhanh biến thể','products')}">
+      th:replace="~{fragments/layout :: layout(~{::section},'Thêm nhanh thuộc tính','products')}">
 <body><section>
 <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
 <div>
-<h1 class="h4 mb-1">Thêm nhanh biến thể</h1>
+<h1 class="h4 mb-1">Thêm nhanh thuộc tính</h1>
 <p class="text-muted mb-0" th:text="${product.productName}"></p>
 </div>
 <a class="btn btn-outline-primary btn-sm"
@@ -84,9 +84,9 @@ Chọn nhiều kích cỡ và màu sắc. Hệ thống sẽ tạo tất cả t�
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
 <div>
 <div class="fw-semibold">Sẽ tạo <span data-combination-count>0</span> tổ hợp</div>
-<div class="small text-muted">Tồn kho ban đầu bằng 0; nhập kho bằng phiếu nhập.</div>
+<div class="small text-muted">Số lượng ban đầu bằng 0; cập nhật bằng phiếu nhập hàng.</div>
 </div>
-<button class="btn btn-primary px-4" type="submit" data-submit-variants disabled>Tạo biến thể</button>
+<button class="btn btn-primary px-4" type="submit" data-submit-variants disabled>Tạo thuộc tính</button>
 </div>
 </div>
 </form>

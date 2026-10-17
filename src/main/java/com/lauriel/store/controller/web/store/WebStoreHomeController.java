@@ -22,8 +22,7 @@ public class WebStoreHomeController {
     @GetMapping("/shop")
     public String home(Model model) {
         model.addAttribute("categories", categories.listActive());
-        model.addAttribute("products", products.listPublic(0, 8, null, null, null, null,
-                "createdAt", "desc").content());
+        model.addAttribute("products", products.featured(8));
         model.addAttribute("promotions", promotions.list(0, 6, true).content());
         model.addAttribute("orderPromotions", orderPromotions.active(0, 6).content());
         model.addAttribute("vouchers", vouchers.listAvailable(0, 6).content());

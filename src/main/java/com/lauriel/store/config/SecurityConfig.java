@@ -5,6 +5,7 @@ import com.lauriel.store.security.DatabaseJwtAuthenticationConverter;
 import com.lauriel.store.security.RoleAwareAuthenticationSuccessHandler;
 import com.lauriel.store.security.WebAccountStateFilter;
 import com.lauriel.store.repository.UserRepository;
+import com.lauriel.store.service.StoreCartService;
 import jakarta.servlet.DispatcherType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
@@ -18,16 +19,20 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.savedrequest.NullRequestCache;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.AnyRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 @Configuration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class SecurityConfig {
     @Bean
     public RoleAwareAuthenticationSuccessHandler roleAwareAuthenticationSuccessHandler(
-            org.springframework.core.env.Environment environment) {
+            org.springframework.core.env.Environment environment,
+            org.springframework.beans.factory.ObjectProvider<StoreCartService> carts) {
         return new RoleAwareAuthenticationSuccessHandler(
                 environment.getProperty("app.admin.port", Integer.class, 8080),
-                environment.getProperty("app.storefront.port", Integer.class, 8081));
+                environment.getProperty("app.storefront.port", Integer.class, 8081), carts.getIfAvailable());
     }
 
     @Bean
@@ -79,7 +84,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/login", "/register", "/error", "/403", "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/products/**").permitAll()
                         .requestMatchers("/shop/checkout/**", "/shop/orders/**", "/shop/profile/**").hasRole("CUSTOMER")
-                        .requestMatchers("/shop", "/shop/products/**", "/shop/cart/**").permitAll()
+                        .requestMatchers("/shop", "/shop/products/**", "/shop/cart/**", "/shop/offers/**").permitAll()
                         .requestMatchers("/admin/accounts", "/admin/accounts/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/admin", "/admin/dashboard", "/admin/statistics", "/admin/statistics/**", "/admin/products", "/admin/products/**",
                                 "/admin/categories", "/admin/categories/**",
@@ -94,11 +99,28 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .formLogin(form -> form.loginPage("/login").successHandler(successHandler)
                         .failureUrl("/login?error").permitAll())
-                .exceptionHandling(errors -> errors.accessDeniedHandler((request, response, exception) -> {
-                    response.setStatus(403);
-                    request.getRequestDispatcher("/403").forward(request, response);
-                }))
-                .logout(logout -> logout.logoutSuccessUrl("/login?logout"))
+                .exceptionHandling(errors -> errors
+                        .defaultAuthenticationEntryPointFor(
+                                new LoginUrlAuthenticationEntryPoint("/login?checkout"),
+                                PathPatternRequestMatcher.pathPattern("/shop/checkout/**"))
+                        .defaultAuthenticationEntryPointFor(
+                                new LoginUrlAuthenticationEntryPoint("/login"),
+                                AnyRequestMatcher.INSTANCE)
+                        .accessDeniedHandler((request, response, exception) -> {
+                            response.setStatus(403);
+                            request.getRequestDispatcher("/403").forward(request, response);
+                        }))
+                .logout(logout -> logout
+                        .addLogoutHandler((request, response, authentication) -> {
+                            var session = request.getSession(false);
+                            if (session != null) {
+                                if (StoreCartService.retainCartOnly(session)) request.changeSessionId();
+                                else session.invalidate();
+                            }
+                        })
+                        .invalidateHttpSession(false)
+                        .clearAuthentication(true)
+                        .logoutSuccessUrl("/login?logout"))
                 .addFilterBefore(new WebAccountStateFilter(users), AuthorizationFilter.class)
                 .build(); // CSRF remains enabled for session/form login.
     }

@@ -13,6 +13,26 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
+    @Query(value = """
+            SELECT p.*
+            FROM products p
+            JOIN categories c ON c.category_id = p.category_id
+            LEFT JOIN (
+                SELECT v.product_id, SUM(d.quantity) AS sold_quantity,
+                       SUM(d.subtotal) AS sold_revenue
+                FROM order_details d
+                JOIN orders o ON o.order_id = d.order_id
+                JOIN product_variants v ON v.variant_id = d.variant_id
+                WHERE o.status = 'DELIVERED'
+                GROUP BY v.product_id
+            ) sales ON sales.product_id = p.product_id
+            WHERE p.status = 'ACTIVE' AND c.status = 'ACTIVE'
+            ORDER BY COALESCE(sales.sold_quantity, 0) DESC,
+                     COALESCE(sales.sold_revenue, 0) DESC,
+                     p.created_at DESC, p.product_id DESC
+            """, nativeQuery = true)
+    List<Product> findFeaturedProducts(Pageable pageable);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Product p where p.productId = :id")
     Optional<Product> findByIdForUpdate(Long id);

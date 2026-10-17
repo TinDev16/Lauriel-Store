@@ -8,6 +8,7 @@ import com.lauriel.store.entity.OrderDetail;
 import com.lauriel.store.entity.OrderDetailId;
 import com.lauriel.store.entity.Customer;
 import com.lauriel.store.entity.enums.OrderStatus;
+import com.lauriel.store.entity.enums.SalesChannel;
 import com.lauriel.store.event.OrderCreatedEvent;
 import com.lauriel.store.exception.*;
 import com.lauriel.store.mapper.OrderMapper;
@@ -51,6 +52,11 @@ public class OrderService {
 
     @Transactional
     public OrderResponse checkout(CheckoutRequest request, Long actorId) {
+        return checkout(request, actorId, SalesChannel.UNKNOWN);
+    }
+
+    @Transactional
+    public OrderResponse checkout(CheckoutRequest request, Long actorId, SalesChannel salesChannel) {
         var customer = requireCustomer(actorId);
         var quantities = CheckoutItems.normalize(request.items());
         // Locks and verifies stock once, before reading prices or creating any order rows.
@@ -62,6 +68,7 @@ public class OrderService {
         order.setVoucher(null);
         order.setStatus(OrderStatus.PENDING);
         order.setShippingAddress(request.shippingAddress().strip());
+        order.setSalesChannel(salesChannel == null ? SalesChannel.UNKNOWN : salesChannel);
         var lines = new ArrayList<OrderDetail>();
         BigDecimal total = BigDecimal.ZERO;
         for (var entry : quantities.entrySet()) {

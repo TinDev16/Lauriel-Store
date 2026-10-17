@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{store/fragments/layout :: layout(~{::main},${offerTitle})}">
+<body>
+<main class="container-xl store-page store-offer-detail-page">
+  <nav class="store-breadcrumb">
+    <a th:href="@{/shop}">Trang chủ</a><i class="bi bi-chevron-right"></i>
+    <a th:href="@{/shop#offers}">Ưu đãi</a><i class="bi bi-chevron-right"></i>
+    <span th:text="${offerTitle}"></span>
+  </nav>
+
+  <section class="store-offer-detail-hero" th:classappend="| offer-${#strings.toLowerCase(offerType)}|">
+    <div class="store-offer-detail-copy">
+      <span th:text="${offerLabel}"></span>
+      <div class="store-offer-code" th:if="${voucherCode != null}">
+        <i class="bi bi-ticket-perforated"></i><strong th:text="${voucherCode}"></strong>
+      </div>
+      <h1 th:text="${offerTitle}"></h1>
+      <p th:if="${offerDescription != null and !#strings.isEmpty(offerDescription)}"
+         th:text="${offerDescription}"></p>
+      <p th:unless="${offerDescription != null and !#strings.isEmpty(offerDescription)}">
+        Ưu đãi đang được áp dụng tại Lauriel Store trong thời gian chương trình diễn ra.
+      </p>
+      <a class="store-btn store-btn-dark" th:href="@{/shop/products}">Xem sản phẩm <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="store-offer-detail-value">
+      <small>MỨC ƯU ĐÃI</small>
+      <strong th:if="${discountPercent != null}" th:text="|${@view.number(discountPercent)}%|"></strong>
+      <strong th:if="${discountValue != null}" th:text="${@view.money(discountValue)}"></strong>
+      <span th:if="${maxDiscountAmount != null}" th:text="|Tối đa ${@view.money(maxDiscountAmount)}|"></span>
+    </div>
+  </section>
+
+  <section class="store-offer-conditions">
+    <article><i class="bi bi-calendar-event"></i><div><span>Bắt đầu</span><strong th:text="${#temporals.format(startDate,'HH:mm · dd/MM/yyyy')}"></strong></div></article>
+    <article><i class="bi bi-calendar-check"></i><div><span>Kết thúc</span><strong th:text="${#temporals.format(endDate,'HH:mm · dd/MM/yyyy')}"></strong></div></article>
+    <article th:if="${minOrderAmount != null}"><i class="bi bi-receipt"></i><div><span>Giá trị đơn tối thiểu</span><strong th:text="${@view.money(minOrderAmount)}"></strong></div></article>
+    <article th:if="${remainingQuantity != null}"><i class="bi bi-ticket-detailed"></i><div><span>Số lượt còn lại</span><strong th:text="|${remainingQuantity} lượt|"></strong></div></article>
+  </section>
+
+  <section class="store-section store-offer-products" th:if="${offerType == 'PRODUCT'}">
+    <div class="store-section-heading"><div><span>PHẠM VI ÁP DỤNG</span><h2>Sản phẩm thuộc ưu đãi</h2></div></div>
+    <div class="store-product-grid" th:unless="${#lists.isEmpty(products)}">
+      <th:block th:each="p:${products}"><div th:replace="~{store/fragments/product-card :: card(${p})}"></div></th:block>
+    </div>
+    <div class="store-empty store-offer-empty" th:if="${#lists.isEmpty(products)}">
+      <i class="bi bi-tags"></i><h2>Chưa có sản phẩm áp dụng</h2><p>Danh sách sản phẩm sẽ được cập nhật trong thời gian sớm nhất.</p>
+    </div>
+  </section>
+</main>
+</body>
+</html>

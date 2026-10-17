@@ -1,11 +1,11 @@
 <th:block xmlns:th="http://www.thymeleaf.org">
-  <a th:fragment="product(p)" th:href="@{/shop/products}" class="store-offer store-offer-dark">
-    <small>GIẢM GIÁ SẢN PHẨM</small><strong th:text="|Giảm ${@view.number(p.discountPercent)}%|"></strong><span th:text="${p.promotionName}"></span>
+  <a th:fragment="product(p)" th:href="@{/shop/offers/products/{id}(id=${p.promotionId})}" class="store-offer store-offer-dark">
+    <small>GIẢM GIÁ SẢN PHẨM</small><strong th:text="|Giảm ${@view.number(p.discountPercent)}%|"></strong><span th:text="${p.promotionName}"></span><i class="bi bi-arrow-up-right"></i>
   </a>
-  <article th:fragment="order(p)" class="store-offer">
-    <small>ƯU ĐÃI TỰ ĐỘNG</small><strong th:text="|Đơn từ ${@view.money(p.minOrderAmount)}|"></strong><span th:text="|Giảm ${@view.number(p.discountPercent)}% · tối đa ${@view.money(p.maxDiscountAmount)}|"></span>
-  </article>
-  <article th:fragment="voucher(v)" class="store-offer store-offer-accent">
-    <small>VOUCHER</small><strong th:text="${v.code}"></strong><span th:text="|${v.voucherName} · đơn từ ${@view.money(v.minOrderAmount)}|"></span>
-  </article>
+  <a th:fragment="order(p)" th:href="@{/shop/offers/orders/{id}(id=${p.orderPromotionId})}" class="store-offer">
+    <small>ƯU ĐÃI HÓA ĐƠN</small><strong th:text="|Đơn từ ${@view.money(p.minOrderAmount)}|"></strong><span th:text="|Giảm ${@view.number(p.discountPercent)}% · tối đa ${@view.money(p.maxDiscountAmount)}|"></span><i class="bi bi-arrow-up-right"></i>
+  </a>
+  <a th:fragment="voucher(v)" th:href="@{/shop/offers/vouchers/{id}(id=${v.voucherId})}" class="store-offer store-offer-accent">
+    <small>VOUCHER</small><strong th:text="${v.code}"></strong><span th:text="|${v.voucherName} · đơn từ ${@view.money(v.minOrderAmount)}|"></span><i class="bi bi-arrow-up-right"></i>
+  </a>
 </th:block>

@@ -67,7 +67,7 @@ public final class Models {
         public VoucherRequest(String code,List<Item> items){this.code=code;this.items=items;}
     }
     public static final class VoucherPreview {
-        public boolean valid; public String code;
+        public boolean valid; public String code,voucherName;
         public Long orderPromotionId; public String orderPromotionName;
         public BigDecimal orderAmount,subtotal,productPromotionDiscount,orderPromotionPercent,orderPromotionDiscount,discountAmount,shippingFee,finalAmount;
     }

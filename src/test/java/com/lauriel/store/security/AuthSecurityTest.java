@@ -23,6 +23,7 @@ import com.lauriel.store.repository.CustomerRepository;
 import com.lauriel.store.repository.RoleRepository;
 import com.lauriel.store.repository.UserRepository;
 import com.lauriel.store.service.AuthService;
+import com.lauriel.store.service.StoreCartService;
 import com.lauriel.store.support.TestSecrets;
 import java.time.Instant;
 import java.util.Map;
@@ -387,10 +388,18 @@ class AuthSecurityTest {
                 .andExpect(status().is3xxRedirection()).andReturn();
         MockHttpSession session = (MockHttpSession) result.getRequest().getSession(false);
         assertThat(session).isNotNull();
+        session.setAttribute(StoreCartService.CART_SESSION_ATTRIBUTE,
+                new java.util.LinkedHashMap<>(Map.of(201L, 2)));
+        session.setAttribute("storeVoucher", "PRIVATE");
         mvc.perform(get("/admin/probe").session(session)).andExpect(status().isOk());
         mvc.perform(get("/api/auth/me").session(session)).andExpect(status().isUnauthorized());
         mvc.perform(post("/logout").session(session)).andExpect(status().isForbidden());
         mvc.perform(post("/logout").session(session).with(csrf())).andExpect(status().is3xxRedirection());
+        assertThat(session.getAttribute(StoreCartService.CART_SESSION_ATTRIBUTE)).isEqualTo(Map.of(201L, 2));
+        assertThat(session.getAttribute("storeVoucher")).isNull();
+        assertThat(session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY)).isNull();
+        mvc.perform(get("/admin/probe").session(session)).andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login"));
     }
 
     @Test

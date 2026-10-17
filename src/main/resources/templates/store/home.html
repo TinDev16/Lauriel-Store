@@ -1,10 +1,32 @@
 <!DOCTYPE html><html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{store/fragments/layout :: layout(~{::main},'Trang chủ')}"><body><main>
 <section class="store-hero"><div class="container-xl"><div class="store-hero-copy"><span>NEW SEASON · LAURIEL 2026</span><h1>Phong cách bắt đầu từ điều giản đơn.</h1><p>Khám phá những thiết kế linh hoạt dành cho nhịp sống hiện đại.</p><a class="store-btn store-btn-dark" th:href="@{/shop/products}">Mua sắm ngay <i class="bi bi-arrow-right"></i></a></div></div></section>
-<section class="store-section" th:if="${!#lists.isEmpty(promotions) or !#lists.isEmpty(orderPromotions) or !#lists.isEmpty(vouchers)}"><div class="container-xl"><div class="store-section-heading"><div><span>ƯU ĐÃI</span><h2>Đang diễn ra</h2></div></div><div class="store-offers">
+<section id="offers" class="store-section" th:if="${!#lists.isEmpty(promotions) or !#lists.isEmpty(orderPromotions) or !#lists.isEmpty(vouchers)}"><div class="container-xl"><div class="store-section-heading"><div><span>ƯU ĐÃI</span><h2>Đang diễn ra</h2></div></div><div class="store-offers">
   <th:block th:each="p:${promotions}"><div th:replace="~{store/fragments/promotion-card :: product(${p})}"></div></th:block>
   <th:block th:each="p:${orderPromotions}"><div th:replace="~{store/fragments/promotion-card :: order(${p})}"></div></th:block>
   <th:block th:each="v:${vouchers}"><div th:replace="~{store/fragments/promotion-card :: voucher(${v})}"></div></th:block>
 </div></div></section>
-<section class="store-section store-section-soft"><div class="container-xl"><div class="store-section-heading"><div><span>KHÁM PHÁ</span><h2>Danh mục sản phẩm</h2></div></div><div class="store-category-grid"><a th:each="c,stat:${categories}" th:href="@{/shop/products(categoryId=${c.categoryId})}"><span th:text="${#numbers.formatInteger(stat.count,2)}">01</span><strong th:text="${c.categoryName}"></strong><i class="bi bi-arrow-up-right"></i></a></div></div></section>
-<section class="store-section"><div class="container-xl"><div class="store-section-heading"><div><span>MỚI NHẤT</span><h2>Sản phẩm nổi bật</h2></div><a th:href="@{/shop/products}">Xem tất cả <i class="bi bi-arrow-right"></i></a></div><div class="store-product-grid"><th:block th:each="p:${products}"><div th:replace="~{store/fragments/product-card :: card(${p})}"></div></th:block></div></div></section>
+<section class="store-section store-section-soft store-category-section">
+  <div class="container-xl">
+    <div class="store-section-heading store-category-heading">
+      <div><span>KHÁM PHÁ</span><h2>Danh mục sản phẩm</h2></div>
+      <p>Chọn phong cách phù hợp và khám phá những thiết kế dành riêng cho bạn.</p>
+    </div>
+    <div class="store-category-grid">
+      <a class="store-category-card" th:each="c,stat:${categories}"
+         th:href="@{/shop/products(categoryId=${c.categoryId})}"
+         th:attr="aria-label=|Xem danh mục ${c.categoryName}|">
+        <div class="store-category-card-top">
+          <span th:text="${#numbers.formatInteger(stat.count,2)}">01</span>
+          <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+        </div>
+        <div class="store-category-card-copy">
+          <small>Danh mục</small>
+          <strong th:text="${c.categoryName}">Áo thời trang</strong>
+          <em>Khám phá ngay <i class="bi bi-arrow-right" aria-hidden="true"></i></em>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+<section class="store-section"><div class="container-xl"><div class="store-section-heading"><div><span>BÁN CHẠY</span><h2>Sản phẩm nổi bật</h2></div><a th:href="@{/shop/products}">Xem tất cả <i class="bi bi-arrow-right"></i></a></div><div class="store-product-grid"><th:block th:each="p:${products}"><div th:replace="~{store/fragments/product-card :: card(${p})}"></div></th:block></div></div></section>
 </main></body></html>

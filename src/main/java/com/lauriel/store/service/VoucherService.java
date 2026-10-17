@@ -130,7 +130,8 @@ public class VoucherService {
             discount = pricing.voucherDiscount(voucher, amountAfterOrderPromotion, now);
         }
         var shipping = pricing.checkedAmount(commerce.getShippingFee());
-        return new VoucherValidationResponse(true, voucher == null ? null : voucher.getCode(), amount, amount,
+        return new VoucherValidationResponse(true, voucher == null ? null : voucher.getCode(),
+                voucher == null ? null : voucher.getVoucherName(), amount, amount,
                 productPromotionDiscount, threshold.promotion() == null ? null : threshold.promotion().getOrderPromotionId(),
                 threshold.promotion() == null ? null : threshold.promotion().getPromotionName(),
                 threshold.promotion() == null ? null : threshold.promotion().getDiscountPercent(), threshold.discount(),

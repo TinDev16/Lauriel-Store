@@ -2,6 +2,7 @@ package com.lauriel.store.repository;
 
 import com.lauriel.store.dto.statistics.StatisticsReport;
 import com.lauriel.store.entity.enums.OrderStatus;
+import com.lauriel.store.entity.enums.SalesChannel;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,6 +23,8 @@ public class StatisticsRepository {
                                  BigDecimal orderPromotionDiscount, long orderPromotionOrders) {}
     public record DailyRevenue(LocalDate date, BigDecimal revenue, long orders) {}
     public record DailyCustomers(LocalDate date, long count) {}
+    public record ChannelAggregate(SalesChannel channel, long buyers, long orders, long delivered,
+                                   long cancelled, BigDecimal revenue) {}
     public record DailyPurchase(LocalDate date, long receipts, BigDecimal amount, long quantity) {}
     public record PromotionAggregate(BigDecimal discount, long quantity) {}
 
@@ -300,6 +303,24 @@ public class StatisticsRepository {
                 """;
         return jdbc.query(sql, range(from, until), (rs, n) ->
                 new DailyCustomers(rs.getDate("bucket_date").toLocalDate(), rs.getLong("customers")));
+    }
+
+    public List<ChannelAggregate> channelPerformance(LocalDateTime from, LocalDateTime until) {
+        String sql = """
+                SELECT sales_channel,
+                       COUNT(DISTINCT customer_id) buyers,
+                       COUNT(*) total_orders,
+                       COALESCE(SUM(CASE WHEN status='DELIVERED' THEN 1 ELSE 0 END),0) delivered,
+                       COALESCE(SUM(CASE WHEN status='CANCELLED' THEN 1 ELSE 0 END),0) cancelled,
+                       COALESCE(SUM(CASE WHEN status='DELIVERED' THEN final_amount ELSE 0 END),0) revenue
+                FROM orders
+                WHERE created_at >= :from AND created_at < :until
+                GROUP BY sales_channel
+                """;
+        return jdbc.query(sql, range(from, until), (rs, n) -> new ChannelAggregate(
+                SalesChannel.valueOf(rs.getString("sales_channel")), rs.getLong("buyers"),
+                rs.getLong("total_orders"), rs.getLong("delivered"), rs.getLong("cancelled"),
+                money(rs, "revenue")));
     }
 
     public long activeProducts() {

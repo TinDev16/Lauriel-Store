@@ -328,33 +328,60 @@ public class HomeFragment extends Fragment {
         binding.error.setText("");
         binding.empty.setVisibility(View.GONE);
         binding.stateIcon.setVisibility(View.GONE);
+        if (selectedCategoryId == null) {
+            repository.featured(12, new Callback<List<Models.Product>>() {
+                @Override public void onResponse(Call<List<Models.Product>> call,
+                        Response<List<Models.Product>> response) {
+                    if (binding == null || generation != productRequestGeneration) return;
+                    if (response.isSuccessful() && response.body() != null) {
+                        renderProducts(response.body(), false);
+                    } else {
+                        showProductError("Không thể tải sản phẩm. Chạm để thử lại.");
+                    }
+                }
+
+                @Override public void onFailure(Call<List<Models.Product>> call, Throwable error) {
+                    if (binding != null && generation == productRequestGeneration) {
+                        showProductError("Không thể kết nối máy chủ. Chạm để thử lại.");
+                    }
+                }
+            });
+            return;
+        }
         repository.list(0, null, selectedCategoryId, null, null, new Callback<Models.Page<Models.Product>>() {
             @Override public void onResponse(Call<Models.Page<Models.Product>> call,
                     Response<Models.Page<Models.Product>> response) {
                 if (binding == null || generation != productRequestGeneration) return;
-                binding.loading.setVisibility(View.GONE);
                 if (response.isSuccessful() && response.body() != null) {
-                    adapter.submit(response.body().content);
-                    boolean empty = adapter.getItemCount() == 0;
-                    binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
-                    binding.empty.setText(selectedCategoryName == null
-                            ? getString(R.string.empty_products)
-                            : "Chưa có sản phẩm thuộc " + selectedCategoryName + ".");
-                    binding.stateIcon.setVisibility(empty ? View.VISIBLE : View.GONE);
-                    binding.loadMore.setVisibility(response.body().totalPages > 1 ? View.VISIBLE : View.GONE);
+                    renderProducts(response.body().content, response.body().totalPages > 1);
                 } else {
-                    binding.error.setText("Không thể tải sản phẩm. Chạm để thử lại.");
-                    binding.stateIcon.setVisibility(View.VISIBLE);
+                    showProductError("Không thể tải sản phẩm. Chạm để thử lại.");
                 }
             }
             @Override public void onFailure(Call<Models.Page<Models.Product>> call, Throwable error) {
                 if (binding != null && generation == productRequestGeneration) {
-                    binding.loading.setVisibility(View.GONE);
-                    binding.error.setText("Không thể kết nối máy chủ. Chạm để thử lại.");
-                    binding.stateIcon.setVisibility(View.VISIBLE);
+                    showProductError("Không thể kết nối máy chủ. Chạm để thử lại.");
                 }
             }
         });
+    }
+
+    private void renderProducts(List<Models.Product> products, boolean hasMore) {
+        binding.loading.setVisibility(View.GONE);
+        adapter.submit(products);
+        boolean empty = adapter.getItemCount() == 0;
+        binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
+        binding.empty.setText(selectedCategoryName == null
+                ? getString(R.string.empty_products)
+                : "Chưa có sản phẩm thuộc " + selectedCategoryName + ".");
+        binding.stateIcon.setVisibility(empty ? View.VISIBLE : View.GONE);
+        binding.loadMore.setVisibility(hasMore ? View.VISIBLE : View.GONE);
+    }
+
+    private void showProductError(String message) {
+        binding.loading.setVisibility(View.GONE);
+        binding.error.setText(message);
+        binding.stateIcon.setVisibility(View.VISIBLE);
     }
 
     private void hidePromotions() {

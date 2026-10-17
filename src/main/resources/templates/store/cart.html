@@ -1,5 +1,33 @@
 <!DOCTYPE html><html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{store/fragments/layout :: layout(~{::main},'Giỏ hàng')}"><body><main class="container-xl store-page">
 <nav class="store-breadcrumb"><a th:href="@{/shop}">Trang chủ</a><i class="bi bi-chevron-right"></i><span>Giỏ hàng</span></nav><header class="store-page-heading"><div><span>ĐƠN HÀNG CỦA BẠN</span><h1>Giỏ hàng</h1><p th:text="|${cart.totalQuantity} sản phẩm|"></p></div></header>
-<div class="store-empty" th:if="${cart.empty}"><i class="bi bi-bag"></i><h2>Giỏ hàng đang trống</h2><p>Hãy chọn sản phẩm phù hợp với phong cách của bạn.</p><a class="store-btn store-btn-dark" th:href="@{/shop/products}">Mua sắm ngay</a></div>
-<div class="store-cart-layout" th:unless="${cart.empty}"><section class="store-cart-list"><article class="store-cart-item" th:each="item:${cart.items}"><a th:href="@{/shop/products/{id}(id=${item.productId})}"><img th:src="${item.imageUrl != null} ? ${item.imageUrl} : @{/assets/images/product-placeholder.svg}" th:alt="${item.productName}"></a><div class="store-cart-copy"><a th:href="@{/shop/products/{id}(id=${item.productId})}" th:text="${item.productName}"></a><small th:text="|${item.size.sizeName} · ${item.color.colorName} · ${item.sku}|"></small><div class="store-price"><strong th:text="${@view.money(item.effectivePrice)}"></strong><del th:if="${item.effectivePrice.compareTo(item.originalPrice) < 0}" th:text="${@view.money(item.originalPrice)}"></del></div><form class="store-cart-update" method="post" th:action="@{/shop/cart/update}"><input type="hidden" name="variantId" th:value="${item.variantId}"><button type="button" data-cart-minus>−</button><input name="quantity" type="number" min="1" th:max="${item.stock}" th:value="${item.quantity}"><button type="button" data-cart-plus>+</button><button class="store-link-button">Cập nhật</button></form></div><div class="store-cart-end"><strong th:text="${@view.money(item.subtotal)}"></strong><form method="post" th:action="@{/shop/cart/remove}"><input type="hidden" name="variantId" th:value="${item.variantId}"><button class="store-remove" aria-label="Xóa"><i class="bi bi-trash3"></i></button></form></div></article><form method="post" th:action="@{/shop/cart/clear}"><button class="store-link-button text-danger">Xóa toàn bộ giỏ hàng</button></form></section><aside class="store-cart-summary"><h2>Tóm tắt đơn hàng</h2><div><span>Tạm tính</span><strong th:text="${@view.money(cart.subtotal)}"></strong></div><p>Khuyến mãi, voucher và phí giao hàng sẽ được tính ở bước thanh toán.</p><a class="store-btn store-btn-dark w-100" th:href="@{/shop/checkout}">Tiến hành thanh toán</a><a class="store-continue" th:href="@{/shop/products}"><i class="bi bi-arrow-left"></i> Tiếp tục mua sắm</a></aside></div>
+<div class="store-empty" th:if="${#lists.isEmpty(cart.items)}"><i class="bi bi-bag"></i><h2>Giỏ hàng đang trống</h2><p>Hãy chọn sản phẩm phù hợp với phong cách của bạn.</p><a class="store-btn store-btn-dark" th:href="@{/shop/products}">Mua sắm ngay</a></div>
+<div class="store-cart-layout" th:if="${!#lists.isEmpty(cart.items)}">
+  <section class="store-cart-list">
+    <article class="store-cart-item" th:each="item:${cart.items}">
+      <a th:href="@{/shop/products/{id}(id=${item.productId})}"><img th:src="${item.imageUrl != null} ? ${item.imageUrl} : @{/assets/images/product-placeholder.svg}" th:alt="${item.productName}"></a>
+      <div class="store-cart-copy">
+        <a th:href="@{/shop/products/{id}(id=${item.productId})}" th:text="${item.productName}"></a>
+        <small th:text="|${item.size.sizeName} · ${item.color.colorName}|"></small>
+        <div class="store-price"><strong th:text="${@view.money(item.effectivePrice)}"></strong><del th:if="${item.effectivePrice.compareTo(item.originalPrice) < 0}" th:text="${@view.money(item.originalPrice)}"></del></div>
+        <form class="store-cart-update" method="post" th:action="@{/shop/cart/update}" data-cart-auto-update>
+          <input type="hidden" name="variantId" th:value="${item.variantId}">
+          <button type="button" data-cart-minus aria-label="Giảm số lượng">−</button>
+          <input name="quantity" type="number" min="1" th:max="${item.stock}" th:value="${item.quantity}" th:attr="data-original-quantity=${item.quantity}" aria-label="Số lượng">
+          <button type="button" data-cart-plus aria-label="Tăng số lượng">+</button>
+        </form>
+      </div>
+      <div class="store-cart-end">
+        <strong th:text="${@view.money(item.subtotal)}"></strong>
+        <form method="post" th:action="@{/shop/cart/remove}"><input type="hidden" name="variantId" th:value="${item.variantId}"><button class="store-remove" aria-label="Xóa"><i class="bi bi-trash3"></i></button></form>
+      </div>
+    </article>
+    <form method="post" th:action="@{/shop/cart/clear}"><button class="store-link-button text-danger">Xóa toàn bộ giỏ hàng</button></form>
+  </section>
+  <aside class="store-cart-summary">
+    <h2>Tóm tắt đơn hàng</h2><div><span>Tạm tính</span><strong th:text="${@view.money(cart.subtotal)}"></strong></div>
+    <p>Khuyến mãi, voucher và phí giao hàng sẽ được tính ở bước thanh toán.</p>
+    <a class="store-btn store-btn-dark w-100" th:href="@{/shop/checkout}">Tiến hành thanh toán</a>
+    <a class="store-continue" th:href="@{/shop/products}"><i class="bi bi-arrow-left"></i> Tiếp tục mua sắm</a>
+  </aside>
+</div>
 </main></body></html>

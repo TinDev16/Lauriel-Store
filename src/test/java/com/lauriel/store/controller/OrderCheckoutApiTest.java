@@ -243,6 +243,7 @@ class OrderCheckoutApiTest {
         tx.executeWithoutResult(status -> {
             var order = orders.findAll().getFirst();
             assertThat(order.getVoucher()).isNull();
+            assertThat(order.getSalesChannel()).isEqualTo(com.lauriel.store.entity.enums.SalesChannel.MOBILE);
             assertThat(history.findAll()).hasSize(2).allSatisfy(row -> {
                 assertThat(row.getTransactionType()).isEqualTo(InventoryTransactionType.SALE);
                 assertThat(row.getQuantity()).isPositive();
@@ -270,7 +271,7 @@ class OrderCheckoutApiTest {
     void missingVariantIs404AndInsufficientStockIs409() throws Exception {
         checkout(json(request(new CheckoutItemRequest(999999L, 1))), "A").andExpect(status().isNotFound());
         checkout(json(request(item(first, 6))), "A").andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value(containsString("kho")));
+                .andExpect(jsonPath("$.message").value(containsString("tồn hàng")));
         noCheckoutWrites();
     }
 

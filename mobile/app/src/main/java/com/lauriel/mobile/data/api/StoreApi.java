@@ -18,6 +18,7 @@ public interface StoreApi {
     @GET("api/products") Call<Models.Page<Models.Product>> products(@Query("page") int page,@Query("size") int size,
             @Query("keyword") String keyword,@Query("categoryId") Long categoryId,@Query("sizeId") Long sizeId,@Query("colorId") Long colorId,
             @Query("sortBy") String sortBy,@Query("direction") String direction);
+    @GET("api/products/featured") Call<List<Models.Product>> featuredProducts(@Query("limit") int limit);
     @GET("api/products/{id}") Call<Models.Product> product(@Path("id") long id);
     @GET("api/products/{id}/related") Call<List<Models.Product>> related(@Path("id") long id,@Query("limit") int limit);
     @GET("api/categories") Call<List<Models.Category>> categories();

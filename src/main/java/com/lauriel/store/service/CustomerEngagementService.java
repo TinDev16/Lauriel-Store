@@ -55,4 +55,13 @@ public class CustomerEngagementService {
                 userId, variantId, quantity, Timestamp.valueOf(now)));
         heartbeat(userId);
     }
+
+    @Transactional(readOnly = true)
+    public Map<Long, Integer> loadCart(long userId) {
+        Map<Long, Integer> result = new LinkedHashMap<>();
+        jdbc.query("SELECT variant_id,quantity FROM customer_cart_items WHERE user_id=? ORDER BY updated_at,variant_id",
+                (org.springframework.jdbc.core.RowCallbackHandler) rs ->
+                        result.put(rs.getLong("variant_id"), rs.getInt("quantity")), userId);
+        return result;
+    }
 }

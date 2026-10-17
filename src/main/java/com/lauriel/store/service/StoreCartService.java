@@ -1,6 +1,7 @@
 package com.lauriel.store.service;
 
 import com.lauriel.store.dto.request.CheckoutItemRequest;
+import com.lauriel.store.dto.request.CartSnapshotRequest;
 import com.lauriel.store.dto.store.StoreCartItemView;
 import com.lauriel.store.dto.store.StoreCartView;
 import com.lauriel.store.entity.ProductVariant;
@@ -20,18 +21,30 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class StoreCartService {
-    private static final String CART = "storeCart";
+    public static final String CART_SESSION_ATTRIBUTE = "storeCart";
+    public static final String CART_OWNER_SESSION_ATTRIBUTE = "storeCartOwner";
+    private static final String CART = CART_SESSION_ATTRIBUTE;
+    private static final String CART_OWNER = CART_OWNER_SESSION_ATTRIBUTE;
+    private static final Long ANONYMOUS_OWNER = -1L;
     private static final String BUY_NOW = "storeBuyNow";
     private static final String VOUCHER = "storeVoucher";
     private final ProductVariantRepository variants;
     private final PricingService pricing;
+    private final CustomerEngagementService engagement;
 
-    public StoreCartService(ProductVariantRepository variants, PricingService pricing) {
+    public StoreCartService(ProductVariantRepository variants, PricingService pricing,
+            CustomerEngagementService engagement) {
         this.variants = variants;
         this.pricing = pricing;
+        this.engagement = engagement;
     }
 
     public void add(HttpSession session, Long variantId, int quantity) {
+        add(session, variantId, quantity, null);
+    }
+
+    public void add(HttpSession session, Long variantId, int quantity, Long userId) {
+        prepareOwner(session, userId);
         ProductVariant variant = requirePurchasable(variantId);
         Map<Long, Integer> cart = cart(session, true);
         int total;
@@ -39,6 +52,7 @@ public class StoreCartService {
         catch (ArithmeticException exception) { throw new BadRequestException("Số lượng không hợp lệ."); }
         validateQuantity(total, variant.getQuantity());
         cart.put(variantId, total);
+        persist(session, userId);
     }
 
     public void buyNow(HttpSession session, Long variantId, int quantity) {
@@ -51,21 +65,39 @@ public class StoreCartService {
     }
 
     public void update(HttpSession session, Long variantId, int quantity) {
+        update(session, variantId, quantity, null);
+    }
+
+    public void update(HttpSession session, Long variantId, int quantity, Long userId) {
+        prepareOwner(session, userId);
         Map<Long, Integer> cart = cart(session, false);
         if (!cart.containsKey(variantId)) throw new ResourceNotFoundException("Sản phẩm không có trong giỏ hàng.");
         ProductVariant variant = requirePurchasable(variantId);
         validateQuantity(quantity, variant.getQuantity());
         cart.put(variantId, quantity);
+        persist(session, userId);
     }
 
     public void remove(HttpSession session, Long variantId) {
+        remove(session, variantId, null);
+    }
+
+    public void remove(HttpSession session, Long variantId, Long userId) {
+        prepareOwner(session, userId);
         cart(session, false).remove(variantId);
         session.removeAttribute(VOUCHER);
+        persist(session, userId);
     }
 
     public void clear(HttpSession session) {
+        clear(session, null);
+    }
+
+    public void clear(HttpSession session, Long userId) {
+        prepareOwner(session, userId);
         session.removeAttribute(CART);
         session.removeAttribute(VOUCHER);
+        persist(session, userId);
     }
 
     public void clearBuyNow(HttpSession session) {
@@ -85,6 +117,38 @@ public class StoreCartService {
 
     public int count(HttpSession session) {
         return cart(session, false).values().stream().mapToInt(Integer::intValue).sum();
+    }
+
+    /** Clears account-specific session state while retaining the anonymous shopping cart. */
+    public static boolean retainCartOnly(HttpSession session) {
+        if (session == null) return false;
+        Object cart = session.getAttribute(CART);
+        Object owner = session.getAttribute(CART_OWNER);
+        java.util.Collections.list(session.getAttributeNames()).forEach(session::removeAttribute);
+        if (cart != null) {
+            session.setAttribute(CART, cart);
+            if (owner != null) session.setAttribute(CART_OWNER, owner);
+            return true;
+        }
+        return false;
+    }
+
+    public void activateCustomerCart(HttpSession session, Long userId) {
+        if (session == null || userId == null) return;
+        Object owner = session.getAttribute(CART_OWNER);
+        Map<Long, Integer> current = new LinkedHashMap<>(cart(session, false));
+        Map<Long, Integer> accountCart = new LinkedHashMap<>(engagement.loadCart(userId));
+
+        if (userId.equals(owner)) {
+            accountCart.clear();
+            accountCart.putAll(current);
+        } else if (ANONYMOUS_OWNER.equals(owner)) {
+            current.forEach((variantId, quantity) -> accountCart.merge(variantId, quantity, Math::max));
+        }
+
+        session.setAttribute(CART, accountCart);
+        session.setAttribute(CART_OWNER, userId);
+        persist(session, userId);
     }
 
     @Transactional(readOnly = true)
@@ -134,6 +198,22 @@ public class StoreCartService {
     private static void validateQuantity(int quantity, int stock) {
         if (quantity <= 0) throw new BadRequestException("Số lượng phải lớn hơn 0.");
         if (quantity > stock) throw new BadRequestException("Số lượng vượt quá tồn kho hiện tại.");
+    }
+
+    private void prepareOwner(HttpSession session, Long userId) {
+        Object owner = session.getAttribute(CART_OWNER);
+        if (userId != null && !userId.equals(owner)) {
+            activateCustomerCart(session, userId);
+        } else if (userId == null && owner == null) {
+            session.setAttribute(CART_OWNER, ANONYMOUS_OWNER);
+        }
+    }
+
+    private void persist(HttpSession session, Long userId) {
+        if (userId == null) return;
+        List<CheckoutItemRequest> items = cart(session, false).entrySet().stream()
+                .map(entry -> new CheckoutItemRequest(entry.getKey(), entry.getValue())).toList();
+        engagement.syncCart(userId, new CartSnapshotRequest(items));
     }
 
     @SuppressWarnings("unchecked")

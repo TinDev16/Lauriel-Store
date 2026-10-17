@@ -21,7 +21,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '3b6d01a6-4b56-11f1-bebb-d03957e471cc:1-975';
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '3b6d01a6-4b56-11f1-bebb-d03957e471cc:1-2052';
 
 --
 -- Table structure for table `categories`
@@ -97,8 +97,38 @@ CREATE TABLE `customer_activity` (
 
 LOCK TABLES `customer_activity` WRITE;
 /*!40000 ALTER TABLE `customer_activity` DISABLE KEYS */;
-INSERT INTO `customer_activity` VALUES (3,'2026-10-02 13:48:06'),(1,'2026-10-09 15:41:53');
+INSERT INTO `customer_activity` VALUES (3,'2026-10-02 13:48:06'),(7,'2026-10-17 12:17:40'),(1,'2026-10-17 12:25:58');
 /*!40000 ALTER TABLE `customer_activity` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `customer_addresses`
+--
+
+DROP TABLE IF EXISTS `customer_addresses`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `customer_addresses` (
+  `address_id` bigint NOT NULL AUTO_INCREMENT,
+  `customer_id` bigint NOT NULL,
+  `address_text` text NOT NULL,
+  `is_default` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`address_id`),
+  KEY `idx_customer_addresses_customer` (`customer_id`,`is_default`,`address_id`),
+  CONSTRAINT `fk_customer_addresses_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`customer_id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_customer_addresses_text` CHECK ((char_length(trim(`address_text`)) > 0))
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `customer_addresses`
+--
+
+LOCK TABLES `customer_addresses` WRITE;
+/*!40000 ALTER TABLE `customer_addresses` DISABLE KEYS */;
+INSERT INTO `customer_addresses` VALUES (1,1,'Tòa D1, Vinhomes Q9 TPHCM',1,'2026-10-17 11:50:15'),(2,2,'Long An, VietNam',1,'2026-10-17 11:50:15'),(4,1,'Số 159 Võ Nguyên Giáp (Xa lộ Hà Nội), P. Thảo Điền, TP. Thủ Đức, TP. HCM.',0,'2026-10-17 12:25:02');
+/*!40000 ALTER TABLE `customer_addresses` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -127,7 +157,7 @@ CREATE TABLE `customer_cart_items` (
 
 LOCK TABLES `customer_cart_items` WRITE;
 /*!40000 ALTER TABLE `customer_cart_items` DISABLE KEYS */;
-INSERT INTO `customer_cart_items` VALUES (1,5,2,'2026-10-09 15:41:53'),(3,3,1,'2026-10-02 13:48:06'),(3,6,1,'2026-10-02 13:48:06');
+INSERT INTO `customer_cart_items` VALUES (3,3,1,'2026-10-02 13:48:06'),(3,6,1,'2026-10-02 13:48:06'),(7,3,4,'2026-10-17 12:17:40');
 /*!40000 ALTER TABLE `customer_cart_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -148,7 +178,7 @@ CREATE TABLE `customers` (
   PRIMARY KEY (`customer_id`),
   UNIQUE KEY `user_id` (`user_id`),
   CONSTRAINT `fk_customers_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -157,7 +187,7 @@ CREATE TABLE `customers` (
 
 LOCK TABLES `customers` WRITE;
 /*!40000 ALTER TABLE `customers` DISABLE KEYS */;
-INSERT INTO `customers` VALUES (1,1,'Le Tin','0935991480','Tòa D1, Vinhomes Q9 TPHCM','2026-09-19 13:46:19'),(2,3,'Thi','0325986656','Long An, VietNam','2026-10-02 13:46:43');
+INSERT INTO `customers` VALUES (1,1,'Le Tin','0935991480','Tòa D1, Vinhomes Q9 TPHCM','2026-09-19 13:46:19'),(2,3,'Thi','0325986656','Long An, VietNam','2026-10-02 13:46:43'),(3,7,'Tự Tin Lê','0935991480',NULL,'2026-10-16 22:40:44');
 /*!40000 ALTER TABLE `customers` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -184,7 +214,7 @@ CREATE TABLE `inventory_transactions` (
   CONSTRAINT `fk_inventory_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_inventory_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`),
   CONSTRAINT `chk_inventory_quantity` CHECK ((`quantity` > 0))
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -193,7 +223,7 @@ CREATE TABLE `inventory_transactions` (
 
 LOCK TABLES `inventory_transactions` WRITE;
 /*!40000 ALTER TABLE `inventory_transactions` DISABLE KEYS */;
-INSERT INTO `inventory_transactions` VALUES (7,1,2,'IMPORT',100,'PURCHASE_RECEIPT',7,NULL,'2026-09-25 08:33:14'),(8,3,2,'IMPORT',2000,'PURCHASE_RECEIPT',8,NULL,'2026-09-25 08:33:44'),(9,3,1,'SALE',3,'ORDER',2,NULL,'2026-09-25 08:34:24'),(10,5,2,'IMPORT',10000,'PURCHASE_RECEIPT',10,NULL,'2026-09-25 14:58:23'),(11,6,2,'IMPORT',10000,'PURCHASE_RECEIPT',13,NULL,'2026-09-28 14:29:52'),(12,7,2,'IMPORT',10000,'PURCHASE_RECEIPT',13,NULL,'2026-09-28 14:29:52'),(13,8,2,'IMPORT',10000,'PURCHASE_RECEIPT',13,NULL,'2026-09-28 14:29:52'),(14,7,1,'SALE',3,'ORDER',3,NULL,'2026-09-28 14:30:59'),(15,8,1,'SALE',2,'ORDER',4,NULL,'2026-09-30 20:55:34'),(16,1,1,'SALE',2,'ORDER',5,NULL,'2026-09-30 21:00:08'),(17,8,1,'SALE',3,'ORDER',6,NULL,'2026-09-30 21:36:04');
+INSERT INTO `inventory_transactions` VALUES (7,1,2,'IMPORT',100,'PURCHASE_RECEIPT',7,NULL,'2026-09-25 08:33:14'),(8,3,2,'IMPORT',2000,'PURCHASE_RECEIPT',8,NULL,'2026-09-25 08:33:44'),(9,3,1,'SALE',3,'ORDER',2,NULL,'2026-09-25 08:34:24'),(10,5,2,'IMPORT',10000,'PURCHASE_RECEIPT',10,NULL,'2026-09-25 14:58:23'),(11,6,2,'IMPORT',10000,'PURCHASE_RECEIPT',13,NULL,'2026-09-28 14:29:52'),(12,7,2,'IMPORT',10000,'PURCHASE_RECEIPT',13,NULL,'2026-09-28 14:29:52'),(13,8,2,'IMPORT',10000,'PURCHASE_RECEIPT',13,NULL,'2026-09-28 14:29:52'),(14,7,1,'SALE',3,'ORDER',3,NULL,'2026-09-28 14:30:59'),(15,8,1,'SALE',2,'ORDER',4,NULL,'2026-09-30 20:55:34'),(16,1,1,'SALE',2,'ORDER',5,NULL,'2026-09-30 21:00:08'),(17,8,1,'SALE',3,'ORDER',6,NULL,'2026-09-30 21:36:04'),(18,5,1,'SALE',2,'ORDER',7,NULL,'2026-10-16 14:07:30'),(19,6,7,'SALE',1,'ORDER',8,NULL,'2026-10-16 22:41:27'),(20,6,1,'SALE',2,'ORDER',9,NULL,'2026-10-17 12:25:57');
 /*!40000 ALTER TABLE `inventory_transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -228,7 +258,7 @@ CREATE TABLE `order_details` (
 
 LOCK TABLES `order_details` WRITE;
 /*!40000 ALTER TABLE `order_details` DISABLE KEYS */;
-INSERT INTO `order_details` VALUES (1,1,2,100000.00,0.00,200000.00),(2,3,3,200000.00,0.00,600000.00),(3,7,3,900000.00,0.00,2700000.00),(4,8,2,900000.00,0.00,1800000.00),(5,1,2,100000.00,0.00,200000.00),(6,8,3,900000.00,0.00,2700000.00);
+INSERT INTO `order_details` VALUES (1,1,2,100000.00,0.00,200000.00),(2,3,3,200000.00,0.00,600000.00),(3,7,3,900000.00,0.00,2700000.00),(4,8,2,900000.00,0.00,1800000.00),(5,1,2,100000.00,0.00,200000.00),(6,8,3,900000.00,0.00,2700000.00),(7,5,2,900000.00,0.00,1800000.00),(8,6,1,810000.00,90000.00,810000.00),(9,6,2,810000.00,90000.00,1620000.00);
 /*!40000 ALTER TABLE `order_details` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -289,12 +319,14 @@ CREATE TABLE `orders` (
   `final_amount` decimal(14,2) NOT NULL DEFAULT '0.00',
   `status` enum('PENDING','CONFIRMED','PROCESSING','SHIPPING','DELIVERED','CANCELLED','RETURNED') NOT NULL DEFAULT 'PENDING',
   `shipping_address` text NOT NULL,
+  `sales_channel` enum('WEB','MOBILE','UNKNOWN') NOT NULL DEFAULT 'UNKNOWN',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`order_id`),
   KEY `fk_orders_customer` (`customer_id`),
   KEY `fk_orders_voucher` (`voucher_id`),
   KEY `idx_orders_order_promotion` (`order_promotion_id`),
+  KEY `idx_orders_sales_channel_created_at` (`sales_channel`,`created_at`),
   CONSTRAINT `fk_orders_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`customer_id`),
   CONSTRAINT `fk_orders_order_promotion` FOREIGN KEY (`order_promotion_id`) REFERENCES `order_promotions` (`order_promotion_id`),
   CONSTRAINT `fk_orders_voucher` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`voucher_id`) ON DELETE SET NULL,
@@ -303,7 +335,7 @@ CREATE TABLE `orders` (
   CONSTRAINT `chk_orders_order_promotion_discount` CHECK ((`order_promotion_discount` >= 0)),
   CONSTRAINT `chk_orders_shipping_fee` CHECK ((`shipping_fee` >= 0)),
   CONSTRAINT `chk_orders_total` CHECK ((`total_amount` >= 0))
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -312,7 +344,7 @@ CREATE TABLE `orders` (
 
 LOCK TABLES `orders` WRITE;
 /*!40000 ALTER TABLE `orders` DISABLE KEYS */;
-INSERT INTO `orders` VALUES (1,1,NULL,NULL,200000.00,0.00,NULL,NULL,0.00,20000.00,200000.00,'CANCELLED','q2','2026-09-24 11:41:30','2026-09-24 11:43:53'),(2,1,1,NULL,600000.00,90000.00,NULL,NULL,0.00,20000.00,530000.00,'DELIVERED','q2','2026-09-25 08:34:24','2026-09-25 15:21:58'),(3,1,1,NULL,2700000.00,405000.00,NULL,NULL,0.00,20000.00,2315000.00,'PENDING','Tòa D1, Vinhomes Q9 TPHCM','2026-09-28 14:30:59','2026-09-28 14:30:59'),(4,1,NULL,NULL,1800000.00,0.00,NULL,NULL,0.00,20000.00,1820000.00,'PROCESSING','Tòa D1, Vinhomes Q9 TPHCM','2026-09-30 20:55:34','2026-10-02 13:32:45'),(5,1,NULL,NULL,200000.00,0.00,NULL,NULL,0.00,20000.00,220000.00,'DELIVERED','Tòa D1, Vinhomes Q9 TPHCM','2026-09-30 21:00:07','2026-09-30 21:05:08'),(6,1,1,NULL,2700000.00,405000.00,NULL,NULL,0.00,20000.00,2315000.00,'CONFIRMED','Tòa D1, Vinhomes Q9 TPHCM','2026-09-30 21:36:04','2026-10-02 13:32:17');
+INSERT INTO `orders` VALUES (1,1,NULL,NULL,200000.00,0.00,NULL,NULL,0.00,20000.00,200000.00,'CANCELLED','q2','UNKNOWN','2026-09-24 11:41:30','2026-09-24 11:43:53'),(2,1,1,NULL,600000.00,90000.00,NULL,NULL,0.00,20000.00,530000.00,'DELIVERED','q2','UNKNOWN','2026-09-25 08:34:24','2026-09-25 15:21:58'),(3,1,1,NULL,2700000.00,405000.00,NULL,NULL,0.00,20000.00,2315000.00,'PENDING','Tòa D1, Vinhomes Q9 TPHCM','UNKNOWN','2026-09-28 14:30:59','2026-09-28 14:30:59'),(4,1,NULL,NULL,1800000.00,0.00,NULL,NULL,0.00,20000.00,1820000.00,'PROCESSING','Tòa D1, Vinhomes Q9 TPHCM','UNKNOWN','2026-09-30 20:55:34','2026-10-02 13:32:45'),(5,1,NULL,NULL,200000.00,0.00,NULL,NULL,0.00,20000.00,220000.00,'DELIVERED','Tòa D1, Vinhomes Q9 TPHCM','UNKNOWN','2026-09-30 21:00:07','2026-09-30 21:05:08'),(6,1,1,NULL,2700000.00,405000.00,NULL,NULL,0.00,20000.00,2315000.00,'CONFIRMED','Tòa D1, Vinhomes Q9 TPHCM','UNKNOWN','2026-09-30 21:36:04','2026-10-02 13:32:17'),(7,1,1,1,1800000.00,262500.00,'Voucher 10% cho đơn từ 1tr đồng',10.00,50000.00,20000.00,1507500.00,'PENDING','Tòa D1, Vinhomes Q9 TPHCM','UNKNOWN','2026-10-16 14:07:30','2026-10-16 14:07:30'),(8,3,1,NULL,810000.00,121500.00,NULL,NULL,0.00,20000.00,708500.00,'PENDING','q4','UNKNOWN','2026-10-16 22:41:27','2026-10-16 22:41:27'),(9,1,1,1,1620000.00,235500.00,'Voucher 10% cho đơn từ 1tr đồng',10.00,50000.00,20000.00,1354500.00,'PENDING','Số 159 Võ Nguyên Giáp (Xa lộ Hà Nội), P. Thảo Điền, TP. Thủ Đức, TP. HCM.','WEB','2026-10-17 12:25:57','2026-10-17 12:25:57');
 /*!40000 ALTER TABLE `orders` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -417,7 +449,7 @@ CREATE TABLE `product_variants` (
 
 LOCK TABLES `product_variants` WRITE;
 /*!40000 ALTER TABLE `product_variants` DISABLE KEYS */;
-INSERT INTO `product_variants` VALUES (1,1,3,5,'2',100000.00,318,'ACTIVE'),(2,1,4,5,'3',100000.00,0,'ACTIVE'),(3,2,3,4,'1',900000.00,1997,'ACTIVE'),(4,2,1,2,'SP-2-S1-C2',900000.00,0,'ACTIVE'),(5,2,2,5,'SP-2-S2-C5',900000.00,10000,'ACTIVE'),(6,3,4,2,'SP-3-S4-C2',900000.00,10000,'ACTIVE'),(7,3,3,2,'SP-3-S3-C2',900000.00,9997,'ACTIVE'),(8,3,2,2,'SP-3-S2-C2',900000.00,9995,'ACTIVE'),(9,3,5,2,'SP-3-S5-C2',900000.00,0,'ACTIVE'),(10,3,4,5,'SP-3-S4-C5',900000.00,0,'ACTIVE'),(11,3,3,5,'SP-3-S3-C5',900000.00,0,'ACTIVE'),(12,3,2,5,'SP-3-S2-C5',900000.00,0,'ACTIVE'),(13,3,5,5,'SP-3-S5-C5',900000.00,0,'ACTIVE'),(14,3,1,5,'SP-3-S1-C5',900000.00,0,'ACTIVE'),(15,3,1,2,'SP-3-S1-C2',900000.00,0,'ACTIVE');
+INSERT INTO `product_variants` VALUES (1,1,3,5,'2',100000.00,318,'ACTIVE'),(2,1,4,5,'3',100000.00,0,'ACTIVE'),(3,2,3,4,'1',900000.00,1997,'ACTIVE'),(4,2,1,2,'SP-2-S1-C2',900000.00,0,'ACTIVE'),(5,2,2,5,'SP-2-S2-C5',900000.00,9998,'ACTIVE'),(6,3,4,2,'SP-3-S4-C2',900000.00,9997,'ACTIVE'),(7,3,3,2,'SP-3-S3-C2',900000.00,9997,'ACTIVE'),(8,3,2,2,'SP-3-S2-C2',900000.00,9995,'ACTIVE'),(9,3,5,2,'SP-3-S5-C2',900000.00,0,'ACTIVE'),(10,3,4,5,'SP-3-S4-C5',900000.00,0,'ACTIVE'),(11,3,3,5,'SP-3-S3-C5',900000.00,0,'ACTIVE'),(12,3,2,5,'SP-3-S2-C5',900000.00,0,'ACTIVE'),(13,3,5,5,'SP-3-S5-C5',900000.00,0,'ACTIVE'),(14,3,1,5,'SP-3-S1-C5',900000.00,0,'ACTIVE'),(15,3,1,2,'SP-3-S1-C2',900000.00,0,'ACTIVE');
 /*!40000 ALTER TABLE `product_variants` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -705,7 +737,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `email` (`email`),
   KEY `fk_users_role` (`role_id`),
   CONSTRAINT `fk_users_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`role_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -714,7 +746,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,3,'letutin','$2a$10$YAUinqJGXo09HJeTsa8KL.BjIo8RQfnzWwncY8UrmyAe9OkStDWCq','Le Tin','0935991480','letutin@gmail.com','ACTIVE','2026-09-19 13:46:19'),(2,1,'admin','$2a$10$RxksS16sZo0dhdosZQAbpedSk/cawNn0XSbOWM2PFjvGcg0u5nNKK','Administrator',NULL,NULL,'ACTIVE','2026-09-19 14:05:41'),(3,3,'thibro','$2a$10$l.2SEHkKaquOpTi8RTTpP.5XDwvQ.IU.JXhhRtoDb1pwZdi7sKIE2','Thi','0325986656','thibro@gmail.com','ACTIVE','2026-10-02 13:46:43');
+INSERT INTO `users` VALUES (1,3,'letutin','$2a$10$YAUinqJGXo09HJeTsa8KL.BjIo8RQfnzWwncY8UrmyAe9OkStDWCq','Le Tin','0935991480','letutin@gmail.com','ACTIVE','2026-09-19 13:46:19'),(2,1,'admin','$2a$10$RxksS16sZo0dhdosZQAbpedSk/cawNn0XSbOWM2PFjvGcg0u5nNKK','Administrator',NULL,NULL,'ACTIVE','2026-09-19 14:05:41'),(3,3,'thibro','$2a$10$l.2SEHkKaquOpTi8RTTpP.5XDwvQ.IU.JXhhRtoDb1pwZdi7sKIE2','Thi','0325986656','thibro@gmail.com','ACTIVE','2026-10-02 13:46:43'),(4,4,'owner','$2a$10$kGSlsEel7GhQOVjsDX36PeVfSlf04ar9xQujrxfNLkyhCBb2kofl.','Lauriel Owner',NULL,'owner@lauriel.local','ACTIVE','2026-10-13 22:06:54'),(5,1,'runtime_staff_1791904063','$2a$10$cPwy5PI7m3FnjSJ0s2ajB.UnjqVBYaFBa5OiTS24m1f.jaqhWzIFG','Runtime Staff','0900000001','runtime_staff_1791904063@lauriel.local','INACTIVE','2026-10-13 22:07:43'),(6,1,'runtime_admin_1791904063','$2a$10$TGRRgcZzVNpCYciyUARxR.XZjLp1ctyQT/OXnqK4CMyvkJON6EmQO','Runtime Admin','0900000002','runtime_admin_1791904063@lauriel.local','INACTIVE','2026-10-13 22:07:43'),(7,3,'letutin1608','$2a$10$wePS8aayv/WRJvMPni5VluX8usK7vC707UD9OGxP8XPQ1ekivLgjC','Tự Tin Lê','0935991480','letutin1608@gmail.com','ACTIVE','2026-10-16 22:40:44');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -753,7 +785,7 @@ CREATE TABLE `vouchers` (
 
 LOCK TABLES `vouchers` WRITE;
 /*!40000 ALTER TABLE `vouchers` DISABLE KEYS */;
-INSERT INTO `vouchers` VALUES (1,'SINHNHAT','VOUCHER SINHNHAT','PERCENT',15.00,200000.00,NULL,28,'2026-09-24 21:30:00','2026-10-30 21:30:00','ACTIVE');
+INSERT INTO `vouchers` VALUES (1,'SINHNHAT','VOUCHER SINHNHAT','PERCENT',15.00,200000.00,NULL,25,'2026-09-24 21:30:00','2026-10-30 21:30:00','ACTIVE');
 /*!40000 ALTER TABLE `vouchers` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -767,4 +799,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-10-09 15:42:26
+-- Dump completed on 2026-10-17 12:35:23

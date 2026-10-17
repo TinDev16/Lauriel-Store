@@ -1,6 +1,7 @@
 package com.lauriel.store.entity;
 
 import com.lauriel.store.entity.enums.OrderStatus;
+import com.lauriel.store.entity.enums.SalesChannel;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -60,6 +61,10 @@ public class Order {
 
     @Column(name = "shipping_address", columnDefinition = "text", nullable = false)
     private String shippingAddress;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sales_channel", nullable = false)
+    private SalesChannel salesChannel = SalesChannel.UNKNOWN;
 
     // MySQL owns this timestamp; Hibernate reads the generated value back.
     @Generated(event = EventType.INSERT)

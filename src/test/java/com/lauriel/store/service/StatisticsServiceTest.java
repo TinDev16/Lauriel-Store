@@ -77,10 +77,10 @@ class StatisticsServiceTest {
         jdbc.update("INSERT INTO product_variants(variant_id,product_id,size_id,color_id,sku,price,quantity,status) VALUES(203,101,102,102,'A-L-T',30,20,'INACTIVE')");
         jdbc.update("INSERT INTO vouchers(voucher_id,code,voucher_name,discount_type,discount_value,min_order_amount,quantity,start_date,end_date,status) VALUES(101,'SALE10','Sale','FIXED',10,0,10,?,?,'ACTIVE')",
                 at(today.minusDays(10)), at(today.plusDays(10)));
-        jdbc.update("INSERT INTO orders(order_id,customer_id,voucher_id,total_amount,discount_amount,final_amount,status,shipping_address,created_at) VALUES(101,101,101,100,10,90,'DELIVERED','A',?)", at(yesterday));
-        jdbc.update("INSERT INTO orders(order_id,customer_id,voucher_id,total_amount,discount_amount,final_amount,status,shipping_address,created_at) VALUES(102,102,101,220,20,200,'CANCELLED','B',?)", at(yesterday));
-        jdbc.update("INSERT INTO orders(order_id,customer_id,total_amount,discount_amount,final_amount,status,shipping_address,created_at) VALUES(103,102,50,0,50,'PENDING','B',?)", at(today));
-        jdbc.update("INSERT INTO orders(order_id,customer_id,total_amount,discount_amount,final_amount,status,shipping_address,created_at) VALUES(104,101,60,0,60,'DELIVERED','A',?)", at(today));
+        jdbc.update("INSERT INTO orders(order_id,customer_id,voucher_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(101,101,101,100,10,90,'DELIVERED','A','WEB',?)", at(yesterday));
+        jdbc.update("INSERT INTO orders(order_id,customer_id,voucher_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(102,102,101,220,20,200,'CANCELLED','B','MOBILE',?)", at(yesterday));
+        jdbc.update("INSERT INTO orders(order_id,customer_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(103,102,50,0,50,'PENDING','B','MOBILE',?)", at(today));
+        jdbc.update("INSERT INTO orders(order_id,customer_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(104,101,60,0,60,'DELIVERED','A','WEB',?)", at(today));
         jdbc.update("INSERT INTO order_details(order_id,variant_id,quantity,unit_price,discount_amount,subtotal) VALUES(101,201,2,45,5,90)");
         jdbc.update("INSERT INTO order_details(order_id,variant_id,quantity,unit_price,discount_amount,subtotal) VALUES(102,201,4,50,0,200)");
         jdbc.update("INSERT INTO order_details(order_id,variant_id,quantity,unit_price,discount_amount,subtotal) VALUES(103,201,1,50,0,50)");
@@ -166,6 +166,22 @@ class StatisticsServiceTest {
                 .satisfies(promotion -> assertThat(promotion.discount()).isEqualByComparingTo("7"));
         assertThat(result.topOrderPromotionsByDiscount()).singleElement();
         assertThat(result.newCustomersThisMonth()).isGreaterThanOrEqualTo(1);
+        assertThat(result.channelPerformance()).hasSize(3);
+        assertThat(result.channelPerformance()).filteredOn(channel -> channel.channel().name().equals("WEB"))
+                .singleElement().satisfies(channel -> {
+                    assertThat(channel.buyers()).isEqualTo(1);
+                    assertThat(channel.orders()).isEqualTo(2);
+                    assertThat(channel.delivered()).isEqualTo(2);
+                    assertThat(channel.revenue()).isEqualByComparingTo("150");
+                    assertThat(channel.averageOrderValue()).isEqualByComparingTo("75");
+                });
+        assertThat(result.channelPerformance()).filteredOn(channel -> channel.channel().name().equals("MOBILE"))
+                .singleElement().satisfies(channel -> {
+                    assertThat(channel.buyers()).isEqualTo(1);
+                    assertThat(channel.orders()).isEqualTo(2);
+                    assertThat(channel.cancelled()).isEqualTo(1);
+                    assertThat(channel.revenue()).isEqualByComparingTo("0");
+                });
     }
 
     @Test
@@ -215,6 +231,11 @@ class StatisticsServiceTest {
             mvc.perform(get(path).with(user("staff").roles("STAFF"))).andExpect(status().isOk());
             mvc.perform(get(path).with(user("buyer").roles("CUSTOMER"))).andExpect(status().isForbidden());
         }
+        mvc.perform(get("/admin/statistics/customers").with(user("admin").roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("So sánh khách mua hàng trên Web và Mobile")))
+                .andExpect(content().string(containsString("Website mua hàng")))
+                .andExpect(content().string(containsString("Ứng dụng Mobile")));
     }
 
     @Test

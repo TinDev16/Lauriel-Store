@@ -15,6 +15,7 @@
     <h1>Đăng nhập</h1>
     <p>Dùng tài khoản khách hàng, quản trị viên hoặc nhân viên của bạn.</p>
     <div class="alert alert-danger" th:if="${param.error}">Không thể đăng nhập. Kiểm tra tài khoản và mật khẩu.</div>
+    <div class="alert alert-warning" th:if="${param.checkout}">Vui lòng đăng nhập để tiếp tục thanh toán.</div>
     <div class="alert alert-success" th:if="${param.logout}">Bạn đã đăng xuất.</div>
     <div class="alert alert-warning" th:if="${param.disabled}">Tài khoản đã bị khóa, ngừng hoạt động hoặc thay đổi quyền. Vui lòng đăng nhập lại.</div>
     <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>

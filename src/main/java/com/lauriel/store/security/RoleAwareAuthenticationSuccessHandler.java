@@ -4,6 +4,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import com.lauriel.store.service.StoreCartService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
@@ -12,10 +13,12 @@ public class RoleAwareAuthenticationSuccessHandler implements AuthenticationSucc
     private final HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
     private final int adminPort;
     private final int storefrontPort;
+    private final StoreCartService carts;
 
-    public RoleAwareAuthenticationSuccessHandler(int adminPort, int storefrontPort) {
+    public RoleAwareAuthenticationSuccessHandler(int adminPort, int storefrontPort, StoreCartService carts) {
         this.adminPort = adminPort;
         this.storefrontPort = storefrontPort;
+        this.carts = carts;
     }
 
     @Override
@@ -29,6 +32,9 @@ public class RoleAwareAuthenticationSuccessHandler implements AuthenticationSucc
             requestCache.removeRequest(request, response);
             response.sendRedirect(target(request, adminPort, "/admin"));
             return;
+        }
+        if (carts != null && authentication.getPrincipal() instanceof StoreUserDetails customer) {
+            carts.activateCustomerCart(request.getSession(true), customer.getUserId());
         }
         var saved = requestCache.getRequest(request, response);
         String target = "/shop";

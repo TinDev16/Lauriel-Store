@@ -1,6 +1,7 @@
 package com.lauriel.store.dto.statistics;
 
 import com.lauriel.store.entity.enums.OrderStatus;
+import com.lauriel.store.entity.enums.SalesChannel;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -32,6 +33,7 @@ public record StatisticsReport(
         long customersWithOrders,
         long newCustomersThisMonth,
         List<CustomerPoint> newCustomers,
+        List<ChannelPerformance> channelPerformance,
         Engagement engagement,
         List<OnlineCustomer> onlineCustomers,
         List<CartInterest> cartInterest) {
@@ -64,6 +66,9 @@ public record StatisticsReport(
     public record PromotionProduct(long productId, String productName, long quantity, BigDecimal discount) {}
     public record OrderPromotion(Long promotionId, String promotionName, long orderCount, BigDecimal discount) {}
     public record CustomerPoint(String label, long count) {}
+    public record ChannelPerformance(SalesChannel channel, long buyers, long orders, long delivered,
+                                     long cancelled, BigDecimal revenue, BigDecimal averageOrderValue,
+                                     BigDecimal buyerShare, BigDecimal orderShare) {}
     public record Engagement(long onlineCustomers, long customersWithCart, long distinctProductsInCarts, long cartQuantity) {}
     public record OnlineCustomer(long customerId, String customerName, String username, java.time.LocalDateTime lastSeenAt, long distinctItems, long quantity) {}
     public record CartInterest(long productId, String productName, long customerCount, long quantity) {}

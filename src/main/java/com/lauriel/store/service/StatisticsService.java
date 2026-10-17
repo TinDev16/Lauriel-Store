@@ -2,6 +2,7 @@ package com.lauriel.store.service;
 
 import com.lauriel.store.dto.statistics.StatisticsReport;
 import com.lauriel.store.entity.enums.OrderStatus;
+import com.lauriel.store.entity.enums.SalesChannel;
 import com.lauriel.store.exception.BadRequestException;
 import com.lauriel.store.repository.StatisticsRepository;
 import java.math.BigDecimal;
@@ -98,9 +99,29 @@ public class StatisticsService {
                 repository.customersWithOrders(from, until),
                 newCustomersThisMonth,
                 customerSeries(range, repository.customersDaily(from, until)),
+                channelPerformance(repository.channelPerformance(from, until)),
                 repository.engagement(onlineSince),
                 repository.onlineCustomers(onlineSince, top),
                 repository.cartInterest(top));
+    }
+
+    private static List<StatisticsReport.ChannelPerformance> channelPerformance(
+            List<StatisticsRepository.ChannelAggregate> aggregates) {
+        Map<SalesChannel, StatisticsRepository.ChannelAggregate> byChannel = new LinkedHashMap<>();
+        aggregates.forEach(row -> byChannel.put(row.channel(), row));
+        long buyers = aggregates.stream().mapToLong(StatisticsRepository.ChannelAggregate::buyers).sum();
+        long orders = aggregates.stream().mapToLong(StatisticsRepository.ChannelAggregate::orders).sum();
+        List<StatisticsReport.ChannelPerformance> result = new ArrayList<>();
+        for (SalesChannel channel : List.of(SalesChannel.WEB, SalesChannel.MOBILE, SalesChannel.UNKNOWN)) {
+            var row = byChannel.getOrDefault(channel,
+                    new StatisticsRepository.ChannelAggregate(channel, 0, 0, 0, 0, BigDecimal.ZERO));
+            BigDecimal average = row.delivered() == 0 ? BigDecimal.ZERO
+                    : row.revenue().divide(BigDecimal.valueOf(row.delivered()), 2, RoundingMode.HALF_UP);
+            result.add(new StatisticsReport.ChannelPerformance(channel, row.buyers(), row.orders(),
+                    row.delivered(), row.cancelled(), row.revenue(), average,
+                    percent(row.buyers(), buyers), percent(row.orders(), orders)));
+        }
+        return result;
     }
 
     public StatisticsReport.Range resolve(String preset, LocalDate from, LocalDate to, String groupBy,

@@ -3,6 +3,7 @@ package com.lauriel.store.controller.api;
 import com.lauriel.store.dto.request.CheckoutRequest;
 import com.lauriel.store.dto.response.*;
 import com.lauriel.store.entity.enums.OrderStatus;
+import com.lauriel.store.entity.enums.SalesChannel;
 import com.lauriel.store.security.StoreUserDetails;
 import com.lauriel.store.service.OrderService;
 import jakarta.validation.Valid;
@@ -31,7 +32,7 @@ public class OrderController {
     @ResponseStatus(HttpStatus.CREATED)
     public OrderResponse checkout(@Valid @RequestBody CheckoutRequest request,
             @AuthenticationPrincipal StoreUserDetails user) {
-        return orders.checkout(request, user.getUserId());
+        return orders.checkout(request, user.getUserId(), SalesChannel.MOBILE);
     }
 
     @GetMapping("/my-orders")

@@ -31,6 +31,12 @@ public class ProductController {
         return products.listPublic(page, size, keyword, categoryId, sizeId, colorId, sortBy, direction);
     }
 
+    @GetMapping("/featured")
+    public List<ProductSummaryResponse> featured(
+            @RequestParam(defaultValue = "12") @Min(1) @Max(100) int limit) {
+        return products.featured(limit);
+    }
+
     @GetMapping("/{id}")
     public ProductDetailResponse detail(@PathVariable @Positive Long id) {
         return products.getPublicDetail(id);

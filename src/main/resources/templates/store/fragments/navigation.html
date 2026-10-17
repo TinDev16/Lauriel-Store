@@ -6,14 +6,33 @@
     <a th:href="@{/shop/products}">Sản phẩm</a>
     <a th:if="${storeLoggedIn}" th:href="@{/shop/orders}">Đơn hàng</a>
   </div>
-  <form class="store-search" method="get" th:action="@{/shop/products}">
-    <i class="bi bi-search"></i>
-    <input name="keyword" placeholder="Tìm sản phẩm" th:value="${keyword}">
-    <button th:if="${keyword != null and !#strings.isEmpty(keyword)}" type="button" aria-label="Xóa" data-clear-search><i class="bi bi-x"></i></button>
-  </form>
   <div class="store-actions">
-    <a th:href="@{/shop/cart}" aria-label="Giỏ hàng"><i class="bi bi-bag"></i><span class="store-cart-badge" th:if="${cartCount > 0}" th:text="${cartCount}">0</span></a>
-    <a th:if="${storeLoggedIn}" th:href="@{/shop/profile}" aria-label="Tài khoản"><i class="bi bi-person"></i></a>
-    <a th:unless="${storeLoggedIn}" th:href="@{/login}" class="store-login-link">Đăng nhập</a>
+    <div class="store-header-search" data-store-search>
+      <button class="store-action-button" type="button" aria-label="Tìm kiếm sản phẩm"
+              aria-expanded="false" aria-controls="store-search-panel" data-store-search-toggle>
+        <i class="bi bi-search" aria-hidden="true"></i>
+      </button>
+      <form id="store-search-panel" class="store-search-panel" method="get"
+            th:action="@{/shop/products}" data-store-search-panel>
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <label class="visually-hidden" for="store-search-keyword">Tìm kiếm sản phẩm</label>
+        <input id="store-search-keyword" name="keyword" placeholder="Bạn đang tìm sản phẩm nào?"
+               autocomplete="off" th:value="${keyword}">
+        <button th:if="${keyword != null and !#strings.isEmpty(keyword)}" class="store-search-clear"
+                type="button" aria-label="Xóa từ khóa" data-clear-search><i class="bi bi-x-lg"></i></button>
+        <button class="store-search-submit" type="submit" aria-label="Thực hiện tìm kiếm"><i class="bi bi-arrow-right"></i></button>
+      </form>
+    </div>
+    <a class="store-action-link" th:href="@{/shop} + '#offers'" aria-label="Mã giảm giá" title="Mã giảm giá">
+      <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
+    </a>
+    <a class="store-action-link" th:href="@{/shop/cart}" aria-label="Giỏ hàng" title="Giỏ hàng">
+      <i class="bi bi-bag" aria-hidden="true"></i>
+      <span class="store-cart-badge" th:if="${cartCount > 0}" th:text="${cartCount}">0</span>
+    </a>
+    <a class="store-action-link" th:if="${storeLoggedIn}" th:href="@{/shop/profile}"
+       aria-label="Tài khoản" title="Tài khoản"><i class="bi bi-person" aria-hidden="true"></i></a>
+    <a class="store-action-link" th:unless="${storeLoggedIn}" th:href="@{/login}"
+       aria-label="Đăng nhập" title="Đăng nhập"><i class="bi bi-person" aria-hidden="true"></i></a>
   </div>
 </nav>

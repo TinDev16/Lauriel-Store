@@ -11,6 +11,7 @@ public final class ProductRepository {
     public Call<Models.Page<Models.Product>> list(int page,String keyword,Long categoryId,Long sizeId,Long colorId,Callback<Models.Page<Models.Product>> cb){
         Call<Models.Page<Models.Product>> call=api.products(page,12,keyword,categoryId,sizeId,colorId,"createdAt","desc");call.enqueue(cb);return call;
     }
+    public void featured(int limit,Callback<List<Models.Product>> cb){api.featuredProducts(limit).enqueue(cb);}
     public void detail(long id,Callback<Models.Product> cb){api.product(id).enqueue(cb);}
     public void related(long id,Callback<List<Models.Product>> cb){api.related(id,8).enqueue(cb);}
     public void promotions(Callback<Models.Page<Models.Promotion>> cb){api.activePromotions(0,12).enqueue(cb);}

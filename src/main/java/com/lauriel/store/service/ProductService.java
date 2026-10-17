@@ -64,6 +64,19 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
+    public java.util.List<ProductSummaryResponse> featured(int limit) {
+        if (limit < 1 || limit > 100) {
+            throw new BadRequestException("limit phải từ 1 đến 100");
+        }
+        var featured = productRepository.findFeaturedProducts(PageRequest.of(0, limit));
+        var basePrices = featured.stream().collect(java.util.stream.Collectors.toMap(
+                Product::getProductId, Product::getPrice));
+        var prices = pricing.priceProducts(basePrices, pricing.now());
+        return featured.stream().map(product -> summary(product,
+                prices.get(product.getProductId()))).toList();
+    }
+
+    @Transactional(readOnly = true)
     public ProductDetailResponse getPublicDetail(Long productId) {
         var product = productRepository.findByProductIdAndStatusAndCategory_Status(
                         productId, ActiveStatus.ACTIVE, ActiveStatus.ACTIVE)
@@ -155,6 +168,11 @@ public class ProductService {
                 new CategorySummaryResponse(category.getCategoryId(), category.getCategoryName()),
                 product.getPrice(), product.getImgUrl(), product.getStatus(),
                 price.effectivePrice(), price.promotion());
+    }
+    private ProductSummaryResponse summary(Product product, PriceCalculation price) {
+        return new ProductSummaryResponse(product.getProductId(), product.getProductName(),
+                CatalogMapper.category(product.getCategory()), product.getPrice(), product.getImgUrl(),
+                product.getStatus(), price.effectivePrice(), price.promotion());
     }
     private ProductSummaryResponse summary(ProductSummaryView product) {
         var category = product.getCategory();

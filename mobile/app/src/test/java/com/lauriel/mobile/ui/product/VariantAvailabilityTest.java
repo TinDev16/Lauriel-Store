@@ -11,6 +11,7 @@ import java.util.List;
 import org.junit.Test;
 
 public class VariantAvailabilityTest {
+
     @Test
     public void showsAllOptionsAndFiltersByTheSelectedDimension() {
         Models.Variant smallBlack = variant(1, 10, "S", 20, "Black", 3);
@@ -18,7 +19,8 @@ public class VariantAvailabilityTest {
         Models.Variant largeWhite = variant(3, 11, "L", 21, "White", 5);
 
         VariantAvailability availability = new VariantAvailability(
-                List.of(smallBlack, smallWhite, largeWhite));
+            List.of(smallBlack, smallWhite, largeWhite)
+        );
 
         assertEquals(2, availability.sizes().size());
         assertEquals(2, availability.colors().size());
@@ -32,10 +34,13 @@ public class VariantAvailabilityTest {
 
     @Test
     public void selectingWhiteKeepsMediumSelectedWhenMediumWhiteIsInStock() {
-        VariantAvailability availability = new VariantAvailability(List.of(
+        VariantAvailability availability = new VariantAvailability(
+            List.of(
                 variant(1, 10, "M", 20, "Black", 3),
                 variant(2, 10, "M", 21, "White", 320),
-                variant(3, 11, "L", 20, "Black", 2)));
+                variant(3, 11, "L", 20, "Black", 2)
+            )
+        );
         VariantSelection selection = new VariantSelection(availability);
 
         selection.selectSize(10L);
@@ -52,9 +57,12 @@ public class VariantAvailabilityTest {
 
     @Test
     public void incompatibleSecondChoiceClearsOnlyThePreviousChoice() {
-        VariantAvailability availability = new VariantAvailability(List.of(
+        VariantAvailability availability = new VariantAvailability(
+            List.of(
                 variant(1, 10, "M", 20, "Black", 3),
-                variant(2, 11, "L", 21, "White", 5)));
+                variant(2, 11, "L", 21, "White", 5)
+            )
+        );
         VariantSelection selection = new VariantSelection(availability);
 
         selection.selectSize(10L);
@@ -69,7 +77,8 @@ public class VariantAvailabilityTest {
     @Test
     public void keepsOutOfStockOptionsVisibleButDisabled() {
         VariantAvailability availability = new VariantAvailability(
-                List.of(variant(1, 10, "S", 20, "Black", 0)));
+            List.of(variant(1, 10, "S", 20, "Black", 0))
+        );
 
         assertEquals(1, availability.sizes().size());
         assertEquals(1, availability.colors().size());
@@ -77,8 +86,14 @@ public class VariantAvailabilityTest {
         assertFalse(availability.colorAvailable(20, null));
     }
 
-    private Models.Variant variant(long variantId, long sizeId, String sizeName,
-                                   long colorId, String colorName, int quantity) {
+    private Models.Variant variant(
+        long variantId,
+        long sizeId,
+        String sizeName,
+        long colorId,
+        String colorName,
+        int quantity
+    ) {
         Models.Size size = new Models.Size();
         size.sizeId = sizeId;
         size.sizeName = sizeName;

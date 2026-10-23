@@ -11,10 +11,15 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record BulkProductVariantRequest(
-        @NotEmpty(message = "Hãy chọn ít nhất một kích cỡ")
-        @Size(max = 50) List<@Positive Long> sizeIds,
-        @NotEmpty(message = "Hãy chọn ít nhất một màu sắc")
-        @Size(max = 50) List<@Positive Long> colorIds,
-        @NotNull @PositiveOrZero @Digits(integer = 10, fraction = 2) BigDecimal price,
-        @NotNull ActiveStatus status) {
-}
+    @NotEmpty(message = "Hãy chọn ít nhất một kích cỡ")
+    @Size(max = 50)
+    List<@Positive Long> sizeIds,
+    @NotEmpty(message = "Hãy chọn ít nhất một màu sắc")
+    @Size(max = 50)
+    List<@Positive Long> colorIds,
+    @NotNull
+    @PositiveOrZero
+    @Digits(integer = 10, fraction = 2)
+    BigDecimal price,
+    @NotNull ActiveStatus status
+) {}

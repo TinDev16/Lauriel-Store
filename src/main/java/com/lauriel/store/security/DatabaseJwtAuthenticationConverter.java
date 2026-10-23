@@ -9,10 +9,15 @@ import org.springframework.security.oauth2.server.resource.InvalidBearerTokenExc
 import org.springframework.stereotype.Component;
 
 @Component
-public class DatabaseJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+public class DatabaseJwtAuthenticationConverter
+    implements Converter<Jwt, AbstractAuthenticationToken>
+{
+
     private final StoreUserDetailsService userDetailsService;
 
-    public DatabaseJwtAuthenticationConverter(StoreUserDetailsService userDetailsService) {
+    public DatabaseJwtAuthenticationConverter(
+        StoreUserDetailsService userDetailsService
+    ) {
         this.userDetailsService = userDetailsService;
     }
 
@@ -20,16 +25,28 @@ public class DatabaseJwtAuthenticationConverter implements Converter<Jwt, Abstra
     public AbstractAuthenticationToken convert(Jwt jwt) {
         StoreUserDetails user;
         try {
-            user = userDetailsService.loadByUserId(Long.valueOf(jwt.getSubject()));
-        } catch (IllegalArgumentException | UsernameNotFoundException exception) {
+            user = userDetailsService.loadByUserId(
+                Long.valueOf(jwt.getSubject())
+            );
+        } catch (
+            IllegalArgumentException
+            | UsernameNotFoundException exception
+        ) {
             throw new InvalidBearerTokenException("Token không hợp lệ");
         }
-        if (!user.isEnabled() || !user.isAccountNonLocked()
-                || !user.getRole().name().equals(jwt.getClaimAsString("role"))) {
+        if (
+            !user.isEnabled() ||
+            !user.isAccountNonLocked() ||
+            !user.getRole().name().equals(jwt.getClaimAsString("role"))
+        ) {
             throw new InvalidBearerTokenException("Token không hợp lệ");
         }
         // The API principal needs no password after the database check.
         user.eraseCredentials();
-        return UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities());
+        return UsernamePasswordAuthenticationToken.authenticated(
+            user,
+            null,
+            user.getAuthorities()
+        );
     }
 }

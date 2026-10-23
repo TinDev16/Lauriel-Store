@@ -7,8 +7,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record CategoryRequest(
-        @NotBlank @Size(max = 100) String categoryName,
-        @NotNull ActiveStatus status) {
+    @NotBlank @Size(max = 100) String categoryName,
+    @NotNull ActiveStatus status
+) {
     @JsonAnySetter
     public void rejectUnsupportedField(String name, Object value) {
         throw new IllegalArgumentException("Trường dữ liệu không được hỗ trợ");

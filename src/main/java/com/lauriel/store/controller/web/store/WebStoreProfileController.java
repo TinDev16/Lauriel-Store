@@ -15,30 +15,61 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/shop/profile")
 public class WebStoreProfileController {
+
     private final CustomerService customers;
-    public WebStoreProfileController(CustomerService customers) { this.customers = customers; }
+
+    public WebStoreProfileController(CustomerService customers) {
+        this.customers = customers;
+    }
 
     @GetMapping
-    public String profile(@AuthenticationPrincipal StoreUserDetails user, Model model) {
-        model.addAttribute("profile", customers.me(user.getUserId())); return "store/profile";
+    public String profile(
+        @AuthenticationPrincipal StoreUserDetails user,
+        Model model
+    ) {
+        model.addAttribute("profile", customers.me(user.getUserId()));
+        return "store/profile";
     }
 
     @GetMapping("/edit")
-    public String edit(@AuthenticationPrincipal StoreUserDetails user, Model model) {
+    public String edit(
+        @AuthenticationPrincipal StoreUserDetails user,
+        Model model
+    ) {
         var profile = customers.me(user.getUserId());
         model.addAttribute("profile", profile);
-        model.addAttribute("form", new ProfileUpdateRequest(profile.fullName(), profile.email(), profile.phone(), profile.address()));
+        model.addAttribute(
+            "form",
+            new ProfileUpdateRequest(
+                profile.fullName(),
+                profile.email(),
+                profile.phone(),
+                profile.address()
+            )
+        );
         return "store/profile-edit";
     }
 
     @PostMapping("/edit")
-    public String update(@AuthenticationPrincipal StoreUserDetails user,
-            @Valid @ModelAttribute("form") ProfileUpdateRequest form, BindingResult errors,
-            Model model, RedirectAttributes flash) {
-        if (errors.hasErrors()) { model.addAttribute("profile", customers.me(user.getUserId())); return "store/profile-edit"; }
-        try { customers.updateMe(user.getUserId(), form); flash.addFlashAttribute("successMessage", "Đã cập nhật hồ sơ."); return "redirect:/shop/profile"; }
-        catch (BadRequestException | DuplicateResourceException exception) {
-            errors.reject("business", exception.getMessage()); model.addAttribute("profile", customers.me(user.getUserId())); return "store/profile-edit";
+    public String update(
+        @AuthenticationPrincipal StoreUserDetails user,
+        @Valid @ModelAttribute("form") ProfileUpdateRequest form,
+        BindingResult errors,
+        Model model,
+        RedirectAttributes flash
+    ) {
+        if (errors.hasErrors()) {
+            model.addAttribute("profile", customers.me(user.getUserId()));
+            return "store/profile-edit";
+        }
+        try {
+            customers.updateMe(user.getUserId(), form);
+            flash.addFlashAttribute("successMessage", "Đã cập nhật hồ sơ.");
+            return "redirect:/shop/profile";
+        } catch (BadRequestException | DuplicateResourceException exception) {
+            errors.reject("business", exception.getMessage());
+            model.addAttribute("profile", customers.me(user.getUserId()));
+            return "store/profile-edit";
         }
     }
 }

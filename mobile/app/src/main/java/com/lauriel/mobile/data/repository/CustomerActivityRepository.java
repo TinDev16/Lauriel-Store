@@ -8,6 +8,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public final class CustomerActivityRepository {
+
     private final StoreApi api;
 
     public CustomerActivityRepository(StoreApi api) {
@@ -24,8 +25,11 @@ public final class CustomerActivityRepository {
 
     private static Callback<Void> silent() {
         return new Callback<>() {
-            @Override public void onResponse(Call<Void> call, Response<Void> response) {}
-            @Override public void onFailure(Call<Void> call, Throwable error) {}
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {}
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable error) {}
         };
     }
 }

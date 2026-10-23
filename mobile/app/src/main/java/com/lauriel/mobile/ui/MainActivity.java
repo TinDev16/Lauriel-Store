@@ -18,30 +18,43 @@ import com.lauriel.mobile.ui.product.ShopFragment;
 import com.lauriel.mobile.ui.profile.ProfileFragment;
 
 public class MainActivity extends BaseActivity {
+
     private static final long ACTIVITY_SYNC_INTERVAL_MS = 120_000L;
     private final Handler activityHandler = new Handler(Looper.getMainLooper());
     private ActivityMainBinding b;
     private final Runnable activityPulse = new Runnable() {
-        @Override public void run() {
+        @Override
+        public void run() {
             syncEngagement();
             activityHandler.postDelayed(this, ACTIVITY_SYNC_INTERVAL_MS);
         }
     };
 
-    @Override protected void onCreate(Bundle state) {
+    @Override
+    protected void onCreate(Bundle state) {
         super.onCreate(state);
         b = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(b.getRoot());
         SystemBars.apply(b.getRoot());
-        b.bottomNav.setOnItemSelectedListener(item -> { show(item.getItemId()); return true; });
+        b.bottomNav.setOnItemSelectedListener(item -> {
+            show(item.getItemId());
+            return true;
+        });
         b.bottomNav.setOnItemReselectedListener(item -> {
             if (item.getItemId() != R.id.nav_home) return;
-            Fragment current = getSupportFragmentManager().findFragmentByTag(tag(R.id.nav_home));
-            if (current instanceof HomeFragment) ((HomeFragment) current).refresh();
+            Fragment current = getSupportFragmentManager().findFragmentByTag(
+                tag(R.id.nav_home)
+            );
+            if (current instanceof HomeFragment) (
+                (HomeFragment) current
+            ).refresh();
             syncEngagement();
             updateCartBadge();
         });
-        if (state == null || getSupportFragmentManager().getFragments().isEmpty()) {
+        if (
+            state == null ||
+            getSupportFragmentManager().getFragments().isEmpty()
+        ) {
             b.bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
             show(R.id.nav_home);
         }
@@ -51,10 +64,14 @@ public class MainActivity extends BaseActivity {
     private void show(int id) {
         String tag = tag(id);
         Fragment target = getSupportFragmentManager().findFragmentByTag(tag);
-        FragmentTransaction tx = getSupportFragmentManager().beginTransaction()
-                .setReorderingAllowed(true).setCustomAnimations(R.anim.fade_in, R.anim.fade_out);
-        for (Fragment current : getSupportFragmentManager().getFragments()) if (current.isAdded()) tx.hide(current);
-        if (target == null) tx.add(R.id.container, create(id), tag); else tx.show(target);
+        FragmentTransaction tx = getSupportFragmentManager()
+            .beginTransaction()
+            .setReorderingAllowed(true)
+            .setCustomAnimations(R.anim.fade_in, R.anim.fade_out);
+        for (Fragment current : getSupportFragmentManager().getFragments())
+            if (current.isAdded()) tx.hide(current);
+        if (target == null) tx.add(R.id.container, create(id), tag);
+        else tx.show(target);
         tx.commit();
         updateCartBadge();
     }
@@ -67,15 +84,27 @@ public class MainActivity extends BaseActivity {
         return new HomeFragment();
     }
 
-    private String tag(int id) { return "tab:" + id; }
-    public void showTab(int id) { b.bottomNav.setSelectedItemId(id); }
+    private String tag(int id) {
+        return "tab:" + id;
+    }
+
+    public void showTab(int id) {
+        b.bottomNav.setSelectedItemId(id);
+    }
 
     public void updateCartBadge() {
         if (b == null) return;
         var session = ApiClient.get(this).session();
-        if (!session.hasCustomer()) { b.bottomNav.removeBadge(R.id.nav_cart); return; }
+        if (!session.hasCustomer()) {
+            b.bottomNav.removeBadge(R.id.nav_cart);
+            return;
+        }
         int count = 0;
-        for (CartStore.CartItem item : new CartStore(this, session.userId()).items()) count += item.quantity;
+        for (CartStore.CartItem item : new CartStore(
+            this,
+            session.userId()
+        ).items())
+            count += item.quantity;
         if (count == 0) b.bottomNav.removeBadge(R.id.nav_cart);
         else {
             BadgeDrawable badge = b.bottomNav.getOrCreateBadge(R.id.nav_cart);
@@ -89,18 +118,22 @@ public class MainActivity extends BaseActivity {
         var client = ApiClient.get(this);
         var session = client.session();
         if (!session.hasCustomer()) return;
-        CustomerActivityRepository activity = new CustomerActivityRepository(client.api());
+        CustomerActivityRepository activity = new CustomerActivityRepository(
+            client.api()
+        );
         activity.syncCart(new CartStore(this, session.userId()));
     }
 
-    @Override protected void onResume() {
+    @Override
+    protected void onResume() {
         super.onResume();
         updateCartBadge();
         activityHandler.removeCallbacks(activityPulse);
         activityPulse.run();
     }
 
-    @Override protected void onPause() {
+    @Override
+    protected void onPause() {
         activityHandler.removeCallbacks(activityPulse);
         super.onPause();
     }

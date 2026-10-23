@@ -11,16 +11,52 @@ import com.lauriel.mobile.databinding.ItemProductImageBinding;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class ProductImageAdapter extends RecyclerView.Adapter<ProductImageAdapter.Holder> {
-    private final List<String> urls=new ArrayList<>();
-    public void submit(List<String> next){urls.clear();if(next!=null)urls.addAll(next);notifyDataSetChanged();}
-    @NonNull @Override public Holder onCreateViewHolder(@NonNull ViewGroup p,int t){
-        return new Holder(ItemProductImageBinding.inflate(LayoutInflater.from(p.getContext()),p,false));
+public final class ProductImageAdapter
+    extends RecyclerView.Adapter<ProductImageAdapter.Holder>
+{
+
+    private final List<String> urls = new ArrayList<>();
+
+    public void submit(List<String> next) {
+        urls.clear();
+        if (next != null) urls.addAll(next);
+        notifyDataSetChanged();
     }
-    @Override public void onBindViewHolder(@NonNull Holder h,int position){
-        Glide.with(h.b.image).load(ApiClient.imageUrl(urls.get(position))).placeholder(R.drawable.image_placeholder)
-                .error(R.drawable.image_placeholder).centerCrop().into(h.b.image);
+
+    @NonNull
+    @Override
+    public Holder onCreateViewHolder(@NonNull ViewGroup p, int t) {
+        return new Holder(
+            ItemProductImageBinding.inflate(
+                LayoutInflater.from(p.getContext()),
+                p,
+                false
+            )
+        );
     }
-    @Override public int getItemCount(){return urls.size();}
-    static final class Holder extends RecyclerView.ViewHolder{final ItemProductImageBinding b;Holder(ItemProductImageBinding b){super(b.getRoot());this.b=b;}}
+
+    @Override
+    public void onBindViewHolder(@NonNull Holder h, int position) {
+        Glide.with(h.b.image)
+            .load(ApiClient.imageUrl(urls.get(position)))
+            .placeholder(R.drawable.image_placeholder)
+            .error(R.drawable.image_placeholder)
+            .centerCrop()
+            .into(h.b.image);
+    }
+
+    @Override
+    public int getItemCount() {
+        return urls.size();
+    }
+
+    static final class Holder extends RecyclerView.ViewHolder {
+
+        final ItemProductImageBinding b;
+
+        Holder(ItemProductImageBinding b) {
+            super(b.getRoot());
+            this.b = b;
+        }
+    }
 }

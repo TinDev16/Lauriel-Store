@@ -13,6 +13,7 @@ import org.hibernate.generator.EventType;
 @Getter
 @Setter
 public class InventoryTransaction {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "transaction_id")
@@ -44,7 +45,12 @@ public class InventoryTransaction {
 
     // MySQL owns this timestamp; Hibernate reads the generated value back.
     @Generated(event = EventType.INSERT)
-    @Column(name = "created_at", columnDefinition = "datetime", nullable = false, insertable = false, updatable = false)
+    @Column(
+        name = "created_at",
+        columnDefinition = "datetime",
+        nullable = false,
+        insertable = false,
+        updatable = false
+    )
     private LocalDateTime createdAt;
-
 }

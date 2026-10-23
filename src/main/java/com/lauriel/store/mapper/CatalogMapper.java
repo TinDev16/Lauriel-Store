@@ -8,21 +8,37 @@ import com.lauriel.store.entity.ProductVariant;
 import com.lauriel.store.entity.Size;
 
 public final class CatalogMapper {
-    private CatalogMapper() {
-    }
+
+    private CatalogMapper() {}
 
     public static CategorySummaryResponse category(Category category) {
-        return new CategorySummaryResponse(category.getCategoryId(), category.getCategoryName());
+        return new CategorySummaryResponse(
+            category.getCategoryId(),
+            category.getCategoryName()
+        );
     }
 
     public static ProductResponse product(Product product) {
-        return new ProductResponse(product.getProductId(), product.getProductName(), category(product.getCategory()),
-                product.getDescription(), product.getPrice(), product.getImgUrl(), product.getStatus());
+        return new ProductResponse(
+            product.getProductId(),
+            product.getProductName(),
+            category(product.getCategory()),
+            product.getDescription(),
+            product.getPrice(),
+            product.getImgUrl(),
+            product.getStatus()
+        );
     }
 
     public static ProductSummaryResponse productSummary(Product product) {
-        return new ProductSummaryResponse(product.getProductId(), product.getProductName(), category(product.getCategory()),
-                product.getPrice(), product.getImgUrl(), product.getStatus());
+        return new ProductSummaryResponse(
+            product.getProductId(),
+            product.getProductName(),
+            category(product.getCategory()),
+            product.getPrice(),
+            product.getImgUrl(),
+            product.getStatus()
+        );
     }
 
     public static SizeResponse size(Size size) {
@@ -34,8 +50,15 @@ public final class CatalogMapper {
     }
 
     public static ProductVariantResponse variant(ProductVariant variant) {
-        return new ProductVariantResponse(variant.getVariantId(), variant.getProduct().getProductId(),
-                variant.getSku(), size(variant.getSize()), color(variant.getColor()),
-                variant.getPrice(), variant.getQuantity(), variant.getStatus());
+        return new ProductVariantResponse(
+            variant.getVariantId(),
+            variant.getProduct().getProductId(),
+            variant.getSku(),
+            size(variant.getSize()),
+            color(variant.getColor()),
+            variant.getPrice(),
+            variant.getQuantity(),
+            variant.getStatus()
+        );
     }
 }

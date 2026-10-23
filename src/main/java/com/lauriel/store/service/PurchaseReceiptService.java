@@ -15,7 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PurchaseReceiptService {
-    private static final BigDecimal MAX_TOTAL = new BigDecimal("999999999999.99");
+
+    private static final BigDecimal MAX_TOTAL = new BigDecimal(
+        "999999999999.99"
+    );
     private final PurchaseReceiptRepository receipts;
     private final PurchaseReceiptDetailRepository items;
     private final SupplierRepository suppliers;
@@ -23,9 +26,14 @@ public class PurchaseReceiptService {
     private final UserRepository users;
     private final InventoryService inventory;
 
-    public PurchaseReceiptService(PurchaseReceiptRepository receipts, PurchaseReceiptDetailRepository items,
-            SupplierRepository suppliers, ProductVariantRepository variants, UserRepository users,
-            InventoryService inventory) {
+    public PurchaseReceiptService(
+        PurchaseReceiptRepository receipts,
+        PurchaseReceiptDetailRepository items,
+        SupplierRepository suppliers,
+        ProductVariantRepository variants,
+        UserRepository users,
+        InventoryService inventory
+    ) {
         this.receipts = receipts;
         this.items = items;
         this.suppliers = suppliers;
@@ -35,76 +43,167 @@ public class PurchaseReceiptService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<PurchaseReceiptSummaryResponse> list(int page, int size) {
+    public PageResponse<PurchaseReceiptSummaryResponse> list(
+        int page,
+        int size
+    ) {
         return list(page, size, null, null, null, null);
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<PurchaseReceiptSummaryResponse> list(int page, int size, String keyword,
-            PurchaseReceiptStatus status, java.time.LocalDateTime from, java.time.LocalDateTime to) {
-        return InventoryPagination.response(filteredPage(page, size, keyword, status, from, to),
-                InventoryMapper::summary);
+    public PageResponse<PurchaseReceiptSummaryResponse> list(
+        int page,
+        int size,
+        String keyword,
+        PurchaseReceiptStatus status,
+        java.time.LocalDateTime from,
+        java.time.LocalDateTime to
+    ) {
+        return InventoryPagination.response(
+            filteredPage(page, size, keyword, status, from, to),
+            InventoryMapper::summary
+        );
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<PurchaseReceiptListResponse> listDetailed(int page, int size, String keyword,
-            PurchaseReceiptStatus status, java.time.LocalDateTime from, java.time.LocalDateTime to) {
+    public PageResponse<PurchaseReceiptListResponse> listDetailed(
+        int page,
+        int size,
+        String keyword,
+        PurchaseReceiptStatus status,
+        java.time.LocalDateTime from,
+        java.time.LocalDateTime to
+    ) {
         var result = filteredPage(page, size, keyword, status, from, to);
-        var receiptIds = result.getContent().stream().map(PurchaseReceipt::getReceiptId).toList();
-        var receiptItems = receiptIds.isEmpty() ? java.util.List.<PurchaseReceiptDetail>of()
-                : items.findListItems(receiptIds);
-        var itemsByReceipt = receiptItems.stream()
-                .collect(java.util.stream.Collectors.groupingBy(
-                        item -> item.getId().getReceiptId(),
-                        java.util.LinkedHashMap::new,
-                        java.util.stream.Collectors.toList()));
-        return InventoryPagination.response(result,
-                receipt -> InventoryMapper.listItem(receipt,
-                        itemsByReceipt.getOrDefault(receipt.getReceiptId(), java.util.List.of())));
+        var receiptIds = result
+            .getContent()
+            .stream()
+            .map(PurchaseReceipt::getReceiptId)
+            .toList();
+        var receiptItems = receiptIds.isEmpty()
+            ? java.util.List.<PurchaseReceiptDetail>of()
+            : items.findListItems(receiptIds);
+        var itemsByReceipt = receiptItems
+            .stream()
+            .collect(
+                java.util.stream.Collectors.groupingBy(
+                    item -> item.getId().getReceiptId(),
+                    java.util.LinkedHashMap::new,
+                    java.util.stream.Collectors.toList()
+                )
+            );
+        return InventoryPagination.response(result, receipt ->
+            InventoryMapper.listItem(
+                receipt,
+                itemsByReceipt.getOrDefault(
+                    receipt.getReceiptId(),
+                    java.util.List.of()
+                )
+            )
+        );
     }
 
-    private org.springframework.data.domain.Page<PurchaseReceipt> filteredPage(int page, int size, String keyword,
-            PurchaseReceiptStatus status, java.time.LocalDateTime from, java.time.LocalDateTime to) {
+    private org.springframework.data.domain.Page<PurchaseReceipt> filteredPage(
+        int page,
+        int size,
+        String keyword,
+        PurchaseReceiptStatus status,
+        java.time.LocalDateTime from,
+        java.time.LocalDateTime to
+    ) {
         if (from != null && to != null && from.isAfter(to)) {
-            throw new BadRequestException("Thời gian bắt đầu phải trước hoặc bằng thời gian kết thúc");
+            throw new BadRequestException(
+                "Thời gian bắt đầu phải trước hoặc bằng thời gian kết thúc"
+            );
         }
-        String term = keyword == null || keyword.isBlank() ? null : keyword.strip().toLowerCase(java.util.Locale.ROOT);
-        org.springframework.data.jpa.domain.Specification<PurchaseReceipt> filter = (root, query, builder) -> {
-            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
-            if (status != null) predicates.add(builder.equal(root.get("status"), status));
-            if (from != null) predicates.add(builder.greaterThanOrEqualTo(root.get("createdAt"), from));
-            if (to != null) predicates.add(builder.lessThanOrEqualTo(root.get("createdAt"), to));
-            if (term != null) {
-                String pattern = "%" + term + "%";
-                var supplierName = builder.like(builder.lower(root.get("supplier").get("supplierName")), pattern);
-                var username = builder.like(builder.lower(root.get("user").get("username")), pattern);
-                var fullName = builder.like(builder.lower(root.get("user").get("fullName")), pattern);
-                jakarta.persistence.criteria.Predicate match = builder.or(supplierName, username, fullName);
-                try {
-                    match = builder.or(match, builder.equal(root.get("receiptId"), Long.valueOf(term.replace("pn-", ""))));
-                } catch (NumberFormatException ignored) {
-                    // The keyword is textual.
+        String term =
+            keyword == null || keyword.isBlank()
+                ? null
+                : keyword.strip().toLowerCase(java.util.Locale.ROOT);
+        org.springframework.data.jpa.domain.Specification<PurchaseReceipt> filter =
+            (root, query, builder) -> {
+                var predicates =
+                    new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+                if (status != null) predicates.add(
+                    builder.equal(root.get("status"), status)
+                );
+                if (from != null) predicates.add(
+                    builder.greaterThanOrEqualTo(root.get("createdAt"), from)
+                );
+                if (to != null) predicates.add(
+                    builder.lessThanOrEqualTo(root.get("createdAt"), to)
+                );
+                if (term != null) {
+                    String pattern = "%" + term + "%";
+                    var supplierName = builder.like(
+                        builder.lower(root.get("supplier").get("supplierName")),
+                        pattern
+                    );
+                    var username = builder.like(
+                        builder.lower(root.get("user").get("username")),
+                        pattern
+                    );
+                    var fullName = builder.like(
+                        builder.lower(root.get("user").get("fullName")),
+                        pattern
+                    );
+                    jakarta.persistence.criteria.Predicate match = builder.or(
+                        supplierName,
+                        username,
+                        fullName
+                    );
+                    try {
+                        match = builder.or(
+                            match,
+                            builder.equal(
+                                root.get("receiptId"),
+                                Long.valueOf(term.replace("pn-", ""))
+                            )
+                        );
+                    } catch (NumberFormatException ignored) {
+                        // The keyword is textual.
+                    }
+                    predicates.add(match);
                 }
-                predicates.add(match);
-            }
-            return builder.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
-        };
-        return receipts.findAll(filter, InventoryPagination.page(page, size,
-                Sort.by(Sort.Direction.DESC, "createdAt", "receiptId")));
+                return builder.and(
+                    predicates.toArray(
+                        jakarta.persistence.criteria.Predicate[]::new
+                    )
+                );
+            };
+        return receipts.findAll(
+            filter,
+            InventoryPagination.page(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "createdAt", "receiptId")
+            )
+        );
     }
 
     @Transactional(readOnly = true)
     public PurchaseReceiptResponse detail(Long id) {
-        var receipt = receipts.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phiếu nhập"));
+        var receipt = receipts
+            .findById(id)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy phiếu nhập")
+            );
         return response(receipt);
     }
 
     @Transactional
-    public PurchaseReceiptResponse create(PurchaseReceiptCreateRequest request, Long actorId) {
+    public PurchaseReceiptResponse create(
+        PurchaseReceiptCreateRequest request,
+        Long actorId
+    ) {
         var receipt = new PurchaseReceipt();
-        receipt.setSupplier(suppliers.findById(request.supplierId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhà cung cấp")));
+        receipt.setSupplier(
+            suppliers
+                .findById(request.supplierId())
+                .orElseThrow(() ->
+                    new ResourceNotFoundException("Không tìm thấy nhà cung cấp")
+                )
+        );
         receipt.setUser(requireActor(actorId));
         receipt.setStatus(PurchaseReceiptStatus.DRAFT); // Exact SQL enum: there is no PENDING.
         receipt.setTotalAmount(BigDecimal.ZERO);
@@ -113,33 +212,51 @@ public class PurchaseReceiptService {
     }
 
     @Transactional
-    public PurchaseReceiptResponse addItem(Long id, PurchaseReceiptDetailRequest request) {
+    public PurchaseReceiptResponse addItem(
+        Long id,
+        PurchaseReceiptDetailRequest request
+    ) {
         var receipt = lockDraft(id);
         var key = new PurchaseReceiptDetailId(id, request.variantId());
         if (items.existsById(key)) {
-            throw new DuplicateResourceException("Thuộc tính đã có trong phiếu nhập");
+            throw new DuplicateResourceException(
+                "Thuộc tính đã có trong phiếu nhập"
+            );
         }
-        var variant = variants.findById(request.variantId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thuộc tính"));
+        var variant = variants
+            .findById(request.variantId())
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy thuộc tính")
+            );
         var item = new PurchaseReceiptDetail();
         item.setId(key);
         item.setPurchaseReceipt(receipt);
         item.setProductVariant(variant);
         apply(item, request.quantity(), request.unitPrice());
         // Validate the aggregate BEFORE persisting an out-of-range total.
-        receipt.setTotalAmount(checkedTotal(receipt.getTotalAmount().add(item.getSubtotal())));
+        receipt.setTotalAmount(
+            checkedTotal(receipt.getTotalAmount().add(item.getSubtotal()))
+        );
         items.saveAndFlush(item);
         receipts.saveAndFlush(receipt);
         return response(receipt);
     }
 
     @Transactional
-    public PurchaseReceiptResponse updateItem(Long id, Long variantId, PurchaseReceiptItemUpdateRequest request) {
+    public PurchaseReceiptResponse updateItem(
+        Long id,
+        Long variantId,
+        PurchaseReceiptItemUpdateRequest request
+    ) {
         var receipt = lockDraft(id);
         var item = requireItem(id, variantId);
         BigDecimal old = item.getSubtotal();
         apply(item, request.quantity(), request.unitPrice());
-        receipt.setTotalAmount(checkedTotal(receipt.getTotalAmount().subtract(old).add(item.getSubtotal())));
+        receipt.setTotalAmount(
+            checkedTotal(
+                receipt.getTotalAmount().subtract(old).add(item.getSubtotal())
+            )
+        );
         items.saveAndFlush(item);
         receipts.saveAndFlush(receipt);
         return response(receipt);
@@ -149,7 +266,9 @@ public class PurchaseReceiptService {
     public PurchaseReceiptResponse deleteItem(Long id, Long variantId) {
         var receipt = lockDraft(id);
         var item = requireItem(id, variantId);
-        receipt.setTotalAmount(checkedTotal(receipt.getTotalAmount().subtract(item.getSubtotal())));
+        receipt.setTotalAmount(
+            checkedTotal(receipt.getTotalAmount().subtract(item.getSubtotal()))
+        );
         items.delete(item);
         items.flush();
         receipts.saveAndFlush(receipt);
@@ -161,7 +280,9 @@ public class PurchaseReceiptService {
         var receipt = lockDraft(id); // Serialize all edits/completions of the same receipt.
         var details = items.findItemsForCompletion(id); // Do not fetch variants until they are locked.
         if (details.isEmpty()) {
-            throw new ResourceConflictException("Phiếu nhập phải có ít nhất một dòng hàng");
+            throw new ResourceConflictException(
+                "Phiếu nhập phải có ít nhất một dòng hàng"
+            );
         }
         BigDecimal total = BigDecimal.ZERO;
         for (var item : details) {
@@ -184,41 +305,71 @@ public class PurchaseReceiptService {
     }
 
     private PurchaseReceipt lockDraft(Long id) {
-        var receipt = receipts.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phiếu nhập"));
+        var receipt = receipts
+            .findByIdForUpdate(id)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy phiếu nhập")
+            );
         if (receipt.getStatus() != PurchaseReceiptStatus.DRAFT) {
-            throw new ResourceConflictException("Chỉ phiếu nhập DRAFT được sửa, hoàn tất hoặc hủy");
+            throw new ResourceConflictException(
+                "Chỉ phiếu nhập DRAFT được sửa, hoàn tất hoặc hủy"
+            );
         }
         return receipt;
     }
 
     private PurchaseReceiptDetail requireItem(Long id, Long variantId) {
-        return items.findById(new PurchaseReceiptDetailId(id, variantId))
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dòng hàng"));
+        return items
+            .findById(new PurchaseReceiptDetailId(id, variantId))
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy dòng hàng")
+            );
     }
 
     private User requireActor(Long id) {
-        return users.findById(id).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
+        return users
+            .findById(id)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy người dùng")
+            );
     }
 
-    private void apply(PurchaseReceiptDetail item, int quantity, BigDecimal unitPrice) {
-        if (quantity <= 0 || unitPrice == null || unitPrice.signum() < 0
-                || unitPrice.scale() > 2 || unitPrice.compareTo(new BigDecimal("9999999999.99")) > 0) {
+    private void apply(
+        PurchaseReceiptDetail item,
+        int quantity,
+        BigDecimal unitPrice
+    ) {
+        if (
+            quantity <= 0 ||
+            unitPrice == null ||
+            unitPrice.signum() < 0 ||
+            unitPrice.scale() > 2 ||
+            unitPrice.compareTo(new BigDecimal("9999999999.99")) > 0
+        ) {
             throw new BadRequestException("Số lượng hoặc đơn giá không hợp lệ");
         }
         item.setQuantity(quantity);
         item.setUnitPrice(unitPrice);
-        item.setSubtotal(checkedTotal(unitPrice.multiply(BigDecimal.valueOf(quantity))));
+        item.setSubtotal(
+            checkedTotal(unitPrice.multiply(BigDecimal.valueOf(quantity)))
+        );
     }
 
     private BigDecimal checkedTotal(BigDecimal total) {
         if (total.signum() < 0 || total.compareTo(MAX_TOTAL) > 0) {
-            throw new BadRequestException("Tổng tiền vượt giới hạn DECIMAL(14,2)");
+            throw new BadRequestException(
+                "Tổng tiền vượt giới hạn DECIMAL(14,2)"
+            );
         }
         return total;
     }
 
     private PurchaseReceiptResponse response(PurchaseReceipt receipt) {
-        return InventoryMapper.receipt(receipt, items.findById_ReceiptIdOrderById_VariantIdAsc(receipt.getReceiptId()));
+        return InventoryMapper.receipt(
+            receipt,
+            items.findById_ReceiptIdOrderById_VariantIdAsc(
+                receipt.getReceiptId()
+            )
+        );
     }
 }

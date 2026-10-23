@@ -1,7 +1,7 @@
 package com.lauriel.store.service;
 
-import com.lauriel.store.dto.request.CheckoutItemRequest;
 import com.lauriel.store.dto.request.CartSnapshotRequest;
+import com.lauriel.store.dto.request.CheckoutItemRequest;
 import com.lauriel.store.dto.store.StoreCartItemView;
 import com.lauriel.store.dto.store.StoreCartView;
 import com.lauriel.store.entity.ProductVariant;
@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class StoreCartService {
+
     public static final String CART_SESSION_ATTRIBUTE = "storeCart";
     public static final String CART_OWNER_SESSION_ATTRIBUTE = "storeCartOwner";
     private static final String CART = CART_SESSION_ATTRIBUTE;
@@ -32,8 +33,11 @@ public class StoreCartService {
     private final PricingService pricing;
     private final CustomerEngagementService engagement;
 
-    public StoreCartService(ProductVariantRepository variants, PricingService pricing,
-            CustomerEngagementService engagement) {
+    public StoreCartService(
+        ProductVariantRepository variants,
+        PricingService pricing,
+        CustomerEngagementService engagement
+    ) {
         this.variants = variants;
         this.pricing = pricing;
         this.engagement = engagement;
@@ -43,13 +47,21 @@ public class StoreCartService {
         add(session, variantId, quantity, null);
     }
 
-    public void add(HttpSession session, Long variantId, int quantity, Long userId) {
+    public void add(
+        HttpSession session,
+        Long variantId,
+        int quantity,
+        Long userId
+    ) {
         prepareOwner(session, userId);
         ProductVariant variant = requirePurchasable(variantId);
         Map<Long, Integer> cart = cart(session, true);
         int total;
-        try { total = Math.addExact(cart.getOrDefault(variantId, 0), quantity); }
-        catch (ArithmeticException exception) { throw new BadRequestException("Số lượng không hợp lệ."); }
+        try {
+            total = Math.addExact(cart.getOrDefault(variantId, 0), quantity);
+        } catch (ArithmeticException exception) {
+            throw new BadRequestException("Số lượng không hợp lệ.");
+        }
         validateQuantity(total, variant.getQuantity());
         cart.put(variantId, total);
         persist(session, userId);
@@ -68,10 +80,17 @@ public class StoreCartService {
         update(session, variantId, quantity, null);
     }
 
-    public void update(HttpSession session, Long variantId, int quantity, Long userId) {
+    public void update(
+        HttpSession session,
+        Long variantId,
+        int quantity,
+        Long userId
+    ) {
         prepareOwner(session, userId);
         Map<Long, Integer> cart = cart(session, false);
-        if (!cart.containsKey(variantId)) throw new ResourceNotFoundException("Sản phẩm không có trong giỏ hàng.");
+        if (!cart.containsKey(variantId)) throw new ResourceNotFoundException(
+            "Sản phẩm không có trong giỏ hàng."
+        );
         ProductVariant variant = requirePurchasable(variantId);
         validateQuantity(quantity, variant.getQuantity());
         cart.put(variantId, quantity);
@@ -116,7 +135,11 @@ public class StoreCartService {
     }
 
     public int count(HttpSession session) {
-        return cart(session, false).values().stream().mapToInt(Integer::intValue).sum();
+        return cart(session, false)
+            .values()
+            .stream()
+            .mapToInt(Integer::intValue)
+            .sum();
     }
 
     /** Clears account-specific session state while retaining the anonymous shopping cart. */
@@ -124,7 +147,9 @@ public class StoreCartService {
         if (session == null) return false;
         Object cart = session.getAttribute(CART);
         Object owner = session.getAttribute(CART_OWNER);
-        java.util.Collections.list(session.getAttributeNames()).forEach(session::removeAttribute);
+        java.util.Collections.list(session.getAttributeNames()).forEach(
+            session::removeAttribute
+        );
         if (cart != null) {
             session.setAttribute(CART, cart);
             if (owner != null) session.setAttribute(CART_OWNER, owner);
@@ -137,13 +162,17 @@ public class StoreCartService {
         if (session == null || userId == null) return;
         Object owner = session.getAttribute(CART_OWNER);
         Map<Long, Integer> current = new LinkedHashMap<>(cart(session, false));
-        Map<Long, Integer> accountCart = new LinkedHashMap<>(engagement.loadCart(userId));
+        Map<Long, Integer> accountCart = new LinkedHashMap<>(
+            engagement.loadCart(userId)
+        );
 
         if (userId.equals(owner)) {
             accountCart.clear();
             accountCart.putAll(current);
         } else if (ANONYMOUS_OWNER.equals(owner)) {
-            current.forEach((variantId, quantity) -> accountCart.merge(variantId, quantity, Math::max));
+            current.forEach((variantId, quantity) ->
+                accountCart.merge(variantId, quantity, Math::max)
+            );
         }
 
         session.setAttribute(CART, accountCart);
@@ -153,8 +182,14 @@ public class StoreCartService {
 
     @Transactional(readOnly = true)
     public StoreCartView view(HttpSession session, boolean buyNow) {
-        Map<Long, Integer> state = buyNow ? state(session, BUY_NOW) : cart(session, false);
-        if (state.isEmpty()) return new StoreCartView(List.of(), 0, BigDecimal.ZERO.setScale(2));
+        Map<Long, Integer> state = buyNow
+            ? state(session, BUY_NOW)
+            : cart(session, false);
+        if (state.isEmpty()) return new StoreCartView(
+            List.of(),
+            0,
+            BigDecimal.ZERO.setScale(2)
+        );
         List<ProductVariant> found = variants.findByVariantIdIn(state.keySet());
         Map<Long, ProductVariant> indexed = new LinkedHashMap<>();
         found.forEach(variant -> indexed.put(variant.getVariantId(), variant));
@@ -164,40 +199,84 @@ public class StoreCartService {
         BigDecimal subtotal = BigDecimal.ZERO;
         for (var entry : state.entrySet()) {
             ProductVariant variant = indexed.get(entry.getKey());
-            if (variant == null || variant.getStatus() != ActiveStatus.ACTIVE
-                    || variant.getProduct().getStatus() != ActiveStatus.ACTIVE) continue;
+            if (
+                variant == null ||
+                variant.getStatus() != ActiveStatus.ACTIVE ||
+                variant.getProduct().getStatus() != ActiveStatus.ACTIVE
+            ) continue;
             int quantity = entry.getValue();
             var price = prices.get(variant.getVariantId());
-            BigDecimal line = pricing.lineTotal(price.effectivePrice(), quantity);
-            items.add(new StoreCartItemView(variant.getProduct().getProductId(), variant.getVariantId(),
-                    variant.getProduct().getProductName(), variant.getProduct().getImgUrl(), variant.getSku(),
-                    com.lauriel.store.mapper.CatalogMapper.size(variant.getSize()),
-                    com.lauriel.store.mapper.CatalogMapper.color(variant.getColor()), variant.getPrice(),
-                    price.effectivePrice(), price.promotion(), quantity, variant.getQuantity(), line));
+            BigDecimal line = pricing.lineTotal(
+                price.effectivePrice(),
+                quantity
+            );
+            items.add(
+                new StoreCartItemView(
+                    variant.getProduct().getProductId(),
+                    variant.getVariantId(),
+                    variant.getProduct().getProductName(),
+                    variant.getProduct().getImgUrl(),
+                    variant.getSku(),
+                    com.lauriel.store.mapper.CatalogMapper.size(
+                        variant.getSize()
+                    ),
+                    com.lauriel.store.mapper.CatalogMapper.color(
+                        variant.getColor()
+                    ),
+                    variant.getPrice(),
+                    price.effectivePrice(),
+                    price.promotion(),
+                    quantity,
+                    variant.getQuantity(),
+                    line
+                )
+            );
             totalQuantity += quantity;
             subtotal = pricing.checkedAmount(subtotal.add(line));
         }
         return new StoreCartView(List.copyOf(items), totalQuantity, subtotal);
     }
 
-    public List<CheckoutItemRequest> checkoutItems(HttpSession session, boolean buyNow) {
-        return (buyNow ? state(session, BUY_NOW) : cart(session, false)).entrySet().stream()
-                .map(entry -> new CheckoutItemRequest(entry.getKey(), entry.getValue())).toList();
+    public List<CheckoutItemRequest> checkoutItems(
+        HttpSession session,
+        boolean buyNow
+    ) {
+        return (buyNow ? state(session, BUY_NOW) : cart(session, false))
+            .entrySet()
+            .stream()
+            .map(entry ->
+                new CheckoutItemRequest(entry.getKey(), entry.getValue())
+            )
+            .toList();
     }
 
     private ProductVariant requirePurchasable(Long variantId) {
-        if (variantId == null || variantId <= 0) throw new BadRequestException("Thuộc tính không hợp lệ.");
-        ProductVariant variant = variants.findById(variantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thuộc tính sản phẩm."));
-        if (variant.getStatus() != ActiveStatus.ACTIVE || variant.getProduct().getStatus() != ActiveStatus.ACTIVE) {
+        if (variantId == null || variantId <= 0) throw new BadRequestException(
+            "Thuộc tính không hợp lệ."
+        );
+        ProductVariant variant = variants
+            .findById(variantId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException(
+                    "Không tìm thấy thuộc tính sản phẩm."
+                )
+            );
+        if (
+            variant.getStatus() != ActiveStatus.ACTIVE ||
+            variant.getProduct().getStatus() != ActiveStatus.ACTIVE
+        ) {
             throw new BadRequestException("Sản phẩm không còn hoạt động.");
         }
         return variant;
     }
 
     private static void validateQuantity(int quantity, int stock) {
-        if (quantity <= 0) throw new BadRequestException("Số lượng phải lớn hơn 0.");
-        if (quantity > stock) throw new BadRequestException("Số lượng vượt quá tồn kho hiện tại.");
+        if (quantity <= 0) throw new BadRequestException(
+            "Số lượng phải lớn hơn 0."
+        );
+        if (quantity > stock) throw new BadRequestException(
+            "Số lượng vượt quá tồn kho hiện tại."
+        );
     }
 
     private void prepareOwner(HttpSession session, Long userId) {
@@ -211,8 +290,13 @@ public class StoreCartService {
 
     private void persist(HttpSession session, Long userId) {
         if (userId == null) return;
-        List<CheckoutItemRequest> items = cart(session, false).entrySet().stream()
-                .map(entry -> new CheckoutItemRequest(entry.getKey(), entry.getValue())).toList();
+        List<CheckoutItemRequest> items = cart(session, false)
+            .entrySet()
+            .stream()
+            .map(entry ->
+                new CheckoutItemRequest(entry.getKey(), entry.getValue())
+            )
+            .toList();
         engagement.syncCart(userId, new CartSnapshotRequest(items));
     }
 
@@ -229,6 +313,8 @@ public class StoreCartService {
     @SuppressWarnings("unchecked")
     private Map<Long, Integer> state(HttpSession session, String name) {
         Object value = session.getAttribute(name);
-        return value instanceof Map<?, ?> ? (Map<Long, Integer>) value : Map.of();
+        return value instanceof Map<?, ?>
+            ? (Map<Long, Integer>) value
+            : Map.of();
     }
 }

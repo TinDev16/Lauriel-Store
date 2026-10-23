@@ -1,24 +1,25 @@
 package com.lauriel.store.controller.web;
 
-import com.lauriel.store.exception.GlobalExceptionHandler;
 import com.lauriel.store.dto.response.ErrorResponse;
-import java.time.LocalDateTime;
+import com.lauriel.store.exception.GlobalExceptionHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.LocalDateTime;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.multipart.MaxUploadSizeExceededException;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.ModelAndView;
 
 /** Mapping errors can occur before Spring selects a controller, so package selectors cannot handle them. */
 @ControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class WebRoutingExceptionHandler {
+
     private final GlobalExceptionHandler apiErrors;
 
     public WebRoutingExceptionHandler(GlobalExceptionHandler apiErrors) {
@@ -26,11 +27,25 @@ public class WebRoutingExceptionHandler {
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public Object oversizedUpload(HttpServletRequest request, HttpServletResponse response) {
-        String message = "Ảnh tải lên vượt quá giới hạn 20 MB. Vui lòng chọn ảnh nhỏ hơn.";
-        if (request.getRequestURI().startsWith(request.getContextPath() + "/api/")) {
-            return ResponseEntity.status(413).body(new ErrorResponse(
-                    LocalDateTime.now(), 413, "Content Too Large", message));
+    public Object oversizedUpload(
+        HttpServletRequest request,
+        HttpServletResponse response
+    ) {
+        String message =
+            "Ảnh tải lên vượt quá giới hạn 20 MB. Vui lòng chọn ảnh nhỏ hơn.";
+        if (
+            request
+                .getRequestURI()
+                .startsWith(request.getContextPath() + "/api/")
+        ) {
+            return ResponseEntity.status(413).body(
+                new ErrorResponse(
+                    LocalDateTime.now(),
+                    413,
+                    "Content Too Large",
+                    message
+                )
+            );
         }
         response.setContentType("text/html;charset=UTF-8");
         var view = new ModelAndView("error/413");
@@ -38,27 +53,52 @@ public class WebRoutingExceptionHandler {
         view.addObject("message", message);
         return view;
     }
+
     @ExceptionHandler({
         org.springframework.web.HttpRequestMethodNotSupportedException.class,
         org.springframework.web.HttpMediaTypeNotSupportedException.class,
         org.springframework.web.HttpMediaTypeNotAcceptableException.class,
         org.springframework.web.servlet.NoHandlerFoundException.class,
-        org.springframework.web.servlet.resource.NoResourceFoundException.class
+        org.springframework.web.servlet.resource.NoResourceFoundException.class,
     })
-    public Object routing(Exception exception, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (request.getRequestURI().startsWith(request.getContextPath() + "/api/")) {
-            return apiErrors.handleException(exception, new ServletWebRequest(request, response));
+    public Object routing(
+        Exception exception,
+        HttpServletRequest request,
+        HttpServletResponse response
+    ) throws Exception {
+        if (
+            request
+                .getRequestURI()
+                .startsWith(request.getContextPath() + "/api/")
+        ) {
+            return apiErrors.handleException(
+                exception,
+                new ServletWebRequest(request, response)
+            );
         }
         response.setContentType("text/html;charset=UTF-8");
-        request.removeAttribute(org.springframework.web.servlet.View.SELECTED_CONTENT_TYPE);
-        request.setAttribute(org.springframework.web.servlet.HandlerMapping.PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE,
-                java.util.Set.of(org.springframework.http.MediaType.TEXT_HTML));
+        request.removeAttribute(
+            org.springframework.web.servlet.View.SELECTED_CONTENT_TYPE
+        );
+        request.setAttribute(
+            org.springframework.web.servlet.HandlerMapping.PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE,
+            java.util.Set.of(org.springframework.http.MediaType.TEXT_HTML)
+        );
         var error = (org.springframework.web.ErrorResponse) exception;
-        error.getHeaders().forEach((name, values) -> values.forEach(value -> response.addHeader(name, value)));
+        error
+            .getHeaders()
+            .forEach((name, values) ->
+                values.forEach(value -> response.addHeader(name, value))
+            );
         int status = error.getStatusCode().value();
         var view = new ModelAndView(status == 404 ? "error/404" : "error/400");
         view.setStatus(HttpStatus.valueOf(status));
-        view.addObject("message", status == 404 ? "Không tìm thấy trang." : "Yêu cầu này không được hỗ trợ.");
+        view.addObject(
+            "message",
+            status == 404
+                ? "Không tìm thấy trang."
+                : "Yêu cầu này không được hỗ trợ."
+        );
         return view;
     }
 }

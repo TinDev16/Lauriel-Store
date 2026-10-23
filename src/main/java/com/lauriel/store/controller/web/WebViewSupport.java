@@ -9,13 +9,16 @@ import org.springframework.stereotype.Component;
 
 @Component("view")
 public class WebViewSupport {
+
     public String money(BigDecimal amount) {
         return amount == null ? "—" : number(amount) + " ₫";
     }
 
     public String number(Number value) {
         if (value == null) return "—";
-        NumberFormat format = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+        NumberFormat format = NumberFormat.getNumberInstance(
+            Locale.forLanguageTag("vi-VN")
+        );
         format.setMinimumFractionDigits(0);
         format.setMaximumFractionDigits(2);
         format.setGroupingUsed(true);
@@ -23,7 +26,9 @@ public class WebViewSupport {
     }
 
     public String date(LocalDateTime value) {
-        return value == null ? "—" : value.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        return value == null
+            ? "—"
+            : value.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
     }
 
     public String label(Object value) {
@@ -59,4 +64,5 @@ public class WebViewSupport {
             case "CUSTOMER" -> "Khách hàng";
             default -> value.toString();
         };
-    }}
+    }
+}

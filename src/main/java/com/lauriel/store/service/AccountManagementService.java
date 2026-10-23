@@ -29,7 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AccountManagementService {
-    private static final Logger log = LoggerFactory.getLogger(AccountManagementService.class);
+
+    private static final Logger log = LoggerFactory.getLogger(
+        AccountManagementService.class
+    );
     private static final String SUPER_ADMIN = StoreRole.SUPER_ADMIN.name();
 
     private final UserRepository users;
@@ -37,8 +40,12 @@ public class AccountManagementService {
     private final CustomerRepository customers;
     private final PasswordEncoder passwordEncoder;
 
-    public AccountManagementService(UserRepository users, RoleRepository roles,
-            CustomerRepository customers, PasswordEncoder passwordEncoder) {
+    public AccountManagementService(
+        UserRepository users,
+        RoleRepository roles,
+        CustomerRepository customers,
+        PasswordEncoder passwordEncoder
+    ) {
         this.users = users;
         this.roles = roles;
         this.customers = customers;
@@ -46,34 +53,81 @@ public class AccountManagementService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<AccountSummaryResponse> list(int page, int size, String keyword,
-            StoreRole role, UserStatus status) {
+    public PageResponse<AccountSummaryResponse> list(
+        int page,
+        int size,
+        String keyword,
+        StoreRole role,
+        UserStatus status
+    ) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 100);
-        var result = users.findAll(UserSpecifications.filter(keyword, role, status),
-                PageRequest.of(safePage, safeSize, Sort.by("status").ascending()
-                        .and(Sort.by("createdAt").descending()).and(Sort.by("userId").descending())));
-        return new PageResponse<>(result.getContent().stream().map(AccountManagementService::summary).toList(),
-                result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
+        var result = users.findAll(
+            UserSpecifications.filter(keyword, role, status),
+            PageRequest.of(
+                safePage,
+                safeSize,
+                Sort.by("status")
+                    .ascending()
+                    .and(Sort.by("createdAt").descending())
+                    .and(Sort.by("userId").descending())
+            )
+        );
+        return new PageResponse<>(
+            result
+                .getContent()
+                .stream()
+                .map(AccountManagementService::summary)
+                .toList(),
+            result.getNumber(),
+            result.getSize(),
+            result.getTotalElements(),
+            result.getTotalPages()
+        );
     }
 
     @Transactional(readOnly = true)
     public AccountDetailResponse get(Long id) {
         User user = find(id);
-        var customer = customers.findByUser_UserId(id)
-                .map(value -> new CustomerAccountProfileResponse(value.getCustomerId(), value.getCustomerName(),
-                        value.getPhone(), value.getAddress(), value.getCreatedAt()))
-                .orElse(null);
+        var customer = customers
+            .findByUser_UserId(id)
+            .map(value ->
+                new CustomerAccountProfileResponse(
+                    value.getCustomerId(),
+                    value.getCustomerName(),
+                    value.getPhone(),
+                    value.getAddress(),
+                    value.getCreatedAt()
+                )
+            )
+            .orElse(null);
         StoreRole role = role(user);
-        return new AccountDetailResponse(user.getUserId(), user.getUsername(), user.getFullName(), user.getEmail(),
-                user.getPhone(), role, user.getStatus(), user.getCreatedAt(), customer);
+        return new AccountDetailResponse(
+            user.getUserId(),
+            user.getUsername(),
+            user.getFullName(),
+            user.getEmail(),
+            user.getPhone(),
+            role,
+            user.getStatus(),
+            user.getCreatedAt(),
+            customer
+        );
     }
 
     @Transactional
-    public AccountDetailResponse create(Long actorId, CreateManagementAccountRequest request) {
+    public AccountDetailResponse create(
+        Long actorId,
+        CreateManagementAccountRequest request
+    ) {
         requireSuperAdmin(actorId);
-        if (request.role() != StoreRole.ADMIN && request.role() != StoreRole.STAFF) {
-            throw new BadRequestException("Chỉ được tạo tài khoản ADMIN hoặc STAFF từ màn hình quản trị.");
+        if (
+            request.role() != StoreRole.ADMIN &&
+            request.role() != StoreRole.STAFF
+        ) {
+            throw new BadRequestException(
+                "Chỉ được tạo tài khoản ADMIN hoặc STAFF từ màn hình quản trị."
+            );
         }
         validatePassword(request.password());
         if (!request.password().equals(request.confirmPassword())) {
@@ -89,16 +143,34 @@ public class AccountManagementService {
         user.setFullName(request.fullName().strip());
         user.setEmail(email);
         user.setPhone(optional(request.phone()));
-        user.setRole(roles.findByRoleName(request.role().name())
-                .orElseThrow(() -> new IllegalStateException("Thiếu role " + request.role().name() + " trong database")));
+        user.setRole(
+            roles
+                .findByRoleName(request.role().name())
+                .orElseThrow(() ->
+                    new IllegalStateException(
+                        "Thiếu role " +
+                            request.role().name() +
+                            " trong database"
+                    )
+                )
+        );
         user.setStatus(request.status());
         user = users.saveAndFlush(user);
-        log.info("SUPER_ADMIN {} created {} account {}", actorId, request.role(), user.getUserId());
+        log.info(
+            "SUPER_ADMIN {} created {} account {}",
+            actorId,
+            request.role(),
+            user.getUserId()
+        );
         return get(user.getUserId());
     }
 
     @Transactional
-    public AccountDetailResponse update(Long actorId, Long targetId, UpdateAccountRequest request) {
+    public AccountDetailResponse update(
+        Long actorId,
+        Long targetId,
+        UpdateAccountRequest request
+    ) {
         requireSuperAdmin(actorId);
         User target = find(targetId);
         StoreRole currentRole = role(target);
@@ -112,12 +184,27 @@ public class AccountManagementService {
         target.setPhone(optional(request.phone()));
         target.setStatus(request.status());
         if (currentRole != request.role()) {
-            target.setRole(roles.findByRoleName(request.role().name())
-                    .orElseThrow(() -> new IllegalStateException("Thiếu role " + request.role().name() + " trong database")));
+            target.setRole(
+                roles
+                    .findByRoleName(request.role().name())
+                    .orElseThrow(() ->
+                        new IllegalStateException(
+                            "Thiếu role " +
+                                request.role().name() +
+                                " trong database"
+                        )
+                    )
+            );
         }
         users.saveAndFlush(target);
-        log.info("SUPER_ADMIN {} updated USER {} role {} -> {}, status {}", actorId, targetId,
-                currentRole, request.role(), request.status());
+        log.info(
+            "SUPER_ADMIN {} updated USER {} role {} -> {}, status {}",
+            actorId,
+            targetId,
+            currentRole,
+            request.role(),
+            request.status()
+        );
         return get(targetId);
     }
 
@@ -129,10 +216,23 @@ public class AccountManagementService {
         validateRoleChange(currentRole, newRole);
         protectLastSuperAdmin(target, newRole, target.getStatus());
         if (currentRole != newRole) {
-            target.setRole(roles.findByRoleName(newRole.name())
-                    .orElseThrow(() -> new IllegalStateException("Thiếu role " + newRole.name() + " trong database")));
+            target.setRole(
+                roles
+                    .findByRoleName(newRole.name())
+                    .orElseThrow(() ->
+                        new IllegalStateException(
+                            "Thiếu role " + newRole.name() + " trong database"
+                        )
+                    )
+            );
             users.saveAndFlush(target);
-            log.info("SUPER_ADMIN {} changed USER {} role {} -> {}", actorId, targetId, currentRole, newRole);
+            log.info(
+                "SUPER_ADMIN {} changed USER {} role {} -> {}",
+                actorId,
+                targetId,
+                currentRole,
+                newRole
+            );
         }
     }
 
@@ -144,16 +244,28 @@ public class AccountManagementService {
         UserStatus previous = target.getStatus();
         target.setStatus(status);
         users.saveAndFlush(target);
-        log.info("SUPER_ADMIN {} changed USER {} status {} -> {}", actorId, targetId, previous, status);
+        log.info(
+            "SUPER_ADMIN {} changed USER {} status {} -> {}",
+            actorId,
+            targetId,
+            previous,
+            status
+        );
     }
 
     @Transactional
-    public void resetPassword(Long actorId, Long targetId, ResetPasswordRequest request) {
+    public void resetPassword(
+        Long actorId,
+        Long targetId,
+        ResetPasswordRequest request
+    ) {
         requireSuperAdmin(actorId);
         User target = find(targetId);
         StoreRole targetRole = role(target);
         if (targetRole != StoreRole.ADMIN && targetRole != StoreRole.STAFF) {
-            throw new BadRequestException("Chỉ hỗ trợ đặt lại mật khẩu cho ADMIN hoặc STAFF.");
+            throw new BadRequestException(
+                "Chỉ hỗ trợ đặt lại mật khẩu cho ADMIN hoặc STAFF."
+            );
         }
         validatePassword(request.password());
         if (!request.password().equals(request.confirmPassword())) {
@@ -161,34 +273,69 @@ public class AccountManagementService {
         }
         target.setPasswordHash(passwordEncoder.encode(request.password()));
         users.saveAndFlush(target);
-        log.info("SUPER_ADMIN {} reset password for USER {}", actorId, targetId);
+        log.info(
+            "SUPER_ADMIN {} reset password for USER {}",
+            actorId,
+            targetId
+        );
     }
 
     private User requireSuperAdmin(Long actorId) {
         User actor = find(actorId);
-        if (actor.getStatus() != UserStatus.ACTIVE || role(actor) != StoreRole.SUPER_ADMIN) {
-            throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền quản lý tài khoản.");
+        if (
+            actor.getStatus() != UserStatus.ACTIVE ||
+            role(actor) != StoreRole.SUPER_ADMIN
+        ) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                "Bạn không có quyền quản lý tài khoản."
+            );
         }
         return actor;
     }
 
     private void validateRoleChange(StoreRole currentRole, StoreRole newRole) {
-        if (currentRole == StoreRole.CUSTOMER && newRole != StoreRole.CUSTOMER) {
-            throw new BadRequestException("Không thể đổi role CUSTOMER vì hồ sơ khách hàng đang được liên kết.");
+        if (
+            currentRole == StoreRole.CUSTOMER && newRole != StoreRole.CUSTOMER
+        ) {
+            throw new BadRequestException(
+                "Không thể đổi role CUSTOMER vì hồ sơ khách hàng đang được liên kết."
+            );
         }
-        if (currentRole != StoreRole.CUSTOMER && newRole == StoreRole.CUSTOMER) {
-            throw new BadRequestException("Không thể đổi tài khoản quản lý thành CUSTOMER.");
+        if (
+            currentRole != StoreRole.CUSTOMER && newRole == StoreRole.CUSTOMER
+        ) {
+            throw new BadRequestException(
+                "Không thể đổi tài khoản quản lý thành CUSTOMER."
+            );
         }
-        if (currentRole != StoreRole.SUPER_ADMIN && newRole == StoreRole.SUPER_ADMIN) {
-            throw new BadRequestException("Không cấp role SUPER_ADMIN từ giao diện quản trị.");
+        if (
+            currentRole != StoreRole.SUPER_ADMIN &&
+            newRole == StoreRole.SUPER_ADMIN
+        ) {
+            throw new BadRequestException(
+                "Không cấp role SUPER_ADMIN từ giao diện quản trị."
+            );
         }
     }
 
-    private void protectLastSuperAdmin(User target, StoreRole newRole, UserStatus newStatus) {
-        if (role(target) == StoreRole.SUPER_ADMIN && target.getStatus() == UserStatus.ACTIVE
-                && (newRole != StoreRole.SUPER_ADMIN || newStatus != UserStatus.ACTIVE)
-                && users.countByRole_RoleNameAndStatus(SUPER_ADMIN, UserStatus.ACTIVE) <= 1) {
-            throw new ResourceConflictException("Không thể khóa, ngừng hoạt động hoặc hạ quyền SUPER_ADMIN cuối cùng.");
+    private void protectLastSuperAdmin(
+        User target,
+        StoreRole newRole,
+        UserStatus newStatus
+    ) {
+        if (
+            role(target) == StoreRole.SUPER_ADMIN &&
+            target.getStatus() == UserStatus.ACTIVE &&
+            (newRole != StoreRole.SUPER_ADMIN ||
+                newStatus != UserStatus.ACTIVE) &&
+            users.countByRole_RoleNameAndStatus(
+                SUPER_ADMIN,
+                UserStatus.ACTIVE
+            ) <= 1
+        ) {
+            throw new ResourceConflictException(
+                "Không thể khóa, ngừng hoạt động hoặc hạ quyền SUPER_ADMIN cuối cùng."
+            );
         }
     }
 
@@ -196,23 +343,41 @@ public class AccountManagementService {
         if (currentId == null && users.existsByUsernameIgnoreCase(username)) {
             throw new DuplicateResourceException("Tên đăng nhập đã tồn tại.");
         }
-        if (email != null && (currentId == null ? users.existsByEmailIgnoreCase(email)
-                : users.existsByEmailIgnoreCaseAndUserIdNot(email, currentId))) {
+        if (
+            email != null &&
+            (currentId == null
+                ? users.existsByEmailIgnoreCase(email)
+                : users.existsByEmailIgnoreCaseAndUserIdNot(email, currentId))
+        ) {
             throw new DuplicateResourceException("Email đã được sử dụng.");
         }
     }
 
     private User find(Long id) {
-        return users.findById(id).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản."));
+        return users
+            .findById(id)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy tài khoản.")
+            );
     }
 
     private static StoreRole role(User user) {
-        return StoreRole.valueOf(user.getRole().getRoleName().toUpperCase(Locale.ROOT));
+        return StoreRole.valueOf(
+            user.getRole().getRoleName().toUpperCase(Locale.ROOT)
+        );
     }
 
     private static AccountSummaryResponse summary(User user) {
-        return new AccountSummaryResponse(user.getUserId(), user.getUsername(), user.getFullName(), user.getEmail(),
-                user.getPhone(), role(user), user.getStatus(), user.getCreatedAt());
+        return new AccountSummaryResponse(
+            user.getUserId(),
+            user.getUsername(),
+            user.getFullName(),
+            user.getEmail(),
+            user.getPhone(),
+            role(user),
+            user.getStatus(),
+            user.getCreatedAt()
+        );
     }
 
     private static String optional(String value) {
@@ -220,8 +385,15 @@ public class AccountManagementService {
     }
 
     private static void validatePassword(String password) {
-        if (password == null || password.isBlank() || password.length() < 8 || password.length() > 72) {
-            throw new BadRequestException("Mật khẩu phải có từ 8 đến 72 ký tự.");
+        if (
+            password == null ||
+            password.isBlank() ||
+            password.length() < 8 ||
+            password.length() > 72
+        ) {
+            throw new BadRequestException(
+                "Mật khẩu phải có từ 8 đến 72 ký tự."
+            );
         }
     }
 }

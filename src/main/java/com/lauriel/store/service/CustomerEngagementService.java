@@ -16,12 +16,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CustomerEngagementService {
+
     private final JdbcTemplate jdbc;
     private final ProductVariantRepository variants;
     private final Clock clock;
 
-    public CustomerEngagementService(JdbcTemplate jdbc, ProductVariantRepository variants,
-            @Qualifier("pricingClock") Clock clock) {
+    public CustomerEngagementService(
+        JdbcTemplate jdbc,
+        ProductVariantRepository variants,
+        @Qualifier("pricingClock") Clock clock
+    ) {
         this.jdbc = jdbc;
         this.variants = variants;
         this.clock = clock;
@@ -30,38 +34,74 @@ public class CustomerEngagementService {
     @Transactional
     public void heartbeat(long userId) {
         LocalDateTime now = LocalDateTime.now(clock);
-        int updated = jdbc.update("UPDATE customer_activity SET last_seen_at=? WHERE user_id=?",
-                Timestamp.valueOf(now), userId);
+        int updated = jdbc.update(
+            "UPDATE customer_activity SET last_seen_at=? WHERE user_id=?",
+            Timestamp.valueOf(now),
+            userId
+        );
         if (updated == 0) {
-            jdbc.update("INSERT INTO customer_activity(user_id,last_seen_at) VALUES(?,?)",
-                    userId, Timestamp.valueOf(now));
+            jdbc.update(
+                "INSERT INTO customer_activity(user_id,last_seen_at) VALUES(?,?)",
+                userId,
+                Timestamp.valueOf(now)
+            );
         }
     }
 
     @Transactional
     public void syncCart(long userId, CartSnapshotRequest request) {
         Map<Long, Integer> normalized = new LinkedHashMap<>();
-        request.items().forEach(item -> normalized.merge(item.variantId(), item.quantity(), Math::addExact));
-        if (normalized.values().stream().anyMatch(quantity -> quantity <= 0 || quantity > 999)) {
-            throw new BadRequestException("Số lượng sản phẩm trong giỏ không hợp lệ.");
+        request
+            .items()
+            .forEach(item ->
+                normalized.merge(
+                    item.variantId(),
+                    item.quantity(),
+                    Math::addExact
+                )
+            );
+        if (
+            normalized
+                .values()
+                .stream()
+                .anyMatch(quantity -> quantity <= 0 || quantity > 999)
+        ) {
+            throw new BadRequestException(
+                "Số lượng sản phẩm trong giỏ không hợp lệ."
+            );
         }
-        if (!normalized.isEmpty() && variants.findByVariantIdIn(normalized.keySet()).size() != normalized.size()) {
-            throw new BadRequestException("Giỏ hàng chứa thuộc tính không tồn tại.");
+        if (
+            !normalized.isEmpty() &&
+            variants.findByVariantIdIn(normalized.keySet()).size() !=
+                normalized.size()
+        ) {
+            throw new BadRequestException(
+                "Giỏ hàng chứa thuộc tính không tồn tại."
+            );
         }
         jdbc.update("DELETE FROM customer_cart_items WHERE user_id=?", userId);
         LocalDateTime now = LocalDateTime.now(clock);
-        normalized.forEach((variantId, quantity) -> jdbc.update(
+        normalized.forEach((variantId, quantity) ->
+            jdbc.update(
                 "INSERT INTO customer_cart_items(user_id,variant_id,quantity,updated_at) VALUES(?,?,?,?)",
-                userId, variantId, quantity, Timestamp.valueOf(now)));
+                userId,
+                variantId,
+                quantity,
+                Timestamp.valueOf(now)
+            )
+        );
         heartbeat(userId);
     }
 
     @Transactional(readOnly = true)
     public Map<Long, Integer> loadCart(long userId) {
         Map<Long, Integer> result = new LinkedHashMap<>();
-        jdbc.query("SELECT variant_id,quantity FROM customer_cart_items WHERE user_id=? ORDER BY updated_at,variant_id",
-                (org.springframework.jdbc.core.RowCallbackHandler) rs ->
-                        result.put(rs.getLong("variant_id"), rs.getInt("quantity")), userId);
+        jdbc.query(
+            "SELECT variant_id,quantity FROM customer_cart_items WHERE user_id=? ORDER BY updated_at,variant_id",
+            (org.springframework.jdbc.core.RowCallbackHandler) rs ->
+                result.put(rs.getLong("variant_id"), rs.getInt("quantity")),
+            userId
+        );
         return result;
     }
 }

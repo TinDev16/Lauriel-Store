@@ -8,13 +8,17 @@ import com.lauriel.mobile.ui.SystemBars;
 import com.lauriel.mobile.ui.voucher.VoucherActivity;
 
 public final class NotificationActivity extends BaseActivity {
-    @Override protected void onCreate(Bundle state) {
+
+    @Override
+    protected void onCreate(Bundle state) {
         super.onCreate(state);
-        ActivityNotificationsBinding binding = ActivityNotificationsBinding.inflate(getLayoutInflater());
+        ActivityNotificationsBinding binding =
+            ActivityNotificationsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         SystemBars.apply(binding.getRoot());
         binding.back.setOnClickListener(view -> finish());
         binding.vouchers.setOnClickListener(view ->
-                startActivity(new Intent(this, VoucherActivity.class)));
+            startActivity(new Intent(this, VoucherActivity.class))
+        );
     }
 }

@@ -18,7 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @Order(20)
 public class SuperAdminInitializer implements ApplicationRunner {
-    private static final Logger log = LoggerFactory.getLogger(SuperAdminInitializer.class);
+
+    private static final Logger log = LoggerFactory.getLogger(
+        SuperAdminInitializer.class
+    );
     private final UserRepository users;
     private final RoleRepository roles;
     private final PasswordEncoder encoder;
@@ -27,11 +30,15 @@ public class SuperAdminInitializer implements ApplicationRunner {
     private final String email;
     private final String fullName;
 
-    public SuperAdminInitializer(UserRepository users, RoleRepository roles, PasswordEncoder encoder,
-            @Value("${app.super-admin.username:}") String username,
-            @Value("${app.super-admin.password:}") String password,
-            @Value("${app.super-admin.email:}") String email,
-            @Value("${app.super-admin.full-name:}") String fullName) {
+    public SuperAdminInitializer(
+        UserRepository users,
+        RoleRepository roles,
+        PasswordEncoder encoder,
+        @Value("${app.super-admin.username:}") String username,
+        @Value("${app.super-admin.password:}") String password,
+        @Value("${app.super-admin.email:}") String email,
+        @Value("${app.super-admin.full-name:}") String fullName
+    ) {
         this.users = users;
         this.roles = roles;
         this.encoder = encoder;
@@ -48,20 +55,31 @@ public class SuperAdminInitializer implements ApplicationRunner {
             return;
         }
         if (allBlank()) {
-            log.info("SUPER_ADMIN bootstrap skipped because environment variables are not configured");
+            log.info(
+                "SUPER_ADMIN bootstrap skipped because environment variables are not configured"
+            );
             return;
         }
         validate();
         String normalizedUsername = username.strip();
         String normalizedEmail = email.strip();
         if (users.existsByUsernameIgnoreCase(normalizedUsername)) {
-            throw new IllegalStateException("SUPER_ADMIN_USERNAME đã được sử dụng");
+            throw new IllegalStateException(
+                "SUPER_ADMIN_USERNAME đã được sử dụng"
+            );
         }
         if (users.existsByEmailIgnoreCase(normalizedEmail)) {
-            throw new IllegalStateException("SUPER_ADMIN_EMAIL đã được sử dụng");
+            throw new IllegalStateException(
+                "SUPER_ADMIN_EMAIL đã được sử dụng"
+            );
         }
-        var role = roles.findByRoleName(StoreRole.SUPER_ADMIN.name())
-                .orElseThrow(() -> new IllegalStateException("Thiếu role SUPER_ADMIN trong database"));
+        var role = roles
+            .findByRoleName(StoreRole.SUPER_ADMIN.name())
+            .orElseThrow(() ->
+                new IllegalStateException(
+                    "Thiếu role SUPER_ADMIN trong database"
+                )
+            );
         User owner = new User();
         owner.setUsername(normalizedUsername);
         owner.setPasswordHash(encoder.encode(password));
@@ -74,15 +92,29 @@ public class SuperAdminInitializer implements ApplicationRunner {
     }
 
     private boolean allBlank() {
-        return username.isBlank() && password.isBlank() && email.isBlank() && fullName.isBlank();
+        return (
+            username.isBlank() &&
+            password.isBlank() &&
+            email.isBlank() &&
+            fullName.isBlank()
+        );
     }
 
     private void validate() {
-        if (username.isBlank() || username.strip().length() > 100
-                || password.length() < 8 || password.length() > 72
-                || email.isBlank() || email.strip().length() > 150 || !email.contains("@")
-                || fullName.isBlank() || fullName.strip().length() > 150) {
-            throw new IllegalStateException("Cấu hình bootstrap SUPER_ADMIN không hợp lệ");
+        if (
+            username.isBlank() ||
+            username.strip().length() > 100 ||
+            password.length() < 8 ||
+            password.length() > 72 ||
+            email.isBlank() ||
+            email.strip().length() > 150 ||
+            !email.contains("@") ||
+            fullName.isBlank() ||
+            fullName.strip().length() > 150
+        ) {
+            throw new IllegalStateException(
+                "Cấu hình bootstrap SUPER_ADMIN không hợp lệ"
+            );
         }
     }
 }

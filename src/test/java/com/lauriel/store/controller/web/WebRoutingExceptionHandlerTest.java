@@ -12,8 +12,9 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.ModelAndView;
 
 class WebRoutingExceptionHandlerTest {
+
     private final WebRoutingExceptionHandler handler =
-            new WebRoutingExceptionHandler(new GlobalExceptionHandler());
+        new WebRoutingExceptionHandler(new GlobalExceptionHandler());
 
     @Test
     void oversizedWebUploadRendersVietnamesePageWith413() {
@@ -31,11 +32,16 @@ class WebRoutingExceptionHandlerTest {
     @Test
     void oversizedApiUploadRemainsJsonWith413() {
         var request = new MockHttpServletRequest("POST", "/api/admin/products");
-        Object result = handler.oversizedUpload(request, new MockHttpServletResponse());
+        Object result = handler.oversizedUpload(
+            request,
+            new MockHttpServletResponse()
+        );
         assertThat(result).isInstanceOf(ResponseEntity.class);
         var response = (ResponseEntity<?>) result;
         assertThat(response.getStatusCode().value()).isEqualTo(413);
         assertThat(response.getBody()).isInstanceOf(ErrorResponse.class);
-        assertThat(((ErrorResponse) response.getBody()).message()).contains("20 MB");
+        assertThat(((ErrorResponse) response.getBody()).message()).contains(
+            "20 MB"
+        );
     }
 }

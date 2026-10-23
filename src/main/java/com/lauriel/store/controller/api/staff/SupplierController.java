@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/staff/suppliers")
 public class SupplierController {
+
     private final SupplierService suppliers;
 
     public SupplierController(SupplierService suppliers) {
@@ -18,8 +19,10 @@ public class SupplierController {
     }
 
     @GetMapping
-    public PageResponse<SupplierResponse> list(@RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size) {
+    public PageResponse<SupplierResponse> list(
+        @RequestParam(defaultValue = "0") @Min(0) int page,
+        @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size
+    ) {
         return suppliers.list(page, size);
     }
 
@@ -30,12 +33,17 @@ public class SupplierController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public SupplierResponse create(@Valid @RequestBody SupplierRequest request) {
+    public SupplierResponse create(
+        @Valid @RequestBody SupplierRequest request
+    ) {
         return suppliers.create(request);
     }
 
     @PutMapping("/{id}")
-    public SupplierResponse update(@PathVariable @Positive Long id, @Valid @RequestBody SupplierRequest request) {
+    public SupplierResponse update(
+        @PathVariable @Positive Long id,
+        @Valid @RequestBody SupplierRequest request
+    ) {
         return suppliers.update(id, request);
     }
 }

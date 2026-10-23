@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ColorService {
+
     private final ColorRepository repository;
 
     public ColorService(ColorRepository repository) {
@@ -22,13 +23,22 @@ public class ColorService {
 
     @Transactional(readOnly = true)
     public List<ColorResponse> list() {
-        return repository.findAll(Sort.by("colorName").and(Sort.by("colorId")))
-                .stream().map(CatalogMapper::color).toList();
+        return repository
+            .findAll(Sort.by("colorName").and(Sort.by("colorId")))
+            .stream()
+            .map(CatalogMapper::color)
+            .toList();
     }
 
     @Transactional(readOnly = true)
     public ColorResponse detail(Long id) {
-        return CatalogMapper.color(repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy màu sắc")));
+        return CatalogMapper.color(
+            repository
+                .findById(id)
+                .orElseThrow(() ->
+                    new ResourceNotFoundException("Không tìm thấy màu sắc")
+                )
+        );
     }
 
     @Transactional
@@ -44,10 +54,15 @@ public class ColorService {
 
     @Transactional
     public ColorResponse update(Long colorId, ColorRequest request) {
-        var color = repository.findById(colorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy color"));
+        var color = repository
+            .findById(colorId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy color")
+            );
         String name = request.colorName().strip();
-        if (repository.existsByColorNameIgnoreCaseAndColorIdNot(name, colorId)) {
+        if (
+            repository.existsByColorNameIgnoreCaseAndColorIdNot(name, colorId)
+        ) {
             throw new DuplicateResourceException("Color đã tồn tại");
         }
         color.setColorName(name);

@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 public class WebAccountStateFilter extends OncePerRequestFilter {
+
     private final UserRepository users;
 
     public WebAccountStateFilter(UserRepository users) {
@@ -18,24 +19,43 @@ public class WebAccountStateFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        FilterChain filterChain
+    ) throws ServletException, IOException {
         var context = SecurityContextHolder.getContext();
         var authentication = context.getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()
-                && authentication.getPrincipal() instanceof StoreUserDetails principal) {
-            var current = users.findById(principal.getUserId()).map(StoreUserDetails::new).orElse(null);
-            if (current == null || !current.isEnabled() || !current.isAccountNonLocked()) {
+        if (
+            authentication != null &&
+            authentication.isAuthenticated() &&
+            authentication.getPrincipal() instanceof StoreUserDetails principal
+        ) {
+            var current = users
+                .findById(principal.getUserId())
+                .map(StoreUserDetails::new)
+                .orElse(null);
+            if (
+                current == null ||
+                !current.isEnabled() ||
+                !current.isAccountNonLocked()
+            ) {
                 SecurityContextHolder.clearContext();
                 var session = request.getSession(false);
                 if (session != null) session.invalidate();
-                response.sendRedirect(request.getContextPath() + "/login?disabled");
+                response.sendRedirect(
+                    request.getContextPath() + "/login?disabled"
+                );
                 return;
             }
             if (current.getRole() != principal.getRole()) {
                 current.eraseCredentials();
-                var refreshed = UsernamePasswordAuthenticationToken.authenticated(
-                        current, null, current.getAuthorities());
+                var refreshed =
+                    UsernamePasswordAuthenticationToken.authenticated(
+                        current,
+                        null,
+                        current.getAuthorities()
+                    );
                 refreshed.setDetails(authentication.getDetails());
                 context.setAuthentication(refreshed);
             }

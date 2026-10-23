@@ -15,12 +15,18 @@ import org.hibernate.generator.EventType;
 @Getter
 @Setter
 public class Category {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
     private Long categoryId;
 
-    @Column(name = "category_name", length = 100, nullable = false, unique = true)
+    @Column(
+        name = "category_name",
+        length = 100,
+        nullable = false,
+        unique = true
+    )
     private String categoryName;
 
     @Enumerated(EnumType.STRING)
@@ -28,7 +34,13 @@ public class Category {
     private ActiveStatus status = ActiveStatus.ACTIVE;
 
     @Generated(event = EventType.INSERT)
-    @Column(name = "created_at", columnDefinition = "datetime", nullable = false, insertable = false, updatable = false)
+    @Column(
+        name = "created_at",
+        columnDefinition = "datetime",
+        nullable = false,
+        insertable = false,
+        updatable = false
+    )
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)

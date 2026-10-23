@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
+
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final RoleRepository roleRepository;
@@ -29,9 +30,14 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository, CustomerRepository customerRepository,
-            RoleRepository roleRepository, PasswordEncoder passwordEncoder,
-            AuthenticationManager authenticationManager, JwtService jwtService) {
+    public AuthService(
+        UserRepository userRepository,
+        CustomerRepository customerRepository,
+        RoleRepository roleRepository,
+        PasswordEncoder passwordEncoder,
+        AuthenticationManager authenticationManager,
+        JwtService jwtService
+    ) {
         this.userRepository = userRepository;
         this.customerRepository = customerRepository;
         this.roleRepository = roleRepository;
@@ -50,8 +56,11 @@ public class AuthService {
         if (email != null && userRepository.existsByEmail(email)) {
             throw new DuplicateResourceException("Email đã được sử dụng");
         }
-        var role = roleRepository.findByRoleName(StoreRole.CUSTOMER.name())
-                .orElseThrow(() -> new IllegalStateException("Thiếu role CUSTOMER trong database"));
+        var role = roleRepository
+            .findByRoleName(StoreRole.CUSTOMER.name())
+            .orElseThrow(() ->
+                new IllegalStateException("Thiếu role CUSTOMER trong database")
+            );
         User user = new User();
         user.setUsername(username);
         user.setEmail(email);
@@ -67,14 +76,25 @@ public class AuthService {
         customer.setCustomerName(user.getFullName());
         customer.setPhone(user.getPhone());
         customerRepository.saveAndFlush(customer);
-        return new RegisterResponse(user.getUserId(), user.getUsername(), user.getEmail(),
-                StoreRole.CUSTOMER.name(), "Đăng ký thành công");
+        return new RegisterResponse(
+            user.getUserId(),
+            user.getUsername(),
+            user.getEmail(),
+            StoreRole.CUSTOMER.name(),
+            "Đăng ký thành công"
+        );
     }
 
     public LoginResponse login(LoginRequest request) {
         var authentication = authenticationManager.authenticate(
-                UsernamePasswordAuthenticationToken.unauthenticated(request.username().strip(), request.password()));
-        return jwtService.issue((StoreUserDetails) authentication.getPrincipal());
+            UsernamePasswordAuthenticationToken.unauthenticated(
+                request.username().strip(),
+                request.password()
+            )
+        );
+        return jwtService.issue(
+            (StoreUserDetails) authentication.getPrincipal()
+        );
     }
 
     private String optionalText(String text) {

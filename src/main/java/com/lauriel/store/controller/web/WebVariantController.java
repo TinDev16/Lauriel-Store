@@ -18,13 +18,18 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/admin/products/{productId}/variants")
 public class WebVariantController {
+
     private final ProductService products;
     private final ProductVariantService variants;
     private final SizeService sizes;
     private final ColorService colors;
 
-    public WebVariantController(ProductService products, ProductVariantService variants,
-            SizeService sizes, ColorService colors) {
+    public WebVariantController(
+        ProductService products,
+        ProductVariantService variants,
+        SizeService sizes,
+        ColorService colors
+    ) {
         this.products = products;
         this.variants = variants;
         this.sizes = sizes;
@@ -32,17 +37,34 @@ public class WebVariantController {
     }
 
     @GetMapping
-    public String list(@PathVariable Long productId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "12") int size,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) ActiveStatus status,
-            @RequestParam(required = false) Long colorId, Model model) {
+    public String list(
+        @PathVariable Long productId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "12") int size,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) ActiveStatus status,
+        @RequestParam(required = false) Long colorId,
+        Model model
+    ) {
         model.addAttribute("product", products.getById(productId));
-        var result = variants.listAdmin(productId, page, size, keyword, status, colorId);
-        var groups = result.content().stream().collect(java.util.stream.Collectors.groupingBy(
-                com.lauriel.store.dto.response.ProductVariantResponse::color,
-                java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
+        var result = variants.listAdmin(
+            productId,
+            page,
+            size,
+            keyword,
+            status,
+            colorId
+        );
+        var groups = result
+            .content()
+            .stream()
+            .collect(
+                java.util.stream.Collectors.groupingBy(
+                    com.lauriel.store.dto.response.ProductVariantResponse::color,
+                    java.util.LinkedHashMap::new,
+                    java.util.stream.Collectors.toList()
+                )
+            );
         model.addAttribute("page", result);
         model.addAttribute("variantGroups", groups);
         model.addAttribute("colors", colors.list());
@@ -55,27 +77,56 @@ public class WebVariantController {
     @GetMapping("/new")
     public String createForm(@PathVariable Long productId, Model model) {
         var product = products.getById(productId);
-        model.addAttribute("form", new BulkProductVariantRequest(
-                List.of(), List.of(), product.price(), ActiveStatus.ACTIVE));
+        model.addAttribute(
+            "form",
+            new BulkProductVariantRequest(
+                List.of(),
+                List.of(),
+                product.price(),
+                ActiveStatus.ACTIVE
+            )
+        );
         return bulkForm(productId, model);
     }
 
     @GetMapping("/{id}/edit")
-    public String edit(@PathVariable Long productId, @PathVariable Long id, Model model) {
+    public String edit(
+        @PathVariable Long productId,
+        @PathVariable Long id,
+        Model model
+    ) {
         var variant = variants.detail(productId, id);
-        model.addAttribute("form", new ProductVariantRequest(variant.size().sizeId(),
-                variant.color().colorId(), variant.sku(), variant.price(), variant.status()));
+        model.addAttribute(
+            "form",
+            new ProductVariantRequest(
+                variant.size().sizeId(),
+                variant.color().colorId(),
+                variant.sku(),
+                variant.price(),
+                variant.status()
+            )
+        );
         model.addAttribute("sku", variant.sku());
         model.addAttribute("quantity", variant.quantity());
         return editForm(productId, id, model);
     }
 
     @PostMapping
-    public String create(@PathVariable Long productId,
-            @Valid @ModelAttribute("form") BulkProductVariantRequest form,
-            BindingResult errors, Model model, RedirectAttributes flash) {
-        final ProductVariantService.BulkCreateResult[] result = new ProductVariantService.BulkCreateResult[1];
-        if (!WebActions.save(() -> result[0] = variants.createBulk(productId, form), errors)) {
+    public String create(
+        @PathVariable Long productId,
+        @Valid @ModelAttribute("form") BulkProductVariantRequest form,
+        BindingResult errors,
+        Model model,
+        RedirectAttributes flash
+    ) {
+        final ProductVariantService.BulkCreateResult[] result =
+            new ProductVariantService.BulkCreateResult[1];
+        if (
+            !WebActions.save(
+                () -> result[0] = variants.createBulk(productId, form),
+                errors
+            )
+        ) {
             return bulkForm(productId, model);
         }
         String message = "Đã tạo " + result[0].created() + " thuộc tính.";
@@ -87,23 +138,39 @@ public class WebVariantController {
     }
 
     @PostMapping("/{id}")
-    public String update(@PathVariable Long productId, @PathVariable Long id,
-            @Valid @ModelAttribute("form") ProductVariantRequest form,
-            BindingResult errors, Model model, RedirectAttributes flash) {
+    public String update(
+        @PathVariable Long productId,
+        @PathVariable Long id,
+        @Valid @ModelAttribute("form") ProductVariantRequest form,
+        BindingResult errors,
+        Model model,
+        RedirectAttributes flash
+    ) {
         var variant = variants.detail(productId, id);
         model.addAttribute("sku", variant.sku());
         model.addAttribute("quantity", variant.quantity());
-        if (!WebActions.save(() -> variants.updateForProduct(productId, id, form), errors)) {
+        if (
+            !WebActions.save(
+                () -> variants.updateForProduct(productId, id, form),
+                errors
+            )
+        ) {
             return editForm(productId, id, model);
         }
-        return WebActions.saved("/admin/products/" + productId + "/variants", flash);
+        return WebActions.saved(
+            "/admin/products/" + productId + "/variants",
+            flash
+        );
     }
 
     private String bulkForm(Long productId, Model model) {
         model.addAttribute("product", products.getById(productId));
         model.addAttribute("sizes", sizes.list());
         model.addAttribute("colors", colors.list());
-        model.addAttribute("action", "/admin/products/" + productId + "/variants");
+        model.addAttribute(
+            "action",
+            "/admin/products/" + productId + "/variants"
+        );
         return "admin/products/variant-bulk-form";
     }
 
@@ -112,7 +179,10 @@ public class WebVariantController {
         model.addAttribute("id", id);
         model.addAttribute("sizes", sizes.list());
         model.addAttribute("colors", colors.list());
-        model.addAttribute("action", "/admin/products/" + productId + "/variants/" + id);
+        model.addAttribute(
+            "action",
+            "/admin/products/" + productId + "/variants/" + id
+        );
         return "admin/products/variant-form";
     }
 }

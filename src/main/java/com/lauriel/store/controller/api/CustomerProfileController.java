@@ -11,8 +11,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/customers")
 public class CustomerProfileController {
+
     private final CustomerService customers;
-    public CustomerProfileController(CustomerService customers) { this.customers = customers; }
+
+    public CustomerProfileController(CustomerService customers) {
+        this.customers = customers;
+    }
 
     @GetMapping("/me")
     public ProfileResponse me(@AuthenticationPrincipal StoreUserDetails user) {
@@ -20,8 +24,10 @@ public class CustomerProfileController {
     }
 
     @PutMapping("/me")
-    public ProfileResponse update(@AuthenticationPrincipal StoreUserDetails user,
-                                  @Valid @RequestBody ProfileUpdateRequest request) {
+    public ProfileResponse update(
+        @AuthenticationPrincipal StoreUserDetails user,
+        @Valid @RequestBody ProfileUpdateRequest request
+    ) {
         return customers.updateMe(user.getUserId(), request);
     }
 }

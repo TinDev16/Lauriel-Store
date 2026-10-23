@@ -16,6 +16,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class CustomerCartItemId implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     @Column(name = "user_id", nullable = false)

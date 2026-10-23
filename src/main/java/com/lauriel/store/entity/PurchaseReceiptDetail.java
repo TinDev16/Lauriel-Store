@@ -10,6 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PurchaseReceiptDetail {
+
     @EmbeddedId
     private PurchaseReceiptDetailId id = new PurchaseReceiptDetailId();
 
@@ -31,5 +32,4 @@ public class PurchaseReceiptDetail {
 
     @Column(name = "subtotal", precision = 14, scale = 2, nullable = false)
     private BigDecimal subtotal;
-
 }

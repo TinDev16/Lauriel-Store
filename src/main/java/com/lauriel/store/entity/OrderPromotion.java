@@ -12,6 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class OrderPromotion {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_promotion_id")
@@ -23,16 +24,30 @@ public class OrderPromotion {
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
-    @Column(name = "min_order_amount", precision = 14, scale = 2, nullable = false)
+    @Column(
+        name = "min_order_amount",
+        precision = 14,
+        scale = 2,
+        nullable = false
+    )
     private BigDecimal minOrderAmount;
 
-    @Column(name = "discount_percent", precision = 5, scale = 2, nullable = false)
+    @Column(
+        name = "discount_percent",
+        precision = 5,
+        scale = 2,
+        nullable = false
+    )
     private BigDecimal discountPercent;
 
     @Column(name = "max_discount_amount", precision = 14, scale = 2)
     private BigDecimal maxDiscountAmount;
 
-    @Column(name = "start_date", columnDefinition = "datetime", nullable = false)
+    @Column(
+        name = "start_date",
+        columnDefinition = "datetime",
+        nullable = false
+    )
     private LocalDateTime startDate;
 
     @Column(name = "end_date", columnDefinition = "datetime", nullable = false)

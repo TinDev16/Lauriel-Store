@@ -6,14 +6,20 @@ import com.lauriel.store.entity.enums.ActiveStatus;
 import jakarta.validation.constraints.*;
 import java.nio.charset.StandardCharsets;
 
-public record SupplierRequest(@NotBlank @Size(max = 200) String supplierName,
-                              @Size(max = 20) String phone,
-                              @Email @Size(max = 150) String email,
-                              String address, @NotNull ActiveStatus status) {
+public record SupplierRequest(
+    @NotBlank @Size(max = 200) String supplierName,
+    @Size(max = 20) String phone,
+    @Email @Size(max = 150) String email,
+    String address,
+    @NotNull ActiveStatus status
+) {
     @AssertTrue(message = "address vượt quá giới hạn TEXT")
     @JsonIgnore
     public boolean isAddressWithinStorageLimit() {
-        return address == null || address.getBytes(StandardCharsets.UTF_8).length <= 65535;
+        return (
+            address == null ||
+            address.getBytes(StandardCharsets.UTF_8).length <= 65535
+        );
     }
 
     @JsonAnySetter

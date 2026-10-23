@@ -28,31 +28,60 @@ import org.springframework.web.context.WebApplicationContext;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 class StatisticsServiceTest {
-    @Autowired StatisticsService statistics;
-    @Autowired CustomerEngagementService engagement;
-    @Autowired JdbcTemplate jdbc;
-    @Autowired WebApplicationContext context;
+
+    @Autowired
+    StatisticsService statistics;
+
+    @Autowired
+    CustomerEngagementService engagement;
+
+    @Autowired
+    JdbcTemplate jdbc;
+
+    @Autowired
+    WebApplicationContext context;
+
     private MockMvc mvc;
     private LocalDate today;
 
     @DynamicPropertySource
-    static void properties(DynamicPropertyRegistry properties) throws Exception {
+    static void properties(DynamicPropertyRegistry properties)
+        throws Exception {
         String url = TestSchema.createIsolatedDatabase();
         properties.add("spring.datasource.url", () -> url);
         properties.add("spring.datasource.username", () -> "sa");
         properties.add("spring.datasource.password", () -> "");
-        properties.add("spring.datasource.driver-class-name", () -> "org.h2.Driver");
+        properties.add(
+            "spring.datasource.driver-class-name",
+            () -> "org.h2.Driver"
+        );
         properties.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
         properties.add("app.jwt.secret", TestSecrets::randomBase64);
     }
 
     @BeforeEach
     void reset() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
         today = LocalDate.now(ZoneId.systemDefault());
-        for (String table : new String[] {"customer_cart_items", "customer_activity", "purchase_receipt_details", "purchase_receipts",
-                "order_details", "orders", "product_variants", "products", "categories", "sizes", "colors",
-                "customers", "vouchers", "suppliers", "users"}) {
+        for (String table : new String[] {
+            "customer_cart_items",
+            "customer_activity",
+            "purchase_receipt_details",
+            "purchase_receipts",
+            "order_details",
+            "orders",
+            "product_variants",
+            "products",
+            "categories",
+            "sizes",
+            "colors",
+            "customers",
+            "vouchers",
+            "suppliers",
+            "users",
+        }) {
             jdbc.execute("DELETE FROM " + table);
         }
     }
@@ -63,33 +92,90 @@ class StatisticsServiceTest {
 
     private void seed() {
         LocalDate yesterday = today.minusDays(1);
-        jdbc.update("INSERT INTO customers(customer_id,customer_name,created_at) VALUES(101,'An',?)", at(yesterday));
-        jdbc.update("INSERT INTO customers(customer_id,customer_name,created_at) VALUES(102,'Binh',?)", at(today));
-        jdbc.update("INSERT INTO categories(category_id,category_name,status) VALUES(101,'Clothing','ACTIVE')");
-        jdbc.update("INSERT INTO products(product_id,category_id,product_name,price,status) VALUES(101,101,'Ao',50,'ACTIVE')");
-        jdbc.update("INSERT INTO products(product_id,category_id,product_name,price,status) VALUES(102,101,'Quan',60,'ACTIVE')");
+        jdbc.update(
+            "INSERT INTO customers(customer_id,customer_name,created_at) VALUES(101,'An',?)",
+            at(yesterday)
+        );
+        jdbc.update(
+            "INSERT INTO customers(customer_id,customer_name,created_at) VALUES(102,'Binh',?)",
+            at(today)
+        );
+        jdbc.update(
+            "INSERT INTO categories(category_id,category_name,status) VALUES(101,'Clothing','ACTIVE')"
+        );
+        jdbc.update(
+            "INSERT INTO products(product_id,category_id,product_name,price,status) VALUES(101,101,'Ao',50,'ACTIVE')"
+        );
+        jdbc.update(
+            "INSERT INTO products(product_id,category_id,product_name,price,status) VALUES(102,101,'Quan',60,'ACTIVE')"
+        );
         jdbc.update("INSERT INTO sizes(size_id,size_name) VALUES(101,'M')");
         jdbc.update("INSERT INTO sizes(size_id,size_name) VALUES(102,'L')");
-        jdbc.update("INSERT INTO colors(color_id,color_name) VALUES(101,'Den')");
-        jdbc.update("INSERT INTO colors(color_id,color_name) VALUES(102,'Trang')");
-        jdbc.update("INSERT INTO product_variants(variant_id,product_id,size_id,color_id,sku,price,quantity,status) VALUES(201,101,101,101,'A-M-D',50,3,'ACTIVE')");
-        jdbc.update("INSERT INTO product_variants(variant_id,product_id,size_id,color_id,sku,price,quantity,status) VALUES(202,102,101,101,'Q-M-D',60,0,'ACTIVE')");
-        jdbc.update("INSERT INTO product_variants(variant_id,product_id,size_id,color_id,sku,price,quantity,status) VALUES(203,101,102,102,'A-L-T',30,20,'INACTIVE')");
-        jdbc.update("INSERT INTO vouchers(voucher_id,code,voucher_name,discount_type,discount_value,min_order_amount,quantity,start_date,end_date,status) VALUES(101,'SALE10','Sale','FIXED',10,0,10,?,?,'ACTIVE')",
-                at(today.minusDays(10)), at(today.plusDays(10)));
-        jdbc.update("INSERT INTO orders(order_id,customer_id,voucher_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(101,101,101,100,10,90,'DELIVERED','A','WEB',?)", at(yesterday));
-        jdbc.update("INSERT INTO orders(order_id,customer_id,voucher_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(102,102,101,220,20,200,'CANCELLED','B','MOBILE',?)", at(yesterday));
-        jdbc.update("INSERT INTO orders(order_id,customer_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(103,102,50,0,50,'PENDING','B','MOBILE',?)", at(today));
-        jdbc.update("INSERT INTO orders(order_id,customer_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(104,101,60,0,60,'DELIVERED','A','WEB',?)", at(today));
-        jdbc.update("INSERT INTO order_details(order_id,variant_id,quantity,unit_price,discount_amount,subtotal) VALUES(101,201,2,45,5,90)");
-        jdbc.update("INSERT INTO order_details(order_id,variant_id,quantity,unit_price,discount_amount,subtotal) VALUES(102,201,4,50,0,200)");
-        jdbc.update("INSERT INTO order_details(order_id,variant_id,quantity,unit_price,discount_amount,subtotal) VALUES(103,201,1,50,0,50)");
-        jdbc.update("INSERT INTO order_details(order_id,variant_id,quantity,unit_price,discount_amount,subtotal) VALUES(104,202,1,60,0,60)");
-        jdbc.update("INSERT INTO suppliers(supplier_id,supplier_name,status) VALUES(101,'Nha cung cap','ACTIVE')");
-        jdbc.update("INSERT INTO users(user_id,role_id,username,password_hash,full_name,status) SELECT 101,role_id,'stats-staff','hash','Staff','ACTIVE' FROM roles WHERE role_name='STAFF'");
-        jdbc.update("INSERT INTO purchase_receipts(receipt_id,supplier_id,user_id,total_amount,status,created_at) VALUES(101,101,101,40,'COMPLETED',?)", at(yesterday));
-        jdbc.update("INSERT INTO purchase_receipts(receipt_id,supplier_id,user_id,total_amount,status,created_at) VALUES(102,101,101,100,'DRAFT',?)", at(today));
-        jdbc.update("INSERT INTO purchase_receipt_details(receipt_id,variant_id,quantity,unit_price,subtotal) VALUES(101,201,4,10,40)");
+        jdbc.update(
+            "INSERT INTO colors(color_id,color_name) VALUES(101,'Den')"
+        );
+        jdbc.update(
+            "INSERT INTO colors(color_id,color_name) VALUES(102,'Trang')"
+        );
+        jdbc.update(
+            "INSERT INTO product_variants(variant_id,product_id,size_id,color_id,sku,price,quantity,status) VALUES(201,101,101,101,'A-M-D',50,3,'ACTIVE')"
+        );
+        jdbc.update(
+            "INSERT INTO product_variants(variant_id,product_id,size_id,color_id,sku,price,quantity,status) VALUES(202,102,101,101,'Q-M-D',60,0,'ACTIVE')"
+        );
+        jdbc.update(
+            "INSERT INTO product_variants(variant_id,product_id,size_id,color_id,sku,price,quantity,status) VALUES(203,101,102,102,'A-L-T',30,20,'INACTIVE')"
+        );
+        jdbc.update(
+            "INSERT INTO vouchers(voucher_id,code,voucher_name,discount_type,discount_value,min_order_amount,quantity,start_date,end_date,status) VALUES(101,'SALE10','Sale','FIXED',10,0,10,?,?,'ACTIVE')",
+            at(today.minusDays(10)),
+            at(today.plusDays(10))
+        );
+        jdbc.update(
+            "INSERT INTO orders(order_id,customer_id,voucher_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(101,101,101,100,10,90,'DELIVERED','A','WEB',?)",
+            at(yesterday)
+        );
+        jdbc.update(
+            "INSERT INTO orders(order_id,customer_id,voucher_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(102,102,101,220,20,200,'CANCELLED','B','MOBILE',?)",
+            at(yesterday)
+        );
+        jdbc.update(
+            "INSERT INTO orders(order_id,customer_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(103,102,50,0,50,'PENDING','B','MOBILE',?)",
+            at(today)
+        );
+        jdbc.update(
+            "INSERT INTO orders(order_id,customer_id,total_amount,discount_amount,final_amount,status,shipping_address,sales_channel,created_at) VALUES(104,101,60,0,60,'DELIVERED','A','WEB',?)",
+            at(today)
+        );
+        jdbc.update(
+            "INSERT INTO order_details(order_id,variant_id,quantity,unit_price,discount_amount,subtotal) VALUES(101,201,2,45,5,90)"
+        );
+        jdbc.update(
+            "INSERT INTO order_details(order_id,variant_id,quantity,unit_price,discount_amount,subtotal) VALUES(102,201,4,50,0,200)"
+        );
+        jdbc.update(
+            "INSERT INTO order_details(order_id,variant_id,quantity,unit_price,discount_amount,subtotal) VALUES(103,201,1,50,0,50)"
+        );
+        jdbc.update(
+            "INSERT INTO order_details(order_id,variant_id,quantity,unit_price,discount_amount,subtotal) VALUES(104,202,1,60,0,60)"
+        );
+        jdbc.update(
+            "INSERT INTO suppliers(supplier_id,supplier_name,status) VALUES(101,'Nha cung cap','ACTIVE')"
+        );
+        jdbc.update(
+            "INSERT INTO users(user_id,role_id,username,password_hash,full_name,status) SELECT 101,role_id,'stats-staff','hash','Staff','ACTIVE' FROM roles WHERE role_name='STAFF'"
+        );
+        jdbc.update(
+            "INSERT INTO purchase_receipts(receipt_id,supplier_id,user_id,total_amount,status,created_at) VALUES(101,101,101,40,'COMPLETED',?)",
+            at(yesterday)
+        );
+        jdbc.update(
+            "INSERT INTO purchase_receipts(receipt_id,supplier_id,user_id,total_amount,status,created_at) VALUES(102,101,101,100,'DRAFT',?)",
+            at(today)
+        );
+        jdbc.update(
+            "INSERT INTO purchase_receipt_details(receipt_id,variant_id,quantity,unit_price,subtotal) VALUES(101,201,4,10,40)"
+        );
     }
 
     private StatisticsReport report() {
@@ -99,12 +185,22 @@ class StatisticsServiceTest {
     @Test
     void emptyDatabaseReturnsZerosAndChartPoints() {
         var result = report();
-        assertThat(result.sales().revenue()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(result.sales().averageOrderValue()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(result.sales().cancelRate()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(result.sales().revenue()).isEqualByComparingTo(
+            BigDecimal.ZERO
+        );
+        assertThat(result.sales().averageOrderValue()).isEqualByComparingTo(
+            BigDecimal.ZERO
+        );
+        assertThat(result.sales().cancelRate()).isEqualByComparingTo(
+            BigDecimal.ZERO
+        );
         assertThat(result.inventory().totalQuantity()).isZero();
-        assertThat(result.purchases().amount()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(result.discounts().total()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(result.purchases().amount()).isEqualByComparingTo(
+            BigDecimal.ZERO
+        );
+        assertThat(result.discounts().total()).isEqualByComparingTo(
+            BigDecimal.ZERO
+        );
         assertThat(result.revenue()).hasSize(3);
         assertThat(result.statuses()).allMatch(s -> s.count() == 0);
     }
@@ -118,12 +214,20 @@ class StatisticsServiceTest {
         assertThat(result.sales().cancelled()).isEqualTo(1);
         assertThat(result.sales().revenue()).isEqualByComparingTo("150");
         assertThat(result.kpis().revenueAllTime()).isEqualByComparingTo("150");
-        assertThat(result.sales().averageOrderValue()).isEqualByComparingTo("75");
+        assertThat(result.sales().averageOrderValue()).isEqualByComparingTo(
+            "75"
+        );
         assertThat(result.sales().cancelRate()).isEqualByComparingTo("25");
-        assertThat(result.statuses()).filteredOn(s -> s.status() == OrderStatus.DELIVERED)
-                .singleElement().satisfies(s -> assertThat(s.count()).isEqualTo(2));
-        assertThat(result.revenue().get(1).revenue()).isEqualByComparingTo("90");
-        assertThat(result.revenue().get(2).revenue()).isEqualByComparingTo("60");
+        assertThat(result.statuses())
+            .filteredOn(s -> s.status() == OrderStatus.DELIVERED)
+            .singleElement()
+            .satisfies(s -> assertThat(s.count()).isEqualTo(2));
+        assertThat(result.revenue().get(1).revenue()).isEqualByComparingTo(
+            "90"
+        );
+        assertThat(result.revenue().get(2).revenue()).isEqualByComparingTo(
+            "60"
+        );
         var todayOnly = statistics.report(null, today, today, "DAY", 5, 5);
         assertThat(todayOnly.sales().revenue()).isEqualByComparingTo("60");
         assertThat(todayOnly.sales().cancelled()).isZero();
@@ -132,153 +236,273 @@ class StatisticsServiceTest {
     @Test
     void productCustomerInventoryPurchaseAndDiscountAggregates() {
         seed();
-        jdbc.update("UPDATE orders SET order_promotion_name='Ưu đãi tháng', "
-                + "order_promotion_percent=5, order_promotion_discount=7 WHERE order_id=101");
+        jdbc.update(
+            "UPDATE orders SET order_promotion_name='Ưu đãi tháng', " +
+                "order_promotion_percent=5, order_promotion_discount=7 WHERE order_id=101"
+        );
         var result = report();
         assertThat(result.topProducts().get(0).productName()).isEqualTo("Ao");
         assertThat(result.topProducts().get(0).quantity()).isEqualTo(2);
-        assertThat(result.topProductsByRevenue().get(0).revenue()).isEqualByComparingTo("90");
+        assertThat(
+            result.topProductsByRevenue().get(0).revenue()
+        ).isEqualByComparingTo("90");
         assertThat(result.topVariants().get(0).sku()).isEqualTo("A-M-D");
         assertThat(result.topCustomers().get(0).orderCount()).isEqualTo(2);
-        assertThat(result.topCustomers().get(0).totalSpent()).isEqualByComparingTo("150");
+        assertThat(
+            result.topCustomers().get(0).totalSpent()
+        ).isEqualByComparingTo("150");
         assertThat(result.inventory().totalQuantity()).isEqualTo(23);
         assertThat(result.inventory().activeVariants()).isEqualTo(2);
         assertThat(result.inventory().lowStock()).isEqualTo(1);
         assertThat(result.inventory().outOfStock()).isEqualTo(1);
         assertThat(result.lowStock()).hasSize(1);
         assertThat(result.lowStock().get(0).quantity()).isEqualTo(3);
-        assertThat(result.inventory().valueBySellingPrice()).isEqualByComparingTo("750");
+        assertThat(
+            result.inventory().valueBySellingPrice()
+        ).isEqualByComparingTo("750");
         assertThat(result.purchases().receipts()).isEqualTo(1);
         assertThat(result.purchases().amount()).isEqualByComparingTo("40");
         assertThat(result.purchases().quantity()).isEqualTo(4);
-        assertThat(result.purchaseTrend().stream().map(StatisticsReport.PurchasePoint::amount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)).isEqualByComparingTo("40");
+        assertThat(
+            result
+                .purchaseTrend()
+                .stream()
+                .map(StatisticsReport.PurchasePoint::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+        ).isEqualByComparingTo("40");
         assertThat(result.topSuppliers().get(0).receiptCount()).isEqualTo(1);
         assertThat(result.discounts().voucher()).isEqualByComparingTo("10");
-        assertThat(result.discounts().productPromotion()).isEqualByComparingTo("10");
-        assertThat(result.discounts().orderPromotion()).isEqualByComparingTo("7");
+        assertThat(result.discounts().productPromotion()).isEqualByComparingTo(
+            "10"
+        );
+        assertThat(result.discounts().orderPromotion()).isEqualByComparingTo(
+            "7"
+        );
         assertThat(result.discounts().total()).isEqualByComparingTo("27");
         assertThat(result.discounts().orderPromotionOrders()).isEqualTo(1);
         assertThat(result.discounts().voucherOrders()).isEqualTo(1);
         assertThat(result.topVouchersByUses().get(0).orderCount()).isEqualTo(1);
-        assertThat(result.topPromotionProducts().get(0).discount()).isEqualByComparingTo("10");
-        assertThat(result.topOrderPromotionsByUses()).singleElement()
-                .satisfies(promotion -> assertThat(promotion.discount()).isEqualByComparingTo("7"));
+        assertThat(
+            result.topPromotionProducts().get(0).discount()
+        ).isEqualByComparingTo("10");
+        assertThat(result.topOrderPromotionsByUses())
+            .singleElement()
+            .satisfies(promotion ->
+                assertThat(promotion.discount()).isEqualByComparingTo("7")
+            );
         assertThat(result.topOrderPromotionsByDiscount()).singleElement();
         assertThat(result.newCustomersThisMonth()).isGreaterThanOrEqualTo(1);
         assertThat(result.channelPerformance()).hasSize(3);
-        assertThat(result.channelPerformance()).filteredOn(channel -> channel.channel().name().equals("WEB"))
-                .singleElement().satisfies(channel -> {
-                    assertThat(channel.buyers()).isEqualTo(1);
-                    assertThat(channel.orders()).isEqualTo(2);
-                    assertThat(channel.delivered()).isEqualTo(2);
-                    assertThat(channel.revenue()).isEqualByComparingTo("150");
-                    assertThat(channel.averageOrderValue()).isEqualByComparingTo("75");
-                });
-        assertThat(result.channelPerformance()).filteredOn(channel -> channel.channel().name().equals("MOBILE"))
-                .singleElement().satisfies(channel -> {
-                    assertThat(channel.buyers()).isEqualTo(1);
-                    assertThat(channel.orders()).isEqualTo(2);
-                    assertThat(channel.cancelled()).isEqualTo(1);
-                    assertThat(channel.revenue()).isEqualByComparingTo("0");
-                });
+        assertThat(result.channelPerformance())
+            .filteredOn(channel -> channel.channel().name().equals("WEB"))
+            .singleElement()
+            .satisfies(channel -> {
+                assertThat(channel.buyers()).isEqualTo(1);
+                assertThat(channel.orders()).isEqualTo(2);
+                assertThat(channel.delivered()).isEqualTo(2);
+                assertThat(channel.revenue()).isEqualByComparingTo("150");
+                assertThat(channel.averageOrderValue()).isEqualByComparingTo(
+                    "75"
+                );
+            });
+        assertThat(result.channelPerformance())
+            .filteredOn(channel -> channel.channel().name().equals("MOBILE"))
+            .singleElement()
+            .satisfies(channel -> {
+                assertThat(channel.buyers()).isEqualTo(1);
+                assertThat(channel.orders()).isEqualTo(2);
+                assertThat(channel.cancelled()).isEqualTo(1);
+                assertThat(channel.revenue()).isEqualByComparingTo("0");
+            });
     }
 
     @Test
     void groupingAndFilterValidationAreBounded() {
         seed();
-        for (String group : new String[] {"MONTH", "QUARTER", "YEAR"}) {
-            var result = statistics.report(null, today.minusDays(2), today, group, 5, 10);
-            assertThat(result.revenue().stream().map(StatisticsReport.RevenuePoint::revenue)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)).isEqualByComparingTo("150");
-            assertThat(result.purchaseTrend().stream().map(StatisticsReport.PurchasePoint::amount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)).isEqualByComparingTo("40");
+        for (String group : new String[] { "MONTH", "QUARTER", "YEAR" }) {
+            var result = statistics.report(
+                null,
+                today.minusDays(2),
+                today,
+                group,
+                5,
+                10
+            );
+            assertThat(
+                result
+                    .revenue()
+                    .stream()
+                    .map(StatisticsReport.RevenuePoint::revenue)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+            ).isEqualByComparingTo("150");
+            assertThat(
+                result
+                    .purchaseTrend()
+                    .stream()
+                    .map(StatisticsReport.PurchasePoint::amount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+            ).isEqualByComparingTo("40");
         }
-        assertThat(statistics.report(null, today.minusDays(2), today, "DAY", 0, 5)
-                .inventory().lowStock()).isZero();
+        assertThat(
+            statistics
+                .report(null, today.minusDays(2), today, "DAY", 0, 5)
+                .inventory()
+                .lowStock()
+        ).isZero();
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-                statistics.report(null, today, today.minusDays(1), "DAY", 5, 5))
-                .isInstanceOf(com.lauriel.store.exception.BadRequestException.class);
+            statistics.report(null, today, today.minusDays(1), "DAY", 5, 5)
+        ).isInstanceOf(com.lauriel.store.exception.BadRequestException.class);
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-                statistics.report(null, today.minusDays(366), today, "DAY", 5, 5))
-                .isInstanceOf(com.lauriel.store.exception.BadRequestException.class);
-    }
-    @Test
-    void dateValidationAndSecurityAndChartModel() throws Exception {
-        seed();
-        mvc.perform(get("/admin/statistics")).andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login"));
-        mvc.perform(get("/admin/statistics").with(user("buyer").roles("CUSTOMER")))
-                .andExpect(status().isForbidden());
-        mvc.perform(get("/admin/statistics").with(user("admin").roles("ADMIN")))
-                .andExpect(status().isOk()).andExpect(model().attributeExists("report"))
-                .andExpect(content().string(containsString("revenue-point")));
-        mvc.perform(get("/admin/statistics").with(user("staff").roles("STAFF")))
-                .andExpect(status().isOk());
-        mvc.perform(get("/admin/statistics").with(user("admin").roles("ADMIN"))
-                .param("fromDate", today.toString()).param("toDate", today.minusDays(1).toString()))
-                .andExpect(status().isBadRequest());
+            statistics.report(null, today.minusDays(366), today, "DAY", 5, 5)
+        ).isInstanceOf(com.lauriel.store.exception.BadRequestException.class);
     }
 
     @Test
-    void allStatisticsRoutesRenderForStaffAndAdminButRejectCustomers() throws Exception {
+    void dateValidationAndSecurityAndChartModel() throws Exception {
         seed();
-        for (String path : new String[] {"/admin/statistics/sales", "/admin/statistics/products",
-                "/admin/statistics/customers", "/admin/statistics/promotions", "/admin/statistics/inventory"}) {
+        mvc.perform(get("/admin/statistics"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/login"));
+        mvc.perform(
+            get("/admin/statistics").with(user("buyer").roles("CUSTOMER"))
+        ).andExpect(status().isForbidden());
+        mvc.perform(get("/admin/statistics").with(user("admin").roles("ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeExists("report"))
+            .andExpect(content().string(containsString("revenue-point")));
+        mvc.perform(
+            get("/admin/statistics").with(user("staff").roles("STAFF"))
+        ).andExpect(status().isOk());
+        mvc.perform(
+            get("/admin/statistics")
+                .with(user("admin").roles("ADMIN"))
+                .param("fromDate", today.toString())
+                .param("toDate", today.minusDays(1).toString())
+        ).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void allStatisticsRoutesRenderForStaffAndAdminButRejectCustomers()
+        throws Exception {
+        seed();
+        for (String path : new String[] {
+            "/admin/statistics/sales",
+            "/admin/statistics/products",
+            "/admin/statistics/customers",
+            "/admin/statistics/promotions",
+            "/admin/statistics/inventory",
+        }) {
             mvc.perform(get(path).with(user("admin").roles("ADMIN")))
-                    .andExpect(status().isOk()).andExpect(model().attributeExists("report", "section"))
-                    .andExpect(content().string(containsString("stats-subnav")));
-            mvc.perform(get(path).with(user("staff").roles("STAFF"))).andExpect(status().isOk());
-            mvc.perform(get(path).with(user("buyer").roles("CUSTOMER"))).andExpect(status().isForbidden());
-        }
-        mvc.perform(get("/admin/statistics/customers").with(user("admin").roles("ADMIN")))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("So sánh khách mua hàng trên Web và Mobile")))
-                .andExpect(content().string(containsString("Website mua hàng")))
-                .andExpect(content().string(containsString("Ứng dụng Mobile")));
+                .andExpect(model().attributeExists("report", "section"))
+                .andExpect(content().string(containsString("stats-subnav")));
+            mvc.perform(get(path).with(user("staff").roles("STAFF"))).andExpect(
+                status().isOk()
+            );
+            mvc.perform(
+                get(path).with(user("buyer").roles("CUSTOMER"))
+            ).andExpect(status().isForbidden());
+        }
+        mvc.perform(
+            get("/admin/statistics/customers").with(
+                user("admin").roles("ADMIN")
+            )
+        )
+            .andExpect(status().isOk())
+            .andExpect(
+                content().string(
+                    containsString("So sánh khách mua hàng trên Web và Mobile")
+                )
+            )
+            .andExpect(content().string(containsString("Website mua hàng")))
+            .andExpect(content().string(containsString("Ứng dụng Mobile")));
     }
 
     @Test
     void overviewUsesRealDrillDownLinksAndQuarterPreset() throws Exception {
         seed();
         mvc.perform(get("/admin/statistics").with(user("admin").roles("ADMIN")))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Tổng doanh thu đã giao")))
-                .andExpect(content().string(containsString("Khách hàng đang online")))
-                .andExpect(content().string(containsString("Top sản phẩm đang nằm trong giỏ hàng")))
-                .andExpect(content().string(containsString("/admin/statistics/sales")))
-                .andExpect(content().string(containsString("/admin/statistics/inventory")))
-                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("href=\"#\""))));
+            .andExpect(status().isOk())
+            .andExpect(
+                content().string(containsString("Tổng doanh thu đã giao"))
+            )
+            .andExpect(
+                content().string(containsString("Khách hàng đang online"))
+            )
+            .andExpect(
+                content().string(
+                    containsString("Top sản phẩm đang nằm trong giỏ hàng")
+                )
+            )
+            .andExpect(
+                content().string(containsString("/admin/statistics/sales"))
+            )
+            .andExpect(
+                content().string(containsString("/admin/statistics/inventory"))
+            )
+            .andExpect(
+                content().string(
+                    org.hamcrest.Matchers.not(containsString("href=\"#\""))
+                )
+            );
         var quarter = statistics.report("THIS_QUARTER", null, null, null, 5, 5);
         assertThat(quarter.range().preset()).isEqualTo("THIS_QUARTER");
-        assertThat(quarter.range().fromDate().getMonthValue()).isIn(1, 4, 7, 10);
+        assertThat(quarter.range().fromDate().getMonthValue()).isIn(
+            1,
+            4,
+            7,
+            10
+        );
     }
 
     @Test
     void tracksOnlineCustomersAndServerCartSnapshot() {
         seed();
-        jdbc.update("INSERT INTO users(user_id,role_id,username,password_hash,full_name,status) "
-                + "SELECT 102,role_id,'online-customer','hash','Binh','ACTIVE' FROM roles WHERE role_name='CUSTOMER'");
+        jdbc.update(
+            "INSERT INTO users(user_id,role_id,username,password_hash,full_name,status) " +
+                "SELECT 102,role_id,'online-customer','hash','Binh','ACTIVE' FROM roles WHERE role_name='CUSTOMER'"
+        );
         jdbc.update("UPDATE customers SET user_id=102 WHERE customer_id=102");
 
-        engagement.syncCart(102, new com.lauriel.store.dto.request.CartSnapshotRequest(java.util.List.of(
-                new com.lauriel.store.dto.request.CheckoutItemRequest(201L, 2),
-                new com.lauriel.store.dto.request.CheckoutItemRequest(203L, 1))));
+        engagement.syncCart(
+            102,
+            new com.lauriel.store.dto.request.CartSnapshotRequest(
+                java.util.List.of(
+                    new com.lauriel.store.dto.request.CheckoutItemRequest(
+                        201L,
+                        2
+                    ),
+                    new com.lauriel.store.dto.request.CheckoutItemRequest(
+                        203L,
+                        1
+                    )
+                )
+            )
+        );
 
         var result = report();
         assertThat(result.engagement().onlineCustomers()).isEqualTo(1);
         assertThat(result.engagement().customersWithCart()).isEqualTo(1);
         assertThat(result.engagement().distinctProductsInCarts()).isEqualTo(1);
         assertThat(result.engagement().cartQuantity()).isEqualTo(3);
-        assertThat(result.onlineCustomers()).singleElement()
-                .satisfies(customer -> assertThat(customer.username()).isEqualTo("online-customer"));
-        assertThat(result.cartInterest()).singleElement()
-                .satisfies(product -> {
-                    assertThat(product.customerCount()).isEqualTo(1);
-                    assertThat(product.quantity()).isEqualTo(3);
-                });
+        assertThat(result.onlineCustomers())
+            .singleElement()
+            .satisfies(customer ->
+                assertThat(customer.username()).isEqualTo("online-customer")
+            );
+        assertThat(result.cartInterest())
+            .singleElement()
+            .satisfies(product -> {
+                assertThat(product.customerCount()).isEqualTo(1);
+                assertThat(product.quantity()).isEqualTo(3);
+            });
 
-        engagement.syncCart(102, new com.lauriel.store.dto.request.CartSnapshotRequest(java.util.List.of()));
+        engagement.syncCart(
+            102,
+            new com.lauriel.store.dto.request.CartSnapshotRequest(
+                java.util.List.of()
+            )
+        );
         assertThat(report().engagement().customersWithCart()).isZero();
     }
 }

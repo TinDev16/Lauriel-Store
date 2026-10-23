@@ -9,7 +9,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 public class OrderCreatedTelegramListener {
-    private static final Logger log = LoggerFactory.getLogger(OrderCreatedTelegramListener.class);
+
+    private static final Logger log = LoggerFactory.getLogger(
+        OrderCreatedTelegramListener.class
+    );
     private final TelegramNotificationService telegram;
 
     public OrderCreatedTelegramListener(TelegramNotificationService telegram) {
@@ -21,8 +24,11 @@ public class OrderCreatedTelegramListener {
         try {
             telegram.sendNewOrderNotification(event);
         } catch (RuntimeException exception) {
-            log.warn("Không thể xếp thông báo Telegram cho đơn #{} ({})",
-                    event.orderId(), exception.getClass().getSimpleName());
+            log.warn(
+                "Không thể xếp thông báo Telegram cho đơn #{} ({})",
+                event.orderId(),
+                exception.getClass().getSimpleName()
+            );
         }
     }
 }

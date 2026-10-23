@@ -41,34 +41,96 @@ import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 class MarketingApiTest {
-    private static final LocalDateTime NOW = LocalDateTime.of(2026, 9, 18, 10, 0);
-    private static final String HASH = new BCryptPasswordEncoder().encode("TestPassword123");
-    @Autowired private WebApplicationContext context;
-    @MockitoSpyBean private VoucherRepository vouchers;
-    @Autowired private PromotionRepository promotions;
-    @Autowired private OrderPromotionRepository orderPromotions;
-    @Autowired private PromotionProductRepository associations;
-    @Autowired private PromotionVariantRepository variantPromotions;
-    @MockitoSpyBean private ProductVariantRepository variants;
-    @MockitoSpyBean private OrderRepository orders;
-    @MockitoSpyBean private OrderDetailRepository details;
-    @MockitoSpyBean private InventoryTransactionRepository history;
-    @Autowired private ProductRepository products;
-    @Autowired private CategoryRepository categories;
-    @Autowired private SizeRepository sizes;
-    @Autowired private ColorRepository colors;
-    @Autowired private CustomerRepository customers;
-    @Autowired private UserRepository users;
-    @Autowired private RoleRepository roles;
-    @Autowired private JwtService jwt;
-    @Autowired private OrderService orderService;
-    @Autowired private ProductService catalog;
-    @Autowired private VoucherService voucherService;
-    @Autowired private ObjectMapper mapper;
-    @Autowired private PlatformTransactionManager manager;
-    @Autowired private EntityManagerFactory entityManagerFactory;
-    @MockitoBean private Clock clock;
-    @MockitoBean(name = "pricingClock") private Clock pricingClock;
+
+    private static final LocalDateTime NOW = LocalDateTime.of(
+        2026,
+        9,
+        18,
+        10,
+        0
+    );
+    private static final String HASH = new BCryptPasswordEncoder().encode(
+        "TestPassword123"
+    );
+
+    @Autowired
+    private WebApplicationContext context;
+
+    @MockitoSpyBean
+    private VoucherRepository vouchers;
+
+    @Autowired
+    private PromotionRepository promotions;
+
+    @Autowired
+    private OrderPromotionRepository orderPromotions;
+
+    @Autowired
+    private PromotionProductRepository associations;
+
+    @Autowired
+    private PromotionVariantRepository variantPromotions;
+
+    @MockitoSpyBean
+    private ProductVariantRepository variants;
+
+    @MockitoSpyBean
+    private OrderRepository orders;
+
+    @MockitoSpyBean
+    private OrderDetailRepository details;
+
+    @MockitoSpyBean
+    private InventoryTransactionRepository history;
+
+    @Autowired
+    private ProductRepository products;
+
+    @Autowired
+    private CategoryRepository categories;
+
+    @Autowired
+    private SizeRepository sizes;
+
+    @Autowired
+    private ColorRepository colors;
+
+    @Autowired
+    private CustomerRepository customers;
+
+    @Autowired
+    private UserRepository users;
+
+    @Autowired
+    private RoleRepository roles;
+
+    @Autowired
+    private JwtService jwt;
+
+    @Autowired
+    private OrderService orderService;
+
+    @Autowired
+    private ProductService catalog;
+
+    @Autowired
+    private VoucherService voucherService;
+
+    @Autowired
+    private ObjectMapper mapper;
+
+    @Autowired
+    private PlatformTransactionManager manager;
+
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
+    @MockitoBean
+    private Clock clock;
+
+    @MockitoBean(name = "pricingClock")
+    private Clock pricingClock;
+
     private MockMvc mvc;
     private TransactionTemplate tx;
     private Product product;
@@ -76,16 +138,23 @@ class MarketingApiTest {
     private final Map<String, User> accounts = new HashMap<>();
 
     @DynamicPropertySource
-    static void properties(DynamicPropertyRegistry properties) throws Exception {
+    static void properties(DynamicPropertyRegistry properties)
+        throws Exception {
         String url = TestSchema.createIsolatedDatabase();
         String secret = TestSecrets.randomBase64();
         properties.add("spring.datasource.url", () -> url);
         properties.add("spring.datasource.username", () -> "sa");
         properties.add("spring.datasource.password", () -> "");
-        properties.add("spring.datasource.driver-class-name", () -> "org.h2.Driver");
+        properties.add(
+            "spring.datasource.driver-class-name",
+            () -> "org.h2.Driver"
+        );
         properties.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
         properties.add("spring.sql.init.mode", () -> "never");
-        properties.add("spring.jpa.properties.hibernate.generate_statistics", () -> "true");
+        properties.add(
+            "spring.jpa.properties.hibernate.generate_statistics",
+            () -> "true"
+        );
         properties.add("app.jwt.secret", () -> secret);
         properties.add("app.jwt.expiration", () -> "PT1H");
         properties.add("app.roles.initialize", () -> "true");
@@ -97,7 +166,9 @@ class MarketingApiTest {
         when(clock.instant()).thenReturn(NOW.toInstant(ZoneOffset.UTC));
         when(pricingClock.getZone()).thenReturn(ZoneOffset.UTC);
         when(pricingClock.instant()).thenReturn(NOW.toInstant(ZoneOffset.UTC));
-        mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+            .apply(springSecurity())
+            .build();
         tx = new TransactionTemplate(manager);
         tx.executeWithoutResult(status -> {
             history.deleteAllInBatch();
@@ -120,7 +191,15 @@ class MarketingApiTest {
                 user.setUsername("marketing-" + name);
                 user.setFullName(name);
                 user.setPasswordHash(HASH);
-                user.setRole(roles.findByRoleName(name.equals("A") || name.equals("B") ? "CUSTOMER" : name).orElseThrow());
+                user.setRole(
+                    roles
+                        .findByRoleName(
+                            name.equals("A") || name.equals("B")
+                                ? "CUSTOMER"
+                                : name
+                        )
+                        .orElseThrow()
+                );
                 user.setStatus(UserStatus.ACTIVE);
                 accounts.put(name, users.saveAndFlush(user));
                 if (name.equals("A") || name.equals("B")) {
@@ -131,7 +210,9 @@ class MarketingApiTest {
                 }
             }
             var category = new Category();
-            category.setCategoryName("Clothing"); category.setStatus(ActiveStatus.ACTIVE); categories.saveAndFlush(category);
+            category.setCategoryName("Clothing");
+            category.setStatus(ActiveStatus.ACTIVE);
+            categories.saveAndFlush(category);
             product = new Product();
             product.setCategory(category);
             product.setProductName("Marketing Shirt");
@@ -153,7 +234,13 @@ class MarketingApiTest {
         clearInvocations(vouchers, variants, orders, details, history);
     }
 
-    private ProductVariant variant(Size size, Color color, String sku, String price, int quantity) {
+    private ProductVariant variant(
+        Size size,
+        Color color,
+        String sku,
+        String price,
+        int quantity
+    ) {
         var variant = new ProductVariant();
         variant.setProduct(product);
         variant.setSize(size);
@@ -176,16 +263,28 @@ class MarketingApiTest {
             promotions.saveAndFlush(promotion);
             if (linked) {
                 var association = new PromotionProduct();
-                association.setId(new PromotionProductId(promotion.getPromotionId(), product.getProductId()));
+                association.setId(
+                    new PromotionProductId(
+                        promotion.getPromotionId(),
+                        product.getProductId()
+                    )
+                );
                 association.setPromotion(promotion);
-                association.setProduct(products.findById(product.getProductId()).orElseThrow());
+                association.setProduct(
+                    products.findById(product.getProductId()).orElseThrow()
+                );
                 associations.saveAndFlush(association);
             }
             return promotion;
         });
     }
 
-    private Voucher voucher(String code, DiscountType type, String discount, int remaining) {
+    private Voucher voucher(
+        String code,
+        DiscountType type,
+        String discount,
+        int remaining
+    ) {
         var voucher = new Voucher();
         voucher.setCode(code);
         voucher.setVoucherName(code);
@@ -200,39 +299,113 @@ class MarketingApiTest {
     }
 
     private String token(String name) {
-        return "Bearer " + jwt.issue(new StoreUserDetails(accounts.get(name))).token();
+        return (
+            "Bearer " +
+            jwt.issue(new StoreUserDetails(accounts.get(name))).token()
+        );
     }
-    private Long actor(String name) { return accounts.get(name).getUserId(); }
-    private String json(Object value) { return mapper.writeValueAsString(value); }
-    private CheckoutRequest checkoutRequest(String code, ProductVariant variant, int quantity) {
-        return new CheckoutRequest(List.of(new CheckoutItemRequest(variant.getVariantId(), quantity)), "City", code);
+
+    private Long actor(String name) {
+        return accounts.get(name).getUserId();
     }
+
+    private String json(Object value) {
+        return mapper.writeValueAsString(value);
+    }
+
+    private CheckoutRequest checkoutRequest(
+        String code,
+        ProductVariant variant,
+        int quantity
+    ) {
+        return new CheckoutRequest(
+            List.of(new CheckoutItemRequest(variant.getVariantId(), quantity)),
+            "City",
+            code
+        );
+    }
+
     private ResultActions checkout(CheckoutRequest request) throws Exception {
-        return mvc.perform(post("/api/orders").header("Authorization", token("A"))
-                .contentType(MediaType.APPLICATION_JSON).content(json(request)));
-    }
-    private ResultActions preview(String code) throws Exception {
-        return mvc.perform(post("/api/vouchers/validate").header("Authorization", token("A"))
+        return mvc.perform(
+            post("/api/orders")
+                .header("Authorization", token("A"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(json(new VoucherValidationRequest(code, List.of(new CheckoutItemRequest(first.getVariantId(), 2))))));
+                .content(json(request))
+        );
     }
+
+    private ResultActions preview(String code) throws Exception {
+        return mvc.perform(
+            post("/api/vouchers/validate")
+                .header("Authorization", token("A"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json(
+                        new VoucherValidationRequest(
+                            code,
+                            List.of(
+                                new CheckoutItemRequest(first.getVariantId(), 2)
+                            )
+                        )
+                    )
+                )
+        );
+    }
+
     private ResultActions cancel(Long id) throws Exception {
-        return mvc.perform(post("/api/orders/" + id + "/cancel").header("Authorization", token("A")));
+        return mvc.perform(
+            post("/api/orders/" + id + "/cancel").header(
+                "Authorization",
+                token("A")
+            )
+        );
     }
-    private VoucherRequest voucherRequest(String code, String type, String value, int quantity) {
-        return new VoucherRequest(code, "Voucher", DiscountType.valueOf(type), new BigDecimal(value),
-                BigDecimal.ZERO, null, quantity, NOW.minusDays(1), NOW.plusDays(1), ActiveStatus.ACTIVE);
+
+    private VoucherRequest voucherRequest(
+        String code,
+        String type,
+        String value,
+        int quantity
+    ) {
+        return new VoucherRequest(
+            code,
+            "Voucher",
+            DiscountType.valueOf(type),
+            new BigDecimal(value),
+            BigDecimal.ZERO,
+            null,
+            quantity,
+            NOW.minusDays(1),
+            NOW.plusDays(1),
+            ActiveStatus.ACTIVE
+        );
     }
+
     private PromotionRequest promotionRequest(String value) {
-        return new PromotionRequest("Campaign", "Description", new BigDecimal(value),
-                NOW.minusDays(1), NOW.plusDays(1), ActiveStatus.ACTIVE);
+        return new PromotionRequest(
+            "Campaign",
+            "Description",
+            new BigDecimal(value),
+            NOW.minusDays(1),
+            NOW.plusDays(1),
+            ActiveStatus.ACTIVE
+        );
     }
+
     private int remaining(Voucher voucher) {
-        return vouchers.findById(voucher.getVoucherId()).orElseThrow().getQuantity();
+        return vouchers
+            .findById(voucher.getVoucherId())
+            .orElseThrow()
+            .getQuantity();
     }
+
     private int quantity(ProductVariant variant) {
-        return variants.findById(variant.getVariantId()).orElseThrow().getQuantity();
+        return variants
+            .findById(variant.getVariantId())
+            .orElseThrow()
+            .getQuantity();
     }
+
     private void noOrderWrites() {
         assertThat(orders.count()).isZero();
         assertThat(details.count()).isZero();
@@ -242,103 +415,171 @@ class MarketingApiTest {
     }
 
     @Test
-    void publicPromotionIsActivePagedAndCatalogHasEffectivePricePerVariant() throws Exception {
+    void publicPromotionIsActivePagedAndCatalogHasEffectivePricePerVariant()
+        throws Exception {
         var promotion = promotion("Sale", "10", true);
-        mvc.perform(get("/api/promotions/active")).andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.content[0].promotionId").value(promotion.getPromotionId()));
-        mvc.perform(get("/api/products/" + product.getProductId())).andExpect(status().isOk())
-                .andExpect(jsonPath("$.basePrice").value(50))
-                .andExpect(jsonPath("$.variants[0].price").value(300))
-                .andExpect(jsonPath("$.variants[0].effectivePrice").value(270))
-                .andExpect(jsonPath("$.variants[1].effectivePrice").value(180))
-                .andExpect(jsonPath("$.variants[0].promotion.promotionId").value(promotion.getPromotionId()));
-        assertThat(variants.findById(first.getVariantId()).orElseThrow().getPrice()).isEqualByComparingTo("300");
+        mvc.perform(get("/api/promotions/active"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalElements").value(1))
+            .andExpect(
+                jsonPath("$.content[0].promotionId").value(
+                    promotion.getPromotionId()
+                )
+            );
+        mvc.perform(get("/api/products/" + product.getProductId()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.basePrice").value(50))
+            .andExpect(jsonPath("$.variants[0].price").value(300))
+            .andExpect(jsonPath("$.variants[0].effectivePrice").value(270))
+            .andExpect(jsonPath("$.variants[1].effectivePrice").value(180))
+            .andExpect(
+                jsonPath("$.variants[0].promotion.promotionId").value(
+                    promotion.getPromotionId()
+                )
+            );
+        assertThat(
+            variants.findById(first.getVariantId()).orElseThrow().getPrice()
+        ).isEqualByComparingTo("300");
     }
 
     @Test
-    void publicOrderPromotionEndpointReturnsOnlyCurrentlyActiveCampaigns() throws Exception {
+    void publicOrderPromotionEndpointReturnsOnlyCurrentlyActiveCampaigns()
+        throws Exception {
         tx.executeWithoutResult(status -> {
             var active = new OrderPromotion();
             active.setPromotionName("Đơn hàng từ một triệu");
             active.setMinOrderAmount(new BigDecimal("1000000"));
             active.setDiscountPercent(new BigDecimal("10"));
             active.setMaxDiscountAmount(new BigDecimal("50000"));
-            active.setStartDate(NOW.minusHours(1)); active.setEndDate(NOW.plusHours(1));
-            active.setStatus(ActiveStatus.ACTIVE); orderPromotions.saveAndFlush(active);
+            active.setStartDate(NOW.minusHours(1));
+            active.setEndDate(NOW.plusHours(1));
+            active.setStatus(ActiveStatus.ACTIVE);
+            orderPromotions.saveAndFlush(active);
             var future = new OrderPromotion();
             future.setPromotionName("Chưa bắt đầu");
-            future.setMinOrderAmount(BigDecimal.ZERO); future.setDiscountPercent(BigDecimal.TEN);
-            future.setStartDate(NOW.plusMinutes(1)); future.setEndDate(NOW.plusHours(2));
-            future.setStatus(ActiveStatus.ACTIVE); orderPromotions.saveAndFlush(future);
+            future.setMinOrderAmount(BigDecimal.ZERO);
+            future.setDiscountPercent(BigDecimal.TEN);
+            future.setStartDate(NOW.plusMinutes(1));
+            future.setEndDate(NOW.plusHours(2));
+            future.setStatus(ActiveStatus.ACTIVE);
+            orderPromotions.saveAndFlush(future);
         });
 
         mvc.perform(get("/api/order-promotions/active"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.content[0].promotionName").value("Đơn hàng từ một triệu"))
-                .andExpect(jsonPath("$.content[0].maxDiscountAmount").value(50000));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalElements").value(1))
+            .andExpect(
+                jsonPath("$.content[0].promotionName").value(
+                    "Đơn hàng từ một triệu"
+                )
+            )
+            .andExpect(jsonPath("$.content[0].maxDiscountAmount").value(50000));
     }
 
     @Test
-    void selectedVariantPromotionOnlyDiscountsChosenSizeColorInCatalogAndCheckout() throws Exception {
+    void selectedVariantPromotionOnlyDiscountsChosenSizeColorInCatalogAndCheckout()
+        throws Exception {
         var promotion = promotion("Size M only", "20", true);
         tx.executeWithoutResult(status -> {
             var link = new PromotionVariant();
-            link.setId(new PromotionVariantId(promotion.getPromotionId(), first.getVariantId()));
-            link.setPromotion(promotions.findById(promotion.getPromotionId()).orElseThrow());
-            link.setVariant(variants.findById(first.getVariantId()).orElseThrow());
+            link.setId(
+                new PromotionVariantId(
+                    promotion.getPromotionId(),
+                    first.getVariantId()
+                )
+            );
+            link.setPromotion(
+                promotions.findById(promotion.getPromotionId()).orElseThrow()
+            );
+            link.setVariant(
+                variants.findById(first.getVariantId()).orElseThrow()
+            );
             variantPromotions.saveAndFlush(link);
         });
 
-        mvc.perform(get("/api/products/" + product.getProductId() + "/variants"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].effectivePrice").value(240))
-                .andExpect(jsonPath("$[0].promotion.promotionId").value(promotion.getPromotionId()))
-                .andExpect(jsonPath("$[1].effectivePrice").value(200))
-                .andExpect(jsonPath("$[1].promotion").isEmpty());
+        mvc.perform(
+            get("/api/products/" + product.getProductId() + "/variants")
+        )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].effectivePrice").value(240))
+            .andExpect(
+                jsonPath("$[0].promotion.promotionId").value(
+                    promotion.getPromotionId()
+                )
+            )
+            .andExpect(jsonPath("$[1].effectivePrice").value(200))
+            .andExpect(jsonPath("$[1].promotion").isEmpty());
 
-        checkout(checkoutRequest(null, first, 1)).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.items[0].unitPrice").value(240));
-        checkout(checkoutRequest(null, second, 1)).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.items[0].unitPrice").value(200));
+        checkout(checkoutRequest(null, first, 1))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.items[0].unitPrice").value(240));
+        checkout(checkoutRequest(null, second, 1))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.items[0].unitPrice").value(200));
     }
+
     @ParameterizedTest
-    @ValueSource(strings = {"future", "expired", "inactive", "unlinked"})
-    void unusablePromotionDoesNotAffectCatalogOrCheckout(String kind) throws Exception {
-        var promotion = promotion("Unavailable", "50", !kind.equals("unlinked"));
+    @ValueSource(strings = { "future", "expired", "inactive", "unlinked" })
+    void unusablePromotionDoesNotAffectCatalogOrCheckout(String kind)
+        throws Exception {
+        var promotion = promotion(
+            "Unavailable",
+            "50",
+            !kind.equals("unlinked")
+        );
         tx.executeWithoutResult(status -> {
-            var managed = promotions.findById(promotion.getPromotionId()).orElseThrow();
+            var managed = promotions
+                .findById(promotion.getPromotionId())
+                .orElseThrow();
             if (kind.equals("future")) managed.setStartDate(NOW.plusHours(1));
             if (kind.equals("expired")) managed.setEndDate(NOW.minusHours(1));
-            if (kind.equals("inactive")) managed.setStatus(ActiveStatus.INACTIVE);
+            if (kind.equals("inactive")) managed.setStatus(
+                ActiveStatus.INACTIVE
+            );
         });
-        mvc.perform(get("/api/products/" + product.getProductId() + "/variants"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$[0].effectivePrice").value(300))
-                .andExpect(jsonPath("$[0].promotion").isEmpty());
-        checkout(checkoutRequest(null, first, 1)).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.items[0].unitPrice").value(300));
+        mvc.perform(
+            get("/api/products/" + product.getProductId() + "/variants")
+        )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].effectivePrice").value(300))
+            .andExpect(jsonPath("$[0].promotion").isEmpty());
+        checkout(checkoutRequest(null, first, 1))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.items[0].unitPrice").value(300));
     }
 
     @Test
-    void multipleCandidatesChooseBestThenLowestIdWithoutDuplicateVariants() throws Exception {
+    void multipleCandidatesChooseBestThenLowestIdWithoutDuplicateVariants()
+        throws Exception {
         var lower = promotion("First best", "20", true);
         promotion("Second best", "20", true);
         promotion("Lower discount", "10", true);
-        mvc.perform(get("/api/products/" + product.getProductId() + "/variants"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].effectivePrice").value(240))
-                .andExpect(jsonPath("$[0].promotion.promotionId").value(lower.getPromotionId()));
+        mvc.perform(
+            get("/api/products/" + product.getProductId() + "/variants")
+        )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].effectivePrice").value(240))
+            .andExpect(
+                jsonPath("$[0].promotion.promotionId").value(
+                    lower.getPromotionId()
+                )
+            );
     }
 
     @Test
-    void previewAppliesPromotionThenVoucherAndDoesNotConsumeOrReserve() throws Exception {
+    void previewAppliesPromotionThenVoucherAndDoesNotConsumeOrReserve()
+        throws Exception {
         promotion("Sale", "10", true);
         var voucher = voucher("SAVE10", DiscountType.PERCENT, "10", 1);
-        preview(" save10 ").andExpect(status().isOk()).andExpect(jsonPath("$.valid").value(true))
-                .andExpect(jsonPath("$.code").value("SAVE10")).andExpect(jsonPath("$.orderAmount").value(540))
-                .andExpect(jsonPath("$.discountAmount").value(54))
-                .andExpect(jsonPath("$.shippingFee").value(20000))
-                .andExpect(jsonPath("$.finalAmount").value(20486));
+        preview(" save10 ")
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.valid").value(true))
+            .andExpect(jsonPath("$.code").value("SAVE10"))
+            .andExpect(jsonPath("$.orderAmount").value(540))
+            .andExpect(jsonPath("$.discountAmount").value(54))
+            .andExpect(jsonPath("$.shippingFee").value(20000))
+            .andExpect(jsonPath("$.finalAmount").value(20486));
         assertThat(remaining(voucher)).isEqualTo(1);
         verify(variants, never()).findByIdForUpdate(anyLong());
         verify(vouchers, never()).findByCodeForUpdate(anyString());
@@ -346,127 +587,231 @@ class MarketingApiTest {
     }
 
     @Test
-    void previewUsesServerAmountsEvenWhenRequestedQuantityExceedsStock() throws Exception {
+    void previewUsesServerAmountsEvenWhenRequestedQuantityExceedsStock()
+        throws Exception {
         voucher("SAVE", DiscountType.FIXED, "50", 1);
-        mvc.perform(post("/api/vouchers/validate").header("Authorization", token("A"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(new VoucherValidationRequest("SAVE", List.of(new CheckoutItemRequest(first.getVariantId(), 20))))))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.orderAmount").value(6000));
-        mvc.perform(post("/api/vouchers/validate").header("Authorization", token("A"))
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"code\":\"SAVE\",\"orderAmount\":1}"))
-                .andExpect(status().isBadRequest());
+        mvc.perform(
+            post("/api/vouchers/validate")
+                .header("Authorization", token("A"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json(
+                        new VoucherValidationRequest(
+                            "SAVE",
+                            List.of(
+                                new CheckoutItemRequest(
+                                    first.getVariantId(),
+                                    20
+                                )
+                            )
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.orderAmount").value(6000));
+        mvc.perform(
+            post("/api/vouchers/validate")
+                .header("Authorization", token("A"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"code\":\"SAVE\",\"orderAmount\":1}")
+        ).andExpect(status().isBadRequest());
         noOrderWrites();
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"missing", "inactive", "future", "expired", "exhausted", "minimum"})
-    void invalidVoucherRejectsPreviewAndCheckoutWithoutWrites(String condition) throws Exception {
+    @ValueSource(
+        strings = {
+            "missing",
+            "inactive",
+            "future",
+            "expired",
+            "exhausted",
+            "minimum",
+        }
+    )
+    void invalidVoucherRejectsPreviewAndCheckoutWithoutWrites(String condition)
+        throws Exception {
         var voucher = voucher("INVALID", DiscountType.PERCENT, "10", 1);
         tx.executeWithoutResult(status -> {
-            var managed = vouchers.findByIdForUpdate(voucher.getVoucherId()).orElseThrow();
+            var managed = vouchers
+                .findByIdForUpdate(voucher.getVoucherId())
+                .orElseThrow();
             switch (condition) {
                 case "inactive" -> managed.setStatus(ActiveStatus.INACTIVE);
                 case "future" -> managed.setStartDate(NOW.plusHours(1));
                 case "expired" -> managed.setEndDate(NOW.minusHours(1));
                 case "exhausted" -> managed.setQuantity(0);
-                case "minimum" -> managed.setMinOrderAmount(new BigDecimal("1000"));
+                case "minimum" -> managed.setMinOrderAmount(
+                    new BigDecimal("1000")
+                );
             }
         });
         String code = condition.equals("missing") ? "MISSING" : "INVALID";
         preview(code).andExpect(status().isBadRequest());
-        checkout(checkoutRequest(code, first, 2)).andExpect(status().isBadRequest());
-        assertThat(remaining(voucher)).isEqualTo(condition.equals("exhausted") ? 0 : 1);
+        checkout(checkoutRequest(code, first, 2)).andExpect(
+            status().isBadRequest()
+        );
+        assertThat(remaining(voucher)).isEqualTo(
+            condition.equals("exhausted") ? 0 : 1
+        );
         noOrderWrites();
     }
 
     @Test
-    void minimumIsCheckedAfterPromotionAndMaxDiscountIsApplied() throws Exception {
+    void minimumIsCheckedAfterPromotionAndMaxDiscountIsApplied()
+        throws Exception {
         promotion("Sale", "50", true);
         var voucher = voucher("MIN", DiscountType.PERCENT, "50", 2);
-        tx.executeWithoutResult(status -> vouchers.findByIdForUpdate(voucher.getVoucherId()).orElseThrow().setMinOrderAmount(new BigDecimal("400")));
+        tx.executeWithoutResult(status ->
+            vouchers
+                .findByIdForUpdate(voucher.getVoucherId())
+                .orElseThrow()
+                .setMinOrderAmount(new BigDecimal("400"))
+        );
         preview("MIN").andExpect(status().isBadRequest()); // Original 600, post-promotion amount 300.
         tx.executeWithoutResult(status -> {
-            var managed = vouchers.findByIdForUpdate(voucher.getVoucherId()).orElseThrow();
+            var managed = vouchers
+                .findByIdForUpdate(voucher.getVoucherId())
+                .orElseThrow();
             managed.setMinOrderAmount(new BigDecimal("300"));
             managed.setMaxDiscountAmount(new BigDecimal("30"));
         });
-        checkout(checkoutRequest("MIN", first, 2)).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.totalAmount").value(300)).andExpect(jsonPath("$.discountAmount").value(30))
-                .andExpect(jsonPath("$.finalAmount").value(20270));
+        checkout(checkoutRequest("MIN", first, 2))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.totalAmount").value(300))
+            .andExpect(jsonPath("$.discountAmount").value(30))
+            .andExpect(jsonPath("$.finalAmount").value(20270));
     }
 
     @Test
     void fixedVoucherCannotMakeNegativeFinalAmount() throws Exception {
         voucher("FIXED", DiscountType.FIXED, "5000", 1);
-        checkout(checkoutRequest("FIXED", first, 1)).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.totalAmount").value(300)).andExpect(jsonPath("$.discountAmount").value(300))
-                .andExpect(jsonPath("$.finalAmount").value(20000));
+        checkout(checkoutRequest("FIXED", first, 1))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.totalAmount").value(300))
+            .andExpect(jsonPath("$.discountAmount").value(300))
+            .andExpect(jsonPath("$.finalAmount").value(20000));
     }
 
     @Test
-    void successfulCheckoutSnapshotsPromotionAndVoucherAndDoesNotMutateCatalogPrice() throws Exception {
+    void successfulCheckoutSnapshotsPromotionAndVoucherAndDoesNotMutateCatalogPrice()
+        throws Exception {
         var promotion = promotion("Sale", "10", true);
         var voucher = voucher("SAVE10", DiscountType.PERCENT, "10", 2);
-        var result = orderService.checkout(checkoutRequest("save10", first, 2), actor("A"));
+        var result = orderService.checkout(
+            checkoutRequest("save10", first, 2),
+            actor("A")
+        );
         assertThat(result.totalAmount()).isEqualByComparingTo("540");
         assertThat(result.discountAmount()).isEqualByComparingTo("54");
         assertThat(result.shippingFee()).isEqualByComparingTo("20000");
         assertThat(result.finalAmount()).isEqualByComparingTo("20486");
         assertThat(result.voucherCode()).isEqualTo("SAVE10");
-        assertThat(result.items().getFirst().unitPrice()).isEqualByComparingTo("270");
-        assertThat(result.items().getFirst().discountAmount()).isEqualByComparingTo("30"); // Per unit.
+        assertThat(result.items().getFirst().unitPrice()).isEqualByComparingTo(
+            "270"
+        );
+        assertThat(
+            result.items().getFirst().discountAmount()
+        ).isEqualByComparingTo("30"); // Per unit.
         assertThat(remaining(voucher)).isEqualTo(1);
         tx.executeWithoutResult(status -> {
-            assertThat(orders.findById(result.orderId()).orElseThrow().getVoucher().getVoucherId()).isEqualTo(voucher.getVoucherId());
-            promotions.findByIdForUpdate(promotion.getPromotionId()).orElseThrow().setDiscountPercent(new BigDecimal("50"));
-            var managed = vouchers.findByIdForUpdate(voucher.getVoucherId()).orElseThrow();
+            assertThat(
+                orders
+                    .findById(result.orderId())
+                    .orElseThrow()
+                    .getVoucher()
+                    .getVoucherId()
+            ).isEqualTo(voucher.getVoucherId());
+            promotions
+                .findByIdForUpdate(promotion.getPromotionId())
+                .orElseThrow()
+                .setDiscountPercent(new BigDecimal("50"));
+            var managed = vouchers
+                .findByIdForUpdate(voucher.getVoucherId())
+                .orElseThrow();
             managed.setDiscountValue(new BigDecimal("99"));
             managed.setStatus(ActiveStatus.INACTIVE);
-            variants.findByIdForUpdate(first.getVariantId()).orElseThrow().setPrice(new BigDecimal("999"));
+            variants
+                .findByIdForUpdate(first.getVariantId())
+                .orElseThrow()
+                .setPrice(new BigDecimal("999"));
         });
-        mvc.perform(get("/api/orders/" + result.orderId()).header("Authorization", token("A")))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].unitPrice").value(270))
-                .andExpect(jsonPath("$.items[0].discountAmount").value(30))
-                .andExpect(jsonPath("$.shippingFee").value(20000))
-                .andExpect(jsonPath("$.finalAmount").value(20486));
+        mvc.perform(
+            get("/api/orders/" + result.orderId()).header(
+                "Authorization",
+                token("A")
+            )
+        )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].unitPrice").value(270))
+            .andExpect(jsonPath("$.items[0].discountAmount").value(30))
+            .andExpect(jsonPath("$.shippingFee").value(20000))
+            .andExpect(jsonPath("$.finalAmount").value(20486));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", " "})
-    void blankVoucherCodeIsOptionalAndDoesNotConsumeAnyVoucher(String code) throws Exception {
+    @ValueSource(strings = { "", " " })
+    void blankVoucherCodeIsOptionalAndDoesNotConsumeAnyVoucher(String code)
+        throws Exception {
         var voucher = voucher("UNUSED", DiscountType.PERCENT, "10", 1);
-        checkout(checkoutRequest(code, first, 1)).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.discountAmount").value(0)).andExpect(jsonPath("$.voucherCode").isEmpty());
+        checkout(checkoutRequest(code, first, 1))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.discountAmount").value(0))
+            .andExpect(jsonPath("$.voucherCode").isEmpty());
         assertThat(remaining(voucher)).isEqualTo(1);
     }
 
     @Test
     void stockFailureDoesNotConsumeVoucher() throws Exception {
         var voucher = voucher("SAVE", DiscountType.PERCENT, "10", 1);
-        checkout(checkoutRequest("SAVE", first, 6)).andExpect(status().isConflict());
+        checkout(checkoutRequest("SAVE", first, 6)).andExpect(
+            status().isConflict()
+        );
         assertThat(remaining(voucher)).isEqualTo(1);
         verify(vouchers, never()).findByCodeForUpdate(anyString());
         noOrderWrites();
     }
 
     @Test
-    void failureAfterVoucherDecrementRollsBackUsageAndAllCheckoutWrites() throws Exception {
+    void failureAfterVoucherDecrementRollsBackUsageAndAllCheckoutWrites()
+        throws Exception {
         var voucher = voucher("SAVE", DiscountType.PERCENT, "10", 1);
-        doThrow(new IllegalStateException("Simulated second detail failure")).when(details)
-                .saveAndFlush(argThat(row -> row.getProductVariant().getVariantId().equals(second.getVariantId())));
-        checkout(new CheckoutRequest(List.of(new CheckoutItemRequest(second.getVariantId(), 1),
-                        new CheckoutItemRequest(first.getVariantId(), 1)), "City", "SAVE"))
-                .andExpect(status().isInternalServerError());
+        doThrow(new IllegalStateException("Simulated second detail failure"))
+            .when(details)
+            .saveAndFlush(
+                argThat(row ->
+                    row
+                        .getProductVariant()
+                        .getVariantId()
+                        .equals(second.getVariantId())
+                )
+            );
+        checkout(
+            new CheckoutRequest(
+                List.of(
+                    new CheckoutItemRequest(second.getVariantId(), 1),
+                    new CheckoutItemRequest(first.getVariantId(), 1)
+                ),
+                "City",
+                "SAVE"
+            )
+        ).andExpect(status().isInternalServerError());
         verify(vouchers).findByCodeForUpdate("SAVE");
         assertThat(remaining(voucher)).isEqualTo(1);
         noOrderWrites();
     }
 
     @Test
-    void historyFailureAfterVoucherConsumptionAlsoRollsBackUsage() throws Exception {
+    void historyFailureAfterVoucherConsumptionAlsoRollsBackUsage()
+        throws Exception {
         var voucher = voucher("SAVE", DiscountType.PERCENT, "10", 1);
-        doThrow(new IllegalStateException("Simulated SALE failure")).when(history).saveAndFlush(any(InventoryTransaction.class));
-        checkout(checkoutRequest("SAVE", first, 1)).andExpect(status().isInternalServerError());
+        doThrow(new IllegalStateException("Simulated SALE failure"))
+            .when(history)
+            .saveAndFlush(any(InventoryTransaction.class));
+        checkout(checkoutRequest("SAVE", first, 1)).andExpect(
+            status().isInternalServerError()
+        );
         assertThat(remaining(voucher)).isEqualTo(1);
         noOrderWrites();
     }
@@ -474,13 +819,19 @@ class MarketingApiTest {
     @Test
     void cancelRestoresExpiredInactiveVoucherOnlyOnce() throws Exception {
         var voucher = voucher("SAVE", DiscountType.PERCENT, "10", 1);
-        Long id = orderService.checkout(checkoutRequest("SAVE", first, 2), actor("A")).orderId();
+        Long id = orderService
+            .checkout(checkoutRequest("SAVE", first, 2), actor("A"))
+            .orderId();
         tx.executeWithoutResult(status -> {
-            var managed = vouchers.findByIdForUpdate(voucher.getVoucherId()).orElseThrow();
+            var managed = vouchers
+                .findByIdForUpdate(voucher.getVoucherId())
+                .orElseThrow();
             managed.setStatus(ActiveStatus.INACTIVE);
             managed.setEndDate(NOW.minusHours(1));
         });
-        cancel(id).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("CANCELLED"));
+        cancel(id)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("CANCELLED"));
         cancel(id).andExpect(status().isConflict());
         assertThat(remaining(voucher)).isEqualTo(1);
         assertThat(quantity(first)).isEqualTo(5);
@@ -488,46 +839,83 @@ class MarketingApiTest {
     }
 
     @Test
-    void failureAfterVoucherRestorationRollsBackStockUsageReturnsAndOrderState() throws Exception {
+    void failureAfterVoucherRestorationRollsBackStockUsageReturnsAndOrderState()
+        throws Exception {
         var voucher = voucher("SAVE", DiscountType.PERCENT, "10", 2);
-        Long id = orderService.checkout(checkoutRequest("SAVE", first, 2), actor("A")).orderId();
-        doThrow(new IllegalStateException("Simulated cancel order save failure")).when(orders)
-                .saveAndFlush(argThat(order -> order.getStatus() == OrderStatus.CANCELLED));
+        Long id = orderService
+            .checkout(checkoutRequest("SAVE", first, 2), actor("A"))
+            .orderId();
+        doThrow(
+            new IllegalStateException("Simulated cancel order save failure")
+        )
+            .when(orders)
+            .saveAndFlush(
+                argThat(order -> order.getStatus() == OrderStatus.CANCELLED)
+            );
         cancel(id).andExpect(status().isInternalServerError());
         assertThat(remaining(voucher)).isEqualTo(1);
         assertThat(quantity(first)).isEqualTo(3);
-        assertThat(orderService.staffDetail(id).status()).isEqualTo(OrderStatus.PENDING);
+        assertThat(orderService.staffDetail(id).status()).isEqualTo(
+            OrderStatus.PENDING
+        );
         assertThat(history.count()).isEqualTo(1);
     }
 
     @Test
     void voucherRestoreOverflowRollsBackRestocking() throws Exception {
         var voucher = voucher("SAVE", DiscountType.PERCENT, "10", 1);
-        Long id = orderService.checkout(checkoutRequest("SAVE", first, 2), actor("A")).orderId();
-        tx.executeWithoutResult(status -> vouchers.findByIdForUpdate(voucher.getVoucherId()).orElseThrow().setQuantity(Integer.MAX_VALUE));
+        Long id = orderService
+            .checkout(checkoutRequest("SAVE", first, 2), actor("A"))
+            .orderId();
+        tx.executeWithoutResult(status ->
+            vouchers
+                .findByIdForUpdate(voucher.getVoucherId())
+                .orElseThrow()
+                .setQuantity(Integer.MAX_VALUE)
+        );
         cancel(id).andExpect(status().isConflict());
         assertThat(quantity(first)).isEqualTo(3);
         assertThat(remaining(voucher)).isEqualTo(Integer.MAX_VALUE);
         assertThat(history.count()).isEqualTo(1);
-        assertThat(orderService.staffDetail(id).status()).isEqualTo(OrderStatus.PENDING);
+        assertThat(orderService.staffDetail(id).status()).isEqualTo(
+            OrderStatus.PENDING
+        );
     }
 
-    private int competingCheckout(String customer, ProductVariant variant, CountDownLatch start) throws Exception {
+    private int competingCheckout(
+        String customer,
+        ProductVariant variant,
+        CountDownLatch start
+    ) throws Exception {
         start.await(10, TimeUnit.SECONDS);
-        try { orderService.checkout(checkoutRequest("LAST", variant, 1), actor(customer)); return 201; }
-        catch (BadRequestException invalidVoucher) { return 400; }
+        try {
+            orderService.checkout(
+                checkoutRequest("LAST", variant, 1),
+                actor(customer)
+            );
+            return 201;
+        } catch (BadRequestException invalidVoucher) {
+            return 400;
+        }
     }
 
     @Test
-    void twoCustomersOnDifferentVariantsCompeteForLastVoucherWithoutSilentFallback() throws Exception {
+    void twoCustomersOnDifferentVariantsCompeteForLastVoucherWithoutSilentFallback()
+        throws Exception {
         var voucher = voucher("LAST", DiscountType.PERCENT, "10", 1);
         var start = new CountDownLatch(1);
         try (var executor = Executors.newFixedThreadPool(2)) {
             var a = executor.submit(() -> competingCheckout("A", first, start));
-            var b = executor.submit(() -> competingCheckout("B", second, start));
+            var b = executor.submit(() ->
+                competingCheckout("B", second, start)
+            );
             start.countDown();
-            assertThat(List.of(a.get(15, TimeUnit.SECONDS), b.get(15, TimeUnit.SECONDS)))
-                    .containsExactlyInAnyOrder(201, 400);
+            assertThat(
+                List.of(
+                    a.get(15, TimeUnit.SECONDS),
+                    b.get(15, TimeUnit.SECONDS)
+                )
+            ).containsExactlyInAnyOrder(201, 400);
         }
         assertThat(remaining(voucher)).isZero();
         assertThat(orders.count()).isEqualTo(1);
@@ -536,17 +924,32 @@ class MarketingApiTest {
     }
 
     @Test
-    void twoOrdersRestoreSameVoucherCounterWithoutLostUpdates() throws Exception {
+    void twoOrdersRestoreSameVoucherCounterWithoutLostUpdates()
+        throws Exception {
         var voucher = voucher("SAVE", DiscountType.PERCENT, "10", 2);
-        Long aId = orderService.checkout(checkoutRequest("SAVE", first, 1), actor("A")).orderId();
-        Long bId = orderService.checkout(checkoutRequest("SAVE", second, 1), actor("B")).orderId();
+        Long aId = orderService
+            .checkout(checkoutRequest("SAVE", first, 1), actor("A"))
+            .orderId();
+        Long bId = orderService
+            .checkout(checkoutRequest("SAVE", second, 1), actor("B"))
+            .orderId();
         var start = new CountDownLatch(1);
         try (var executor = Executors.newFixedThreadPool(2)) {
-            var a = executor.submit(() -> { start.await(10, TimeUnit.SECONDS); return orderService.customerCancel(aId, actor("A")); });
-            var b = executor.submit(() -> { start.await(10, TimeUnit.SECONDS); return orderService.customerCancel(bId, actor("B")); });
+            var a = executor.submit(() -> {
+                start.await(10, TimeUnit.SECONDS);
+                return orderService.customerCancel(aId, actor("A"));
+            });
+            var b = executor.submit(() -> {
+                start.await(10, TimeUnit.SECONDS);
+                return orderService.customerCancel(bId, actor("B"));
+            });
             start.countDown();
-            assertThat(a.get(15, TimeUnit.SECONDS).status()).isEqualTo(OrderStatus.CANCELLED);
-            assertThat(b.get(15, TimeUnit.SECONDS).status()).isEqualTo(OrderStatus.CANCELLED);
+            assertThat(a.get(15, TimeUnit.SECONDS).status()).isEqualTo(
+                OrderStatus.CANCELLED
+            );
+            assertThat(b.get(15, TimeUnit.SECONDS).status()).isEqualTo(
+                OrderStatus.CANCELLED
+            );
         }
         assertThat(remaining(voucher)).isEqualTo(2);
         assertThat(quantity(first)).isEqualTo(5);
@@ -554,131 +957,307 @@ class MarketingApiTest {
     }
 
     @Test
-    void checkoutAcquiresVariantsThenVoucherAndVoucherLocksAreDeclared() throws Exception {
+    void checkoutAcquiresVariantsThenVoucherAndVoucherLocksAreDeclared()
+        throws Exception {
         var voucher = voucher("SAVE", DiscountType.PERCENT, "10", 1);
         clearInvocations(vouchers, variants);
         orderService.checkout(checkoutRequest("SAVE", first, 1), actor("A"));
         var order = inOrder(variants, vouchers);
         order.verify(variants).findByIdForUpdate(first.getVariantId());
         order.verify(vouchers).findByCodeForUpdate("SAVE");
-        assertThat(VoucherRepository.class.getMethod("findByCodeForUpdate", String.class).getAnnotation(Lock.class).value())
-                .isEqualTo(LockModeType.PESSIMISTIC_WRITE);
-        assertThat(VoucherRepository.class.getMethod("findByIdForUpdate", Long.class).getAnnotation(Lock.class).value())
-                .isEqualTo(LockModeType.PESSIMISTIC_WRITE);
+        assertThat(
+            VoucherRepository.class
+                .getMethod("findByCodeForUpdate", String.class)
+                .getAnnotation(Lock.class)
+                .value()
+        ).isEqualTo(LockModeType.PESSIMISTIC_WRITE);
+        assertThat(
+            VoucherRepository.class
+                .getMethod("findByIdForUpdate", Long.class)
+                .getAnnotation(Lock.class)
+                .value()
+        ).isEqualTo(LockModeType.PESSIMISTIC_WRITE);
         assertThat(remaining(voucher)).isZero();
     }
 
     @Test
-    void adminCreatesReadsUpdatesAndDeactivatesMarketingAndNormalizesCodes() throws Exception {
-        mvc.perform(post("/api/admin/vouchers").header("Authorization", token("ADMIN")).contentType(MediaType.APPLICATION_JSON)
-                        .content(json(voucherRequest(" sale10 ", "PERCENT", "10", 3))))
-                .andExpect(status().isCreated()).andExpect(jsonPath("$.code").value("SALE10"));
+    void adminCreatesReadsUpdatesAndDeactivatesMarketingAndNormalizesCodes()
+        throws Exception {
+        mvc.perform(
+            post("/api/admin/vouchers")
+                .header("Authorization", token("ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(voucherRequest(" sale10 ", "PERCENT", "10", 3)))
+        )
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.code").value("SALE10"));
         var voucher = vouchers.findByCodeIgnoreCase("SALE10").orElseThrow();
-        mvc.perform(get("/api/admin/vouchers").header("Authorization", token("ADMIN"))).andExpect(status().isOk());
-        mvc.perform(get("/api/admin/vouchers/" + voucher.getVoucherId()).header("Authorization", token("ADMIN"))).andExpect(status().isOk());
-        var updated = new VoucherRequest("SALE10", "Edited", DiscountType.FIXED, new BigDecimal("20"),
-                BigDecimal.ZERO, null, 3, NOW.minusDays(1), NOW.plusDays(1), ActiveStatus.INACTIVE);
-        mvc.perform(put("/api/admin/vouchers/" + voucher.getVoucherId()).header("Authorization", token("ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON).content(json(updated)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("INACTIVE"));
-        mvc.perform(post("/api/admin/promotions").header("Authorization", token("ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON).content(json(promotionRequest("10")))).andExpect(status().isCreated());
+        mvc.perform(
+            get("/api/admin/vouchers").header("Authorization", token("ADMIN"))
+        ).andExpect(status().isOk());
+        mvc.perform(
+            get("/api/admin/vouchers/" + voucher.getVoucherId()).header(
+                "Authorization",
+                token("ADMIN")
+            )
+        ).andExpect(status().isOk());
+        var updated = new VoucherRequest(
+            "SALE10",
+            "Edited",
+            DiscountType.FIXED,
+            new BigDecimal("20"),
+            BigDecimal.ZERO,
+            null,
+            3,
+            NOW.minusDays(1),
+            NOW.plusDays(1),
+            ActiveStatus.INACTIVE
+        );
+        mvc.perform(
+            put("/api/admin/vouchers/" + voucher.getVoucherId())
+                .header("Authorization", token("ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(updated))
+        )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("INACTIVE"));
+        mvc.perform(
+            post("/api/admin/promotions")
+                .header("Authorization", token("ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(promotionRequest("10")))
+        ).andExpect(status().isCreated());
         var promotion = promotions.findAll().getFirst();
-        mvc.perform(get("/api/admin/promotions/" + promotion.getPromotionId()).header("Authorization", token("ADMIN"))).andExpect(status().isOk());
-        mvc.perform(put("/api/admin/promotions/" + promotion.getPromotionId()).header("Authorization", token("ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON).content(json(promotionRequest("20"))))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.discountPercent").value(20));
+        mvc.perform(
+            get("/api/admin/promotions/" + promotion.getPromotionId()).header(
+                "Authorization",
+                token("ADMIN")
+            )
+        ).andExpect(status().isOk());
+        mvc.perform(
+            put("/api/admin/promotions/" + promotion.getPromotionId())
+                .header("Authorization", token("ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(promotionRequest("20")))
+        )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.discountPercent").value(20));
     }
 
     @Test
     void duplicateCodeCreateOrUpdateReturns409() throws Exception {
         var one = voucher("SALE", DiscountType.PERCENT, "10", 1);
         var other = voucher("OTHER", DiscountType.FIXED, "10", 1);
-        mvc.perform(post("/api/admin/vouchers").header("Authorization", token("ADMIN")).contentType(MediaType.APPLICATION_JSON)
-                        .content(json(voucherRequest(" sale ", "PERCENT", "20", 1)))).andExpect(status().isConflict());
-        mvc.perform(put("/api/admin/vouchers/" + other.getVoucherId()).header("Authorization", token("ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON).content(json(voucherRequest("sale", "PERCENT", "10", 1))))
-                .andExpect(status().isConflict());
+        mvc.perform(
+            post("/api/admin/vouchers")
+                .header("Authorization", token("ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(voucherRequest(" sale ", "PERCENT", "20", 1)))
+        ).andExpect(status().isConflict());
+        mvc.perform(
+            put("/api/admin/vouchers/" + other.getVoucherId())
+                .header("Authorization", token("ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(voucherRequest("sale", "PERCENT", "10", 1)))
+        ).andExpect(status().isConflict());
         assertThat(remaining(one)).isEqualTo(1);
     }
 
     @Test
-    void promotionAssociationsAreValidatedAndOnlyJoinRecordsAreDeleted() throws Exception {
+    void promotionAssociationsAreValidatedAndOnlyJoinRecordsAreDeleted()
+        throws Exception {
         var promotion = promotion("Campaign", "10", false);
-        String path = "/api/admin/promotions/" + promotion.getPromotionId() + "/products/";
-        mvc.perform(post(path + product.getProductId()).header("Authorization", token("ADMIN"))).andExpect(status().isCreated());
-        mvc.perform(post(path + product.getProductId()).header("Authorization", token("ADMIN"))).andExpect(status().isConflict());
-        mvc.perform(post(path + "999999").header("Authorization", token("ADMIN"))).andExpect(status().isNotFound());
-        mvc.perform(get(path.substring(0, path.length() - 1)).header("Authorization", token("ADMIN")))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1));
-        mvc.perform(delete(path + product.getProductId()).header("Authorization", token("ADMIN"))).andExpect(status().isNoContent());
+        String path =
+            "/api/admin/promotions/" +
+            promotion.getPromotionId() +
+            "/products/";
+        mvc.perform(
+            post(path + product.getProductId()).header(
+                "Authorization",
+                token("ADMIN")
+            )
+        ).andExpect(status().isCreated());
+        mvc.perform(
+            post(path + product.getProductId()).header(
+                "Authorization",
+                token("ADMIN")
+            )
+        ).andExpect(status().isConflict());
+        mvc.perform(
+            post(path + "999999").header("Authorization", token("ADMIN"))
+        ).andExpect(status().isNotFound());
+        mvc.perform(
+            get(path.substring(0, path.length() - 1)).header(
+                "Authorization",
+                token("ADMIN")
+            )
+        )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(
+            delete(path + product.getProductId()).header(
+                "Authorization",
+                token("ADMIN")
+            )
+        ).andExpect(status().isNoContent());
         assertThat(products.existsById(product.getProductId())).isTrue();
         assertThat(associations.count()).isZero();
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"0", "-1", "100.01", "150"})
-    void invalidPromotionAndVoucherPercentAreRejectedOnCreateAndUpdate(String percent) throws Exception {
+    @ValueSource(strings = { "0", "-1", "100.01", "150" })
+    void invalidPromotionAndVoucherPercentAreRejectedOnCreateAndUpdate(
+        String percent
+    ) throws Exception {
         var promotion = promotion("Existing", "10", false);
         var voucher = voucher("EXISTING", DiscountType.PERCENT, "10", 1);
-        for (var builder : List.of(post("/api/admin/promotions"), put("/api/admin/promotions/" + promotion.getPromotionId()))) {
-            mvc.perform(builder.header("Authorization", token("ADMIN")).contentType(MediaType.APPLICATION_JSON)
-                            .content(json(promotionRequest(percent)))).andExpect(status().isBadRequest());
+        for (var builder : List.of(
+            post("/api/admin/promotions"),
+            put("/api/admin/promotions/" + promotion.getPromotionId())
+        )) {
+            mvc.perform(
+                builder
+                    .header("Authorization", token("ADMIN"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json(promotionRequest(percent)))
+            ).andExpect(status().isBadRequest());
         }
-        for (var builder : List.of(post("/api/admin/vouchers"), put("/api/admin/vouchers/" + voucher.getVoucherId()))) {
-            mvc.perform(builder.header("Authorization", token("ADMIN")).contentType(MediaType.APPLICATION_JSON)
-                            .content(json(voucherRequest("EXISTING", "PERCENT", percent, 1)))).andExpect(status().isBadRequest());
+        for (var builder : List.of(
+            post("/api/admin/vouchers"),
+            put("/api/admin/vouchers/" + voucher.getVoucherId())
+        )) {
+            mvc.perform(
+                builder
+                    .header("Authorization", token("ADMIN"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        json(voucherRequest("EXISTING", "PERCENT", percent, 1))
+                    )
+            ).andExpect(status().isBadRequest());
         }
     }
 
     @Test
     void invalidMarketingTimeAndUnknownFieldsAre400() throws Exception {
-        var voucher = new VoucherRequest("TEST", "Voucher", DiscountType.FIXED, new BigDecimal("10"), BigDecimal.ZERO,
-                null, 1, NOW, NOW, ActiveStatus.ACTIVE);
-        mvc.perform(post("/api/admin/vouchers").header("Authorization", token("ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON).content(json(voucher))).andExpect(status().isBadRequest());
-        var promotion = new PromotionRequest("Bad", null, new BigDecimal("10"), NOW.plusDays(1), NOW, ActiveStatus.ACTIVE);
-        mvc.perform(post("/api/admin/promotions").header("Authorization", token("ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON).content(json(promotion))).andExpect(status().isBadRequest());
-        mvc.perform(post("/api/admin/promotions").header("Authorization", token("ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"promotionName\":\"X\",\"discountType\":\"FIXED\"}"))
-                .andExpect(status().isBadRequest());
+        var voucher = new VoucherRequest(
+            "TEST",
+            "Voucher",
+            DiscountType.FIXED,
+            new BigDecimal("10"),
+            BigDecimal.ZERO,
+            null,
+            1,
+            NOW,
+            NOW,
+            ActiveStatus.ACTIVE
+        );
+        mvc.perform(
+            post("/api/admin/vouchers")
+                .header("Authorization", token("ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(voucher))
+        ).andExpect(status().isBadRequest());
+        var promotion = new PromotionRequest(
+            "Bad",
+            null,
+            new BigDecimal("10"),
+            NOW.plusDays(1),
+            NOW,
+            ActiveStatus.ACTIVE
+        );
+        mvc.perform(
+            post("/api/admin/promotions")
+                .header("Authorization", token("ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(promotion))
+        ).andExpect(status().isBadRequest());
+        mvc.perform(
+            post("/api/admin/promotions")
+                .header("Authorization", token("ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"promotionName\":\"X\",\"discountType\":\"FIXED\"}")
+        ).andExpect(status().isBadRequest());
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"A", "STAFF"})
-    void customerAndStaffCannotReadOrMutateAdminMarketing(String role) throws Exception {
-        mvc.perform(get("/api/admin/vouchers").header("Authorization", token(role))).andExpect(status().isForbidden());
-        mvc.perform(post("/api/admin/vouchers").header("Authorization", token(role)).contentType(MediaType.APPLICATION_JSON)
-                        .content(json(voucherRequest("TEST", "FIXED", "10", 1)))).andExpect(status().isForbidden());
-        mvc.perform(post("/api/admin/promotions").header("Authorization", token(role)).contentType(MediaType.APPLICATION_JSON)
-                        .content(json(promotionRequest("10")))).andExpect(status().isForbidden());
+    @ValueSource(strings = { "A", "STAFF" })
+    void customerAndStaffCannotReadOrMutateAdminMarketing(String role)
+        throws Exception {
+        mvc.perform(
+            get("/api/admin/vouchers").header("Authorization", token(role))
+        ).andExpect(status().isForbidden());
+        mvc.perform(
+            post("/api/admin/vouchers")
+                .header("Authorization", token(role))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(voucherRequest("TEST", "FIXED", "10", 1)))
+        ).andExpect(status().isForbidden());
+        mvc.perform(
+            post("/api/admin/promotions")
+                .header("Authorization", token(role))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(promotionRequest("10")))
+        ).andExpect(status().isForbidden());
     }
 
     @Test
     void previewRequiresCustomerAndAnonymousAdminIs401() throws Exception {
-        String body = json(new VoucherValidationRequest("TEST", List.of(new CheckoutItemRequest(first.getVariantId(), 1))));
-        mvc.perform(post("/api/vouchers/validate").contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isUnauthorized());
+        String body = json(
+            new VoucherValidationRequest(
+                "TEST",
+                List.of(new CheckoutItemRequest(first.getVariantId(), 1))
+            )
+        );
+        mvc.perform(
+            post("/api/vouchers/validate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+        ).andExpect(status().isUnauthorized());
         for (String role : List.of("STAFF", "ADMIN")) {
-            mvc.perform(post("/api/vouchers/validate").header("Authorization", token(role))
-                            .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
+            mvc.perform(
+                post("/api/vouchers/validate")
+                    .header("Authorization", token(role))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body)
+            ).andExpect(status().isForbidden());
         }
-        mvc.perform(get("/api/admin/vouchers")).andExpect(status().isUnauthorized());
-        mvc.perform(post("/api/promotions/active").contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/admin/vouchers")).andExpect(
+            status().isUnauthorized()
+        );
+        mvc.perform(
+            post("/api/promotions/active")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}")
+        ).andExpect(status().isUnauthorized());
     }
 
     @Test
     void noHardDeleteAndMissingAdminResourcesAre404() throws Exception {
         var voucher = voucher("TEST", DiscountType.FIXED, "10", 1);
         var promotion = promotion("Test", "10", false);
-        mvc.perform(delete("/api/admin/vouchers/" + voucher.getVoucherId()).header("Authorization", token("ADMIN")))
-                .andExpect(status().isMethodNotAllowed());
-        mvc.perform(delete("/api/admin/promotions/" + promotion.getPromotionId()).header("Authorization", token("ADMIN")))
-                .andExpect(status().isMethodNotAllowed());
-        mvc.perform(get("/api/admin/vouchers/999999").header("Authorization", token("ADMIN"))).andExpect(status().isNotFound());
-        mvc.perform(get("/api/admin/promotions/999999").header("Authorization", token("ADMIN"))).andExpect(status().isNotFound());
+        mvc.perform(
+            delete("/api/admin/vouchers/" + voucher.getVoucherId()).header(
+                "Authorization",
+                token("ADMIN")
+            )
+        ).andExpect(status().isMethodNotAllowed());
+        mvc.perform(
+            delete(
+                "/api/admin/promotions/" + promotion.getPromotionId()
+            ).header("Authorization", token("ADMIN"))
+        ).andExpect(status().isMethodNotAllowed());
+        mvc.perform(
+            get("/api/admin/vouchers/999999").header(
+                "Authorization",
+                token("ADMIN")
+            )
+        ).andExpect(status().isNotFound());
+        mvc.perform(
+            get("/api/admin/promotions/999999").header(
+                "Authorization",
+                token("ADMIN")
+            )
+        ).andExpect(status().isNotFound());
     }
 
     @Test
@@ -686,14 +1265,29 @@ class MarketingApiTest {
         promotion("One", "10", true);
         promotion("Two", "20", true);
         var voucher = voucher("TEST", DiscountType.PERCENT, "10", 1);
-        var result = orderService.checkout(new CheckoutRequest(List.of(new CheckoutItemRequest(first.getVariantId(), 1),
-                new CheckoutItemRequest(second.getVariantId(), 1)), "City", "TEST"), actor("A"));
-        var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        var result = orderService.checkout(
+            new CheckoutRequest(
+                List.of(
+                    new CheckoutItemRequest(first.getVariantId(), 1),
+                    new CheckoutItemRequest(second.getVariantId(), 1)
+                ),
+                "City",
+                "TEST"
+            ),
+            actor("A")
+        );
+        var statistics = entityManagerFactory
+            .unwrap(SessionFactory.class)
+            .getStatistics();
         statistics.clear();
-        assertThat(catalog.getPublicDetail(product.getProductId()).variants()).hasSize(2);
+        assertThat(
+            catalog.getPublicDetail(product.getProductId()).variants()
+        ).hasSize(2);
         assertThat(statistics.getPrepareStatementCount()).isEqualTo(3);
         statistics.clear();
-        assertThat(orderService.staffDetail(result.orderId()).items()).hasSize(2);
+        assertThat(orderService.staffDetail(result.orderId()).items()).hasSize(
+            2
+        );
         assertThat(statistics.getPrepareStatementCount()).isEqualTo(2);
         assertThat(remaining(voucher)).isZero();
     }

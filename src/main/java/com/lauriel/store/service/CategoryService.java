@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CategoryService {
+
     private final CategoryRepository repository;
 
     public CategoryService(CategoryRepository repository) {
@@ -28,12 +29,19 @@ public class CategoryService {
 
     @Transactional(readOnly = true)
     public List<CategorySummaryResponse> listActive() {
-        return repository.findByStatusOrderByCategoryNameAscCategoryIdAsc(ActiveStatus.ACTIVE)
-                .stream().map(this::summary).toList();
+        return repository
+            .findByStatusOrderByCategoryNameAscCategoryIdAsc(
+                ActiveStatus.ACTIVE
+            )
+            .stream()
+            .map(this::summary)
+            .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<CategorySummaryResponse> listSelectable(Long currentCategoryId) {
+    public List<CategorySummaryResponse> listSelectable(
+        Long currentCategoryId
+    ) {
         var choices = new LinkedHashMap<Long, CategorySummaryResponse>();
         listActive().forEach(item -> choices.put(item.categoryId(), item));
         if (currentCategoryId != null) {
@@ -46,9 +54,12 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public CategoryResponse detail(Long id) {
         Category category = require(id);
-        return repository.findAllWithProductCount().stream()
-                .filter(item -> item.categoryId().equals(category.getCategoryId()))
-                .findFirst().orElseThrow();
+        return repository
+            .findAllWithProductCount()
+            .stream()
+            .filter(item -> item.categoryId().equals(category.getCategoryId()))
+            .findFirst()
+            .orElseThrow();
     }
 
     @Transactional
@@ -68,7 +79,9 @@ public class CategoryService {
     public CategoryResponse update(Long id, CategoryRequest request) {
         Category category = require(id);
         String name = normalize(request.categoryName());
-        if (repository.existsByCategoryNameIgnoreCaseAndCategoryIdNot(name, id)) {
+        if (
+            repository.existsByCategoryNameIgnoreCaseAndCategoryIdNot(name, id)
+        ) {
             throw new DuplicateResourceException("Danh mục đã tồn tại");
         }
         category.setCategoryName(name);
@@ -89,14 +102,19 @@ public class CategoryService {
     public Category requireAssignable(Long id) {
         Category category = require(id);
         if (category.getStatus() != ActiveStatus.ACTIVE) {
-            throw new com.lauriel.store.exception.BadRequestException("Không thể gán sản phẩm vào danh mục ngừng hoạt động");
+            throw new com.lauriel.store.exception.BadRequestException(
+                "Không thể gán sản phẩm vào danh mục ngừng hoạt động"
+            );
         }
         return category;
     }
 
     private Category require(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
+        return repository
+            .findById(id)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy danh mục")
+            );
     }
 
     private String normalize(String value) {
@@ -104,11 +122,19 @@ public class CategoryService {
     }
 
     private CategorySummaryResponse summary(Category category) {
-        return new CategorySummaryResponse(category.getCategoryId(), category.getCategoryName());
+        return new CategorySummaryResponse(
+            category.getCategoryId(),
+            category.getCategoryName()
+        );
     }
 
     private CategoryResponse response(Category category, long count) {
-        return new CategoryResponse(category.getCategoryId(), category.getCategoryName(),
-                category.getStatus(), category.getCreatedAt(), count);
+        return new CategoryResponse(
+            category.getCategoryId(),
+            category.getCategoryName(),
+            category.getStatus(),
+            category.getCreatedAt(),
+            count
+        );
     }
 }

@@ -20,17 +20,27 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class OrderCreatedTelegramListenerTest {
-    @Autowired private ApplicationEventPublisher events;
-    @Autowired private PlatformTransactionManager transactionManager;
-    @MockitoBean private TelegramNotificationService telegram;
+
+    @Autowired
+    private ApplicationEventPublisher events;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
+    @MockitoBean
+    private TelegramNotificationService telegram;
 
     @DynamicPropertySource
-    static void properties(DynamicPropertyRegistry properties) throws Exception {
+    static void properties(DynamicPropertyRegistry properties)
+        throws Exception {
         String url = TestSchema.createIsolatedDatabase();
         properties.add("spring.datasource.url", () -> url);
         properties.add("spring.datasource.username", () -> "sa");
         properties.add("spring.datasource.password", () -> "");
-        properties.add("spring.datasource.driver-class-name", () -> "org.h2.Driver");
+        properties.add(
+            "spring.datasource.driver-class-name",
+            () -> "org.h2.Driver"
+        );
         properties.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
         properties.add("spring.sql.init.mode", () -> "never");
         properties.add("app.jwt.secret", TestSecrets::randomBase64);
@@ -41,24 +51,37 @@ class OrderCreatedTelegramListenerTest {
     @Test
     void committedTransactionInvokesAfterCommitListener() {
         new TransactionTemplate(transactionManager).executeWithoutResult(
-                status -> events.publishEvent(event(1L)));
+            status -> events.publishEvent(event(1L))
+        );
 
         verify(telegram).sendNewOrderNotification(event(1L));
     }
 
     @Test
     void rolledBackTransactionNeverInvokesAfterCommitListener() {
-        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            events.publishEvent(event(2L));
-            status.setRollbackOnly();
-        });
+        new TransactionTemplate(transactionManager).executeWithoutResult(
+            status -> {
+                events.publishEvent(event(2L));
+                status.setRollbackOnly();
+            }
+        );
 
         verifyNoInteractions(telegram);
     }
 
     private OrderCreatedEvent event(Long id) {
-        return new OrderCreatedEvent(id, "Khách", "0901", "Địa chỉ",
-                BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.ONE, new BigDecimal("11"),
-                com.lauriel.store.entity.enums.OrderStatus.PENDING, null, List.of());
+        return new OrderCreatedEvent(
+            id,
+            "Khách",
+            "0901",
+            "Địa chỉ",
+            BigDecimal.TEN,
+            BigDecimal.ZERO,
+            BigDecimal.ONE,
+            new BigDecimal("11"),
+            com.lauriel.store.entity.enums.OrderStatus.PENDING,
+            null,
+            List.of()
+        );
     }
 }

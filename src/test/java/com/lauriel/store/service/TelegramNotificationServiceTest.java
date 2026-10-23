@@ -20,6 +20,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 class TelegramNotificationServiceTest {
+
     @Test
     void disabledTelegramDoesNotCallHttp() {
         var properties = configured();
@@ -38,11 +39,20 @@ class TelegramNotificationServiceTest {
         var properties = configured();
         var builder = RestClient.builder().baseUrl("https://api.telegram.org");
         var server = MockRestServiceServer.bindTo(builder).build();
-        server.expect(requestTo("https://api.telegram.org/botfake-token/sendMessage"))
-                .andExpect(content().string(containsString("\"chat_id\":\"12345\"")))
-                .andExpect(content().string(containsString("Mã đơn: #125")))
-                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("fake-token"))))
-                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        server
+            .expect(
+                requestTo("https://api.telegram.org/botfake-token/sendMessage")
+            )
+            .andExpect(
+                content().string(containsString("\"chat_id\":\"12345\""))
+            )
+            .andExpect(content().string(containsString("Mã đơn: #125")))
+            .andExpect(
+                content().string(
+                    org.hamcrest.Matchers.not(containsString("fake-token"))
+                )
+            )
+            .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
         service(properties, builder).sendNewOrderNotification(event());
 
@@ -54,18 +64,29 @@ class TelegramNotificationServiceTest {
         var properties = configured();
         var builder = RestClient.builder().baseUrl("https://api.telegram.org");
         var server = MockRestServiceServer.bindTo(builder).build();
-        server.expect(requestTo("https://api.telegram.org/botfake-token/sendMessage"))
-                .andRespond(withServerError());
+        server
+            .expect(
+                requestTo("https://api.telegram.org/botfake-token/sendMessage")
+            )
+            .andRespond(withServerError());
 
-        assertThatCode(() -> service(properties, builder).sendNewOrderNotification(event()))
-                .doesNotThrowAnyException();
+        assertThatCode(() ->
+            service(properties, builder).sendNewOrderNotification(event())
+        ).doesNotThrowAnyException();
 
         server.verify();
     }
 
-    private TelegramNotificationService service(TelegramProperties properties, RestClient.Builder builder) {
-        return new TelegramNotificationService(properties, new TelegramOrderMessageFormatter(),
-                builder.build(), new SyncTaskExecutor());
+    private TelegramNotificationService service(
+        TelegramProperties properties,
+        RestClient.Builder builder
+    ) {
+        return new TelegramNotificationService(
+            properties,
+            new TelegramOrderMessageFormatter(),
+            builder.build(),
+            new SyncTaskExecutor()
+        );
     }
 
     private TelegramProperties configured() {
@@ -77,10 +98,18 @@ class TelegramNotificationServiceTest {
     }
 
     private OrderCreatedEvent event() {
-        return new OrderCreatedEvent(125L, "Customer", "0901", "Address",
-                new BigDecimal("100000"), BigDecimal.ZERO, new BigDecimal("20000"),
-                new BigDecimal("120000"), OrderStatus.PENDING,
-                LocalDateTime.of(2026, 9, 30, 20, 15),
-                List.of(new OrderCreatedEvent.Item("Áo", "M", "Đen", 1)));
+        return new OrderCreatedEvent(
+            125L,
+            "Customer",
+            "0901",
+            "Address",
+            new BigDecimal("100000"),
+            BigDecimal.ZERO,
+            new BigDecimal("20000"),
+            new BigDecimal("120000"),
+            OrderStatus.PENDING,
+            LocalDateTime.of(2026, 9, 30, 20, 15),
+            List.of(new OrderCreatedEvent.Item("Áo", "M", "Đen", 1))
+        );
     }
 }

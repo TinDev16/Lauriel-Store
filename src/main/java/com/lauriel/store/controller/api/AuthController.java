@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
     private final AuthService authService;
 
     public AuthController(AuthService authService) {
@@ -28,7 +29,9 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public RegisterResponse register(@Valid @RequestBody RegisterRequest request) {
+    public RegisterResponse register(
+        @Valid @RequestBody RegisterRequest request
+    ) {
         return authService.registerCustomer(request);
     }
 
@@ -39,6 +42,10 @@ public class AuthController {
 
     @GetMapping("/me")
     public AuthUserResponse me(@AuthenticationPrincipal StoreUserDetails user) {
-        return new AuthUserResponse(user.getUserId(), user.getUsername(), user.getRole().name());
+        return new AuthUserResponse(
+            user.getUserId(),
+            user.getUsername(),
+            user.getRole().name()
+        );
     }
 }

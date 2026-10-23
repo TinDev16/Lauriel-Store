@@ -14,6 +14,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Promotion {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "promotion_id")
@@ -25,10 +26,19 @@ public class Promotion {
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
-    @Column(name = "discount_percent", precision = 5, scale = 2, nullable = false)
+    @Column(
+        name = "discount_percent",
+        precision = 5,
+        scale = 2,
+        nullable = false
+    )
     private BigDecimal discountPercent;
 
-    @Column(name = "start_date", columnDefinition = "datetime", nullable = false)
+    @Column(
+        name = "start_date",
+        columnDefinition = "datetime",
+        nullable = false
+    )
     private LocalDateTime startDate;
 
     @Column(name = "end_date", columnDefinition = "datetime", nullable = false)
@@ -40,5 +50,4 @@ public class Promotion {
 
     @OneToMany(mappedBy = "promotion", fetch = FetchType.LAZY)
     private List<PromotionProduct> promotionProducts = new ArrayList<>();
-
 }

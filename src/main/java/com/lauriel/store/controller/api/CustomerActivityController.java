@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/customer/activity")
 public class CustomerActivityController {
+
     private final CustomerEngagementService service;
 
     public CustomerActivityController(CustomerEngagementService service) {
@@ -22,14 +23,18 @@ public class CustomerActivityController {
     }
 
     @PostMapping("/heartbeat")
-    public ResponseEntity<Void> heartbeat(@AuthenticationPrincipal StoreUserDetails user) {
+    public ResponseEntity<Void> heartbeat(
+        @AuthenticationPrincipal StoreUserDetails user
+    ) {
         service.heartbeat(user.getUserId());
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/cart")
-    public ResponseEntity<Void> syncCart(@AuthenticationPrincipal StoreUserDetails user,
-            @Valid @RequestBody CartSnapshotRequest request) {
+    public ResponseEntity<Void> syncCart(
+        @AuthenticationPrincipal StoreUserDetails user,
+        @Valid @RequestBody CartSnapshotRequest request
+    ) {
         service.syncCart(user.getUserId(), request);
         return ResponseEntity.noContent().build();
     }

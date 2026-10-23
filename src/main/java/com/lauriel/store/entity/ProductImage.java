@@ -12,22 +12,36 @@ import org.hibernate.generator.EventType;
 @Getter
 @Setter
 public class ProductImage {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_image_id")
     private Long productImageId;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "color_id")
     private Color color;
+
     @Column(name = "image_url", columnDefinition = "text", nullable = false)
     private String imageUrl;
+
     @Column(name = "is_primary", nullable = false)
     private boolean primary;
+
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
+
     @Generated(event = EventType.INSERT)
-    @Column(name = "created_at", columnDefinition = "datetime", nullable = false, insertable = false, updatable = false)
+    @Column(
+        name = "created_at",
+        columnDefinition = "datetime",
+        nullable = false,
+        insertable = false,
+        updatable = false
+    )
     private LocalDateTime createdAt;
 }

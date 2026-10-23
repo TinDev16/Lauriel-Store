@@ -16,6 +16,7 @@ import org.hibernate.generator.EventType;
 @Getter
 @Setter
 public class PurchaseReceipt {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "receipt_id")
@@ -38,10 +39,15 @@ public class PurchaseReceipt {
 
     // MySQL owns this timestamp; Hibernate reads the generated value back.
     @Generated(event = EventType.INSERT)
-    @Column(name = "created_at", columnDefinition = "datetime", nullable = false, insertable = false, updatable = false)
+    @Column(
+        name = "created_at",
+        columnDefinition = "datetime",
+        nullable = false,
+        insertable = false,
+        updatable = false
+    )
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "purchaseReceipt", fetch = FetchType.LAZY)
     private List<PurchaseReceiptDetail> details = new ArrayList<>();
-
 }

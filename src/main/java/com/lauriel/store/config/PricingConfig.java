@@ -5,6 +5,7 @@ import org.springframework.context.annotation.*;
 
 @Configuration
 public class PricingConfig {
+
     @Bean
     public Clock pricingClock() {
         return Clock.systemDefaultZone();

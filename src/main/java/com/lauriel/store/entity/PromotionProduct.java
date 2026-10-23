@@ -9,6 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PromotionProduct {
+
     @EmbeddedId
     private PromotionProductId id = new PromotionProductId();
 
@@ -21,5 +22,4 @@ public class PromotionProduct {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
-
 }

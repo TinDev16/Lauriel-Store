@@ -9,6 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Color {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "color_id")
@@ -16,5 +17,4 @@ public class Color {
 
     @Column(name = "color_name", length = 50, nullable = false, unique = true)
     private String colorName;
-
 }

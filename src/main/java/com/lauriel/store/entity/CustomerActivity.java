@@ -17,6 +17,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CustomerActivity {
+
     @Id
     @Column(name = "user_id", nullable = false)
     private Long userId;

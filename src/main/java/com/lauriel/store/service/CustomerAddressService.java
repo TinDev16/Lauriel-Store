@@ -14,10 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class CustomerAddressService {
+
     private final CustomerAddressRepository addresses;
     private final CustomerRepository customers;
 
-    public CustomerAddressService(CustomerAddressRepository addresses, CustomerRepository customers) {
+    public CustomerAddressService(
+        CustomerAddressRepository addresses,
+        CustomerRepository customers
+    ) {
         this.addresses = addresses;
         this.customers = customers;
     }
@@ -25,9 +29,16 @@ public class CustomerAddressService {
     @Transactional
     public List<StoreCustomerAddress> listForCheckout(Long userId) {
         Customer customer = requireCustomer(userId);
-        List<CustomerAddress> saved = new ArrayList<>(addresses
-                .findByCustomer_CustomerIdOrderByDefaultAddressDescAddressIdAsc(customer.getCustomerId()));
-        if (saved.isEmpty() && customer.getAddress() != null && !customer.getAddress().isBlank()) {
+        List<CustomerAddress> saved = new ArrayList<>(
+            addresses.findByCustomer_CustomerIdOrderByDefaultAddressDescAddressIdAsc(
+                customer.getCustomerId()
+            )
+        );
+        if (
+            saved.isEmpty() &&
+            customer.getAddress() != null &&
+            !customer.getAddress().isBlank()
+        ) {
             CustomerAddress legacyAddress = new CustomerAddress();
             legacyAddress.setCustomer(customer);
             legacyAddress.setAddressText(customer.getAddress().strip());
@@ -41,15 +52,25 @@ public class CustomerAddressService {
     }
 
     @Transactional
-    public void saveFromCheckout(Long userId, String addressText, boolean makeDefault) {
+    public void saveFromCheckout(
+        Long userId,
+        String addressText,
+        boolean makeDefault
+    ) {
         Customer customer = requireCustomer(userId);
         String normalized = addressText.strip();
-        List<CustomerAddress> saved = new ArrayList<>(addresses
-                .findByCustomer_CustomerIdOrderByDefaultAddressDescAddressIdAsc(customer.getCustomerId()));
-        CustomerAddress selected = saved.stream()
-                .filter(address -> sameAddress(address.getAddressText(), normalized))
-                .findFirst()
-                .orElse(null);
+        List<CustomerAddress> saved = new ArrayList<>(
+            addresses.findByCustomer_CustomerIdOrderByDefaultAddressDescAddressIdAsc(
+                customer.getCustomerId()
+            )
+        );
+        CustomerAddress selected = saved
+            .stream()
+            .filter(address ->
+                sameAddress(address.getAddressText(), normalized)
+            )
+            .findFirst()
+            .orElse(null);
 
         if (selected == null) {
             selected = new CustomerAddress();
@@ -72,27 +93,44 @@ public class CustomerAddressService {
         addresses.flush();
     }
 
-    private void synchronizeProfileDefault(Customer customer, List<CustomerAddress> saved) {
-        if (customer.getAddress() == null || customer.getAddress().isBlank() || saved.isEmpty()) return;
+    private void synchronizeProfileDefault(
+        Customer customer,
+        List<CustomerAddress> saved
+    ) {
+        if (
+            customer.getAddress() == null ||
+            customer.getAddress().isBlank() ||
+            saved.isEmpty()
+        ) return;
         String profileAddress = customer.getAddress().strip();
-        CustomerAddress match = saved.stream()
-                .filter(address -> sameAddress(address.getAddressText(), profileAddress))
-                .findFirst()
-                .orElse(null);
+        CustomerAddress match = saved
+            .stream()
+            .filter(address ->
+                sameAddress(address.getAddressText(), profileAddress)
+            )
+            .findFirst()
+            .orElse(null);
         if (match == null) {
             match = new CustomerAddress();
             match.setCustomer(customer);
             match.setAddressText(profileAddress);
             saved.add(match);
         }
-        for (CustomerAddress address : saved) address.setDefaultAddress(address == match);
+        for (CustomerAddress address : saved)
+            address.setDefaultAddress(address == match);
         addresses.saveAll(saved);
     }
 
-    private void ensureSingleDefault(Customer customer, List<CustomerAddress> saved) {
+    private void ensureSingleDefault(
+        Customer customer,
+        List<CustomerAddress> saved
+    ) {
         if (saved.isEmpty()) return;
-        CustomerAddress selected = saved.stream().filter(CustomerAddress::isDefaultAddress).findFirst()
-                .orElse(saved.getFirst());
+        CustomerAddress selected = saved
+            .stream()
+            .filter(CustomerAddress::isDefaultAddress)
+            .findFirst()
+            .orElse(saved.getFirst());
         boolean changed = false;
         for (CustomerAddress address : saved) {
             boolean shouldBeDefault = address == selected;
@@ -109,8 +147,11 @@ public class CustomerAddressService {
     }
 
     private Customer requireCustomer(Long userId) {
-        return customers.findByUser_UserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ khách hàng"));
+        return customers
+            .findByUser_UserId(userId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy hồ sơ khách hàng")
+            );
     }
 
     private static boolean sameAddress(String first, String second) {
@@ -118,6 +159,10 @@ public class CustomerAddressService {
     }
 
     private static StoreCustomerAddress response(CustomerAddress address) {
-        return new StoreCustomerAddress(address.getAddressId(), address.getAddressText(), address.isDefaultAddress());
+        return new StoreCustomerAddress(
+            address.getAddressId(),
+            address.getAddressText(),
+            address.isDefaultAddress()
+        );
     }
 }

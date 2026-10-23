@@ -10,6 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class OrderDetail {
+
     @EmbeddedId
     private OrderDetailId id = new OrderDetailId();
 
@@ -29,10 +30,14 @@ public class OrderDetail {
     @Column(name = "unit_price", precision = 12, scale = 2, nullable = false)
     private BigDecimal unitPrice;
 
-    @Column(name = "discount_amount", precision = 12, scale = 2, nullable = false)
+    @Column(
+        name = "discount_amount",
+        precision = 12,
+        scale = 2,
+        nullable = false
+    )
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
     @Column(name = "subtotal", precision = 14, scale = 2, nullable = false)
     private BigDecimal subtotal;
-
 }

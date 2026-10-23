@@ -16,6 +16,7 @@ import org.hibernate.generator.EventType;
 @Getter
 @Setter
 public class Product {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_id")
@@ -42,17 +43,34 @@ public class Product {
     private ActiveStatus status = ActiveStatus.ACTIVE;
 
     @Generated(event = EventType.INSERT)
-    @Column(name = "created_at", columnDefinition = "datetime", nullable = false, insertable = false, updatable = false)
+    @Column(
+        name = "created_at",
+        columnDefinition = "datetime",
+        nullable = false,
+        insertable = false,
+        updatable = false
+    )
     private LocalDateTime createdAt;
 
-    @Generated(event = {EventType.INSERT, EventType.UPDATE})
-    @Column(name = "updated_at", columnDefinition = "datetime", nullable = false, insertable = false, updatable = false)
+    @Generated(event = { EventType.INSERT, EventType.UPDATE })
+    @Column(
+        name = "updated_at",
+        columnDefinition = "datetime",
+        nullable = false,
+        insertable = false,
+        updatable = false
+    )
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     private List<ProductVariant> variants = new ArrayList<>();
 
-    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(
+        mappedBy = "product",
+        fetch = FetchType.LAZY,
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
     @OrderBy("displayOrder ASC, productImageId ASC")
     private List<ProductImage> images = new ArrayList<>();
 }

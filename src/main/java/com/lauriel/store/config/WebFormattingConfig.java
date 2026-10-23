@@ -9,9 +9,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebFormattingConfig implements WebMvcConfigurer {
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new WebPaginationInterceptor()).addPathPatterns("/admin", "/admin/**");
+        registry
+            .addInterceptor(new WebPaginationInterceptor())
+            .addPathPatterns("/admin", "/admin/**");
     }
 
     @Override

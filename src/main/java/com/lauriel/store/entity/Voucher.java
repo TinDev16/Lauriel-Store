@@ -13,6 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Voucher {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "voucher_id")
@@ -28,10 +29,20 @@ public class Voucher {
     @Column(name = "discount_type", nullable = false)
     private DiscountType discountType;
 
-    @Column(name = "discount_value", precision = 12, scale = 2, nullable = false)
+    @Column(
+        name = "discount_value",
+        precision = 12,
+        scale = 2,
+        nullable = false
+    )
     private BigDecimal discountValue;
 
-    @Column(name = "min_order_amount", precision = 12, scale = 2, nullable = false)
+    @Column(
+        name = "min_order_amount",
+        precision = 12,
+        scale = 2,
+        nullable = false
+    )
     private BigDecimal minOrderAmount = BigDecimal.ZERO;
 
     @Column(name = "max_discount_amount", precision = 12, scale = 2)
@@ -40,7 +51,11 @@ public class Voucher {
     @Column(name = "quantity", nullable = false)
     private Integer quantity = 0;
 
-    @Column(name = "start_date", columnDefinition = "datetime", nullable = false)
+    @Column(
+        name = "start_date",
+        columnDefinition = "datetime",
+        nullable = false
+    )
     private LocalDateTime startDate;
 
     @Column(name = "end_date", columnDefinition = "datetime", nullable = false)
@@ -49,5 +64,4 @@ public class Voucher {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private ActiveStatus status = ActiveStatus.ACTIVE;
-
 }

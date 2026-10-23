@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/staff/inventory")
 public class InventoryController {
+
     private final InventoryService inventory;
 
     public InventoryController(InventoryService inventory) {
@@ -18,15 +19,19 @@ public class InventoryController {
     }
 
     @GetMapping
-    public PageResponse<InventoryResponse> list(@RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size) {
+    public PageResponse<InventoryResponse> list(
+        @RequestParam(defaultValue = "0") @Min(0) int page,
+        @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size
+    ) {
         return inventory.list(page, size, null);
     }
 
     @GetMapping("/low-stock")
-    public PageResponse<InventoryResponse> lowStock(@RequestParam(defaultValue = "5") @Min(0) int threshold,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size) {
+    public PageResponse<InventoryResponse> lowStock(
+        @RequestParam(defaultValue = "5") @Min(0) int threshold,
+        @RequestParam(defaultValue = "0") @Min(0) int page,
+        @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size
+    ) {
         return inventory.list(page, size, threshold);
     }
 
@@ -37,12 +42,17 @@ public class InventoryController {
 
     @GetMapping("/transactions")
     public PageResponse<InventoryTransactionResponse> history(
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size,
-            @RequestParam(required = false) @Positive Long variantId,
-            @RequestParam(required = false) InventoryTransactionType type,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        @RequestParam(defaultValue = "0") @Min(0) int page,
+        @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size,
+        @RequestParam(required = false) @Positive Long variantId,
+        @RequestParam(required = false) InventoryTransactionType type,
+        @RequestParam(required = false) @DateTimeFormat(
+            iso = DateTimeFormat.ISO.DATE_TIME
+        ) LocalDateTime from,
+        @RequestParam(required = false) @DateTimeFormat(
+            iso = DateTimeFormat.ISO.DATE_TIME
+        ) LocalDateTime to
+    ) {
         return inventory.history(page, size, variantId, type, from, to);
     }
 }

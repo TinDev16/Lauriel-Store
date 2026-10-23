@@ -1,4 +1,3 @@
 package com.lauriel.store.dto.response;
 
-public record SizeResponse(Long sizeId, String sizeName) {
-}
+public record SizeResponse(Long sizeId, String sizeName) {}

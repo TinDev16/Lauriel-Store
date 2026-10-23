@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/sizes")
 public class SizeController {
+
     private final SizeService service;
 
     public SizeController(SizeService service) {

@@ -20,29 +20,48 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 @Configuration
 @EnableConfigurationProperties(JwtProperties.class)
 public class JwtConfig {
+
     @Bean
     public JwtEncoder jwtEncoder(JwtProperties properties) {
         return NimbusJwtEncoder.withSecretKey(properties.secretKey())
-                .algorithm(MacAlgorithm.HS256).build();
+            .algorithm(MacAlgorithm.HS256)
+            .build();
     }
 
     @Bean
     public JwtDecoder jwtDecoder(JwtProperties properties, Clock clock) {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(properties.secretKey())
-                .macAlgorithm(MacAlgorithm.HS256).build();
-        JwtTimestampValidator timestamps = new JwtTimestampValidator(Duration.ZERO);
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(
+            properties.secretKey()
+        )
+            .macAlgorithm(MacAlgorithm.HS256)
+            .build();
+        JwtTimestampValidator timestamps = new JwtTimestampValidator(
+            Duration.ZERO
+        );
         timestamps.setClock(clock);
-        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
-                timestamps, new JwtIssuerValidator(JwtService.ISSUER),
+        decoder.setJwtValidator(
+            new DelegatingOAuth2TokenValidator<>(
+                timestamps,
+                new JwtIssuerValidator(JwtService.ISSUER),
                 jwt -> {
-                    if (jwt.getIssuedAt() == null || jwt.getExpiresAt() == null
-                            || !jwt.getExpiresAt().isAfter(jwt.getIssuedAt())
-                            || jwt.getIssuedAt().isAfter(clock.instant())) {
+                    if (
+                        jwt.getIssuedAt() == null ||
+                        jwt.getExpiresAt() == null ||
+                        !jwt.getExpiresAt().isAfter(jwt.getIssuedAt()) ||
+                        jwt.getIssuedAt().isAfter(clock.instant())
+                    ) {
                         return OAuth2TokenValidatorResult.failure(
-                                new OAuth2Error("invalid_token", "Token không hợp lệ", null));
+                            new OAuth2Error(
+                                "invalid_token",
+                                "Token không hợp lệ",
+                                null
+                            )
+                        );
                     }
                     return OAuth2TokenValidatorResult.success();
-                }));
+                }
+            )
+        );
         return decoder;
     }
 }

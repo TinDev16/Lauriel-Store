@@ -17,6 +17,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CustomerCartItem {
+
     @EmbeddedId
     private CustomerCartItemId id = new CustomerCartItemId();
 

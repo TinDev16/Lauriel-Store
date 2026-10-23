@@ -9,6 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Size {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "size_id")
@@ -16,5 +17,4 @@ public class Size {
 
     @Column(name = "size_name", length = 20, nullable = false, unique = true)
     private String sizeName;
-
 }

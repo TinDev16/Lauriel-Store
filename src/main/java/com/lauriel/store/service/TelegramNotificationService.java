@@ -12,17 +12,21 @@ import org.springframework.web.client.RestClient;
 
 @Service
 public class TelegramNotificationService {
-    private static final Logger log = LoggerFactory.getLogger(TelegramNotificationService.class);
+
+    private static final Logger log = LoggerFactory.getLogger(
+        TelegramNotificationService.class
+    );
     private final TelegramProperties properties;
     private final TelegramOrderMessageFormatter formatter;
     private final RestClient client;
     private final TaskExecutor executor;
 
     public TelegramNotificationService(
-            TelegramProperties properties,
-            TelegramOrderMessageFormatter formatter,
-            @Qualifier("telegramRestClient") RestClient client,
-            @Qualifier("telegramTaskExecutor") TaskExecutor executor) {
+        TelegramProperties properties,
+        TelegramOrderMessageFormatter formatter,
+        @Qualifier("telegramRestClient") RestClient client,
+        @Qualifier("telegramTaskExecutor") TaskExecutor executor
+    ) {
         this.properties = properties;
         this.formatter = formatter;
         this.client = client;
@@ -34,23 +38,35 @@ public class TelegramNotificationService {
         try {
             executor.execute(() -> deliver(event));
         } catch (RuntimeException exception) {
-            log.warn("Không thể xếp thông báo Telegram cho đơn #{} ({})",
-                    event.orderId(), exception.getClass().getSimpleName());
+            log.warn(
+                "Không thể xếp thông báo Telegram cho đơn #{} ({})",
+                event.orderId(),
+                exception.getClass().getSimpleName()
+            );
         }
     }
 
     private void deliver(OrderCreatedEvent event) {
         try {
-            client.post()
-                    .uri("/bot" + properties.getBotToken() + "/sendMessage")
-                    .body(Map.of(
-                            "chat_id", properties.getChatId(),
-                            "text", formatter.format(event)))
-                    .retrieve()
-                    .toBodilessEntity();
+            client
+                .post()
+                .uri("/bot" + properties.getBotToken() + "/sendMessage")
+                .body(
+                    Map.of(
+                        "chat_id",
+                        properties.getChatId(),
+                        "text",
+                        formatter.format(event)
+                    )
+                )
+                .retrieve()
+                .toBodilessEntity();
         } catch (RuntimeException exception) {
-            log.warn("Gửi Telegram cho đơn #{} thất bại ({})",
-                    event.orderId(), exception.getClass().getSimpleName());
+            log.warn(
+                "Gửi Telegram cho đơn #{} thất bại ({})",
+                event.orderId(),
+                exception.getClass().getSimpleName()
+            );
         }
     }
 }

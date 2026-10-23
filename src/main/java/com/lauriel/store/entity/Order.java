@@ -17,6 +17,7 @@ import org.hibernate.generator.EventType;
 @Getter
 @Setter
 public class Order {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
@@ -40,13 +41,23 @@ public class Order {
     @Column(name = "order_promotion_percent", precision = 5, scale = 2)
     private BigDecimal orderPromotionPercent;
 
-    @Column(name = "order_promotion_discount", precision = 14, scale = 2, nullable = false)
+    @Column(
+        name = "order_promotion_discount",
+        precision = 14,
+        scale = 2,
+        nullable = false
+    )
     private BigDecimal orderPromotionDiscount = BigDecimal.ZERO;
 
     @Column(name = "total_amount", precision = 14, scale = 2, nullable = false)
     private BigDecimal totalAmount = BigDecimal.ZERO;
 
-    @Column(name = "discount_amount", precision = 14, scale = 2, nullable = false)
+    @Column(
+        name = "discount_amount",
+        precision = 14,
+        scale = 2,
+        nullable = false
+    )
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
     @Column(name = "shipping_fee", precision = 14, scale = 2, nullable = false)
@@ -59,7 +70,11 @@ public class Order {
     @Column(name = "status", nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
 
-    @Column(name = "shipping_address", columnDefinition = "text", nullable = false)
+    @Column(
+        name = "shipping_address",
+        columnDefinition = "text",
+        nullable = false
+    )
     private String shippingAddress;
 
     @Enumerated(EnumType.STRING)
@@ -68,15 +83,26 @@ public class Order {
 
     // MySQL owns this timestamp; Hibernate reads the generated value back.
     @Generated(event = EventType.INSERT)
-    @Column(name = "created_at", columnDefinition = "datetime", nullable = false, insertable = false, updatable = false)
+    @Column(
+        name = "created_at",
+        columnDefinition = "datetime",
+        nullable = false,
+        insertable = false,
+        updatable = false
+    )
     private LocalDateTime createdAt;
 
     // MySQL owns this timestamp; Hibernate reads the generated value back.
-    @Generated(event = {EventType.INSERT, EventType.UPDATE})
-    @Column(name = "updated_at", columnDefinition = "datetime", nullable = false, insertable = false, updatable = false)
+    @Generated(event = { EventType.INSERT, EventType.UPDATE })
+    @Column(
+        name = "updated_at",
+        columnDefinition = "datetime",
+        nullable = false,
+        insertable = false,
+        updatable = false
+    )
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
     private List<OrderDetail> details = new ArrayList<>();
-
 }

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SizeService {
+
     private final SizeRepository repository;
 
     public SizeService(SizeRepository repository) {
@@ -22,13 +23,22 @@ public class SizeService {
 
     @Transactional(readOnly = true)
     public List<SizeResponse> list() {
-        return repository.findAll(Sort.by("sizeName").and(Sort.by("sizeId")))
-                .stream().map(CatalogMapper::size).toList();
+        return repository
+            .findAll(Sort.by("sizeName").and(Sort.by("sizeId")))
+            .stream()
+            .map(CatalogMapper::size)
+            .toList();
     }
 
     @Transactional(readOnly = true)
     public SizeResponse detail(Long id) {
-        return CatalogMapper.size(repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy kích cỡ")));
+        return CatalogMapper.size(
+            repository
+                .findById(id)
+                .orElseThrow(() ->
+                    new ResourceNotFoundException("Không tìm thấy kích cỡ")
+                )
+        );
     }
 
     @Transactional
@@ -44,8 +54,11 @@ public class SizeService {
 
     @Transactional
     public SizeResponse update(Long sizeId, SizeRequest request) {
-        var size = repository.findById(sizeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy size"));
+        var size = repository
+            .findById(sizeId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy size")
+            );
         String name = request.sizeName().strip();
         if (repository.existsBySizeNameIgnoreCaseAndSizeIdNot(name, sizeId)) {
             throw new DuplicateResourceException("Size đã tồn tại");

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/colors")
 public class AdminColorController {
+
     private final ColorService service;
 
     public AdminColorController(ColorService service) {
@@ -24,7 +25,10 @@ public class AdminColorController {
     }
 
     @PutMapping("/{id}")
-    public ColorResponse update(@PathVariable @Positive Long id, @Valid @RequestBody ColorRequest request) {
+    public ColorResponse update(
+        @PathVariable @Positive Long id,
+        @Valid @RequestBody ColorRequest request
+    ) {
         return service.update(id, request);
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/sizes")
 public class AdminSizeController {
+
     private final SizeService service;
 
     public AdminSizeController(SizeService service) {
@@ -24,7 +25,10 @@ public class AdminSizeController {
     }
 
     @PutMapping("/{id}")
-    public SizeResponse update(@PathVariable @Positive Long id, @Valid @RequestBody SizeRequest request) {
+    public SizeResponse update(
+        @PathVariable @Positive Long id,
+        @Valid @RequestBody SizeRequest request
+    ) {
         return service.update(id, request);
     }
 }

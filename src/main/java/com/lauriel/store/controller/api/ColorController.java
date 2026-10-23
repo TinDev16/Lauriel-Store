@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/colors")
 public class ColorController {
+
     private final ColorService service;
 
     public ColorController(ColorService service) {

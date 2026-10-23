@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class CustomerService {
+
     private final CustomerRepository customers;
     private final UserRepository users;
 
@@ -27,27 +28,67 @@ public class CustomerService {
         return list(page, size, null, null);
     }
 
-    public PageResponse<CustomerResponse> list(int page, int size, String keyword,
-            com.lauriel.store.entity.enums.UserStatus status) {
-        String term = keyword == null || keyword.isBlank() ? null : "%" + keyword.strip().toLowerCase(java.util.Locale.ROOT) + "%";
-        org.springframework.data.jpa.domain.Specification<Customer> filter = (root, query, builder) -> {
-            var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
-            var user = root.join("user", jakarta.persistence.criteria.JoinType.LEFT);
-            if (status != null) predicates.add(builder.equal(user.get("status"), status));
-            if (term != null) predicates.add(builder.or(
+    public PageResponse<CustomerResponse> list(
+        int page,
+        int size,
+        String keyword,
+        com.lauriel.store.entity.enums.UserStatus status
+    ) {
+        String term =
+            keyword == null || keyword.isBlank()
+                ? null
+                : "%" +
+                  keyword.strip().toLowerCase(java.util.Locale.ROOT) +
+                  "%";
+        org.springframework.data.jpa.domain.Specification<Customer> filter = (
+            root,
+            query,
+            builder
+        ) -> {
+            var predicates =
+                new ArrayList<jakarta.persistence.criteria.Predicate>();
+            var user = root.join(
+                "user",
+                jakarta.persistence.criteria.JoinType.LEFT
+            );
+            if (status != null) predicates.add(
+                builder.equal(user.get("status"), status)
+            );
+            if (term != null) predicates.add(
+                builder.or(
                     builder.like(builder.lower(root.get("customerName")), term),
                     builder.like(builder.lower(root.get("phone")), term),
                     builder.like(builder.lower(user.get("username")), term),
-                    builder.like(builder.lower(user.get("email")), term)));
-            return builder.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+                    builder.like(builder.lower(user.get("email")), term)
+                )
+            );
+            return builder.and(
+                predicates.toArray(
+                    jakarta.persistence.criteria.Predicate[]::new
+                )
+            );
         };
-        return InventoryPagination.response(customers.findAll(filter, InventoryPagination.page(page, size,
-                Sort.by(Sort.Direction.DESC, "customerId"))), CustomerService::response);
+        return InventoryPagination.response(
+            customers.findAll(
+                filter,
+                InventoryPagination.page(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.DESC, "customerId")
+                )
+            ),
+            CustomerService::response
+        );
     }
 
     public CustomerResponse detail(Long id) {
-        return response(customers.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khách hàng")));
+        return response(
+            customers
+                .findById(id)
+                .orElseThrow(() ->
+                    new ResourceNotFoundException("Không tìm thấy khách hàng")
+                )
+        );
     }
 
     public ProfileResponse me(Long userId) {
@@ -59,8 +100,13 @@ public class CustomerService {
         Customer customer = requireByUser(userId);
         var user = customer.getUser();
         String email = normalizeNullable(request.email());
-        if (email != null && users.existsByEmailIgnoreCaseAndUserIdNot(email, userId)) {
-            throw new DuplicateResourceException("Email đã được sử dụng bởi tài khoản khác");
+        if (
+            email != null &&
+            users.existsByEmailIgnoreCaseAndUserIdNot(email, userId)
+        ) {
+            throw new DuplicateResourceException(
+                "Email đã được sử dụng bởi tài khoản khác"
+            );
         }
         String name = request.fullName().strip();
         String phone = normalizeNullable(request.phone());
@@ -77,28 +123,49 @@ public class CustomerService {
 
     public Map<Long, String> names(Collection<Long> ids) {
         Map<Long, String> result = new HashMap<>();
-        if (!ids.isEmpty()) customers.findAllById(ids)
-                .forEach(c -> result.put(c.getCustomerId(), c.getCustomerName()));
+        if (!ids.isEmpty()) customers
+            .findAllById(ids)
+            .forEach(c -> result.put(c.getCustomerId(), c.getCustomerName()));
         return result;
     }
 
     private Customer requireByUser(Long userId) {
-        return customers.findByUser_UserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ khách hàng"));
+        return customers
+            .findByUser_UserId(userId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy hồ sơ khách hàng")
+            );
     }
+
     private static String normalizeNullable(String value) {
         if (value == null || value.isBlank()) return null;
         return value.strip();
     }
+
     private static ProfileResponse profile(Customer c) {
         var u = c.getUser();
-        return new ProfileResponse(c.getCustomerId(), u.getUserId(), u.getUsername(), u.getFullName(),
-                u.getEmail(), c.getPhone(), c.getAddress());
+        return new ProfileResponse(
+            c.getCustomerId(),
+            u.getUserId(),
+            u.getUsername(),
+            u.getFullName(),
+            u.getEmail(),
+            c.getPhone(),
+            c.getAddress()
+        );
     }
+
     private static CustomerResponse response(Customer c) {
         var u = c.getUser();
-        return new CustomerResponse(c.getCustomerId(), u == null ? null : u.getUsername(), c.getCustomerName(),
-                u == null ? null : u.getEmail(), c.getPhone(), u == null ? null : u.getStatus(),
-                c.getCreatedAt(), c.getAddress());
+        return new CustomerResponse(
+            c.getCustomerId(),
+            u == null ? null : u.getUsername(),
+            c.getCustomerName(),
+            u == null ? null : u.getEmail(),
+            c.getPhone(),
+            u == null ? null : u.getStatus(),
+            c.getCreatedAt(),
+            c.getAddress()
+        );
     }
 }

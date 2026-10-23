@@ -16,6 +16,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class PromotionProductId implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     @Column(name = "promotion_id", nullable = false)
@@ -23,5 +24,4 @@ public class PromotionProductId implements Serializable {
 
     @Column(name = "product_id", nullable = false)
     private Long productId;
-
 }

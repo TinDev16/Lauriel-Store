@@ -7,16 +7,25 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class WebStoreHomeController {
+
     private final ProductService products;
     private final CategoryService categories;
     private final PromotionService promotions;
     private final OrderPromotionService orderPromotions;
     private final VoucherService vouchers;
 
-    public WebStoreHomeController(ProductService products, CategoryService categories,
-            PromotionService promotions, OrderPromotionService orderPromotions, VoucherService vouchers) {
-        this.products = products; this.categories = categories; this.promotions = promotions;
-        this.orderPromotions = orderPromotions; this.vouchers = vouchers;
+    public WebStoreHomeController(
+        ProductService products,
+        CategoryService categories,
+        PromotionService promotions,
+        OrderPromotionService orderPromotions,
+        VoucherService vouchers
+    ) {
+        this.products = products;
+        this.categories = categories;
+        this.promotions = promotions;
+        this.orderPromotions = orderPromotions;
+        this.vouchers = vouchers;
     }
 
     @GetMapping("/shop")
@@ -24,7 +33,10 @@ public class WebStoreHomeController {
         model.addAttribute("categories", categories.listActive());
         model.addAttribute("products", products.featured(8));
         model.addAttribute("promotions", promotions.list(0, 6, true).content());
-        model.addAttribute("orderPromotions", orderPromotions.active(0, 6).content());
+        model.addAttribute(
+            "orderPromotions",
+            orderPromotions.active(0, 6).content()
+        );
         model.addAttribute("vouchers", vouchers.listAvailable(0, 6).content());
         return "store/home";
     }

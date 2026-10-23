@@ -9,15 +9,16 @@ import org.springframework.web.client.RestClient;
 
 @Configuration
 public class TelegramConfig {
+
     @Bean("telegramRestClient")
     public RestClient telegramRestClient(TelegramProperties properties) {
         var requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.getConnectTimeout());
         requestFactory.setReadTimeout(properties.getReadTimeout());
         return RestClient.builder()
-                .baseUrl("https://api.telegram.org")
-                .requestFactory(requestFactory)
-                .build();
+            .baseUrl("https://api.telegram.org")
+            .requestFactory(requestFactory)
+            .build();
     }
 
     @Bean("telegramTaskExecutor")

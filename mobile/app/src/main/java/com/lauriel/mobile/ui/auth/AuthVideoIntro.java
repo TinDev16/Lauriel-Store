@@ -13,6 +13,7 @@ import android.view.View;
 import com.lauriel.mobile.R;
 
 final class AuthVideoIntro {
+
     private static final String KEY_DONE = "authIntroDone";
     private static final long INTRO_DURATION_MS = 3000L;
 
@@ -26,7 +27,8 @@ final class AuthVideoIntro {
     private int videoHeight;
 
     private final Runnable reveal = new Runnable() {
-        @Override public void run() {
+        @Override
+        public void run() {
             if (activity.isFinishing() || activity.isDestroyed()) return;
             done = true;
             form.setVisibility(View.VISIBLE);
@@ -36,7 +38,12 @@ final class AuthVideoIntro {
         }
     };
 
-    AuthVideoIntro(Activity activity, TextureView video, View form, Bundle state) {
+    AuthVideoIntro(
+        Activity activity,
+        TextureView video,
+        View form,
+        Bundle state
+    ) {
         this.activity = activity;
         this.video = video;
         this.form = form;
@@ -45,28 +52,56 @@ final class AuthVideoIntro {
         form.setAlpha(done ? 1f : 0f);
 
         video.setOpaque(true);
-        video.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
-            @Override public void onSurfaceTextureAvailable(SurfaceTexture texture, int width, int height) {
-                prepare(texture);
+        video.setSurfaceTextureListener(
+            new TextureView.SurfaceTextureListener() {
+                @Override
+                public void onSurfaceTextureAvailable(
+                    SurfaceTexture texture,
+                    int width,
+                    int height
+                ) {
+                    prepare(texture);
+                }
+
+                @Override
+                public void onSurfaceTextureSizeChanged(
+                    SurfaceTexture texture,
+                    int width,
+                    int height
+                ) {
+                    applyCenterCrop();
+                }
+
+                @Override
+                public boolean onSurfaceTextureDestroyed(
+                    SurfaceTexture texture
+                ) {
+                    releasePlayer();
+                    return true;
+                }
+
+                @Override
+                public void onSurfaceTextureUpdated(SurfaceTexture texture) {}
             }
-            @Override public void onSurfaceTextureSizeChanged(SurfaceTexture texture, int width, int height) {
-                applyCenterCrop();
-            }
-            @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture texture) {
-                releasePlayer();
-                return true;
-            }
-            @Override public void onSurfaceTextureUpdated(SurfaceTexture texture) { }
-        });
+        );
         if (video.isAvailable()) prepare(video.getSurfaceTexture());
     }
 
     private void prepare(SurfaceTexture texture) {
         releasePlayer();
-        if (texture == null) { reveal.run(); return; }
+        if (texture == null) {
+            reveal.run();
+            return;
+        }
         try {
-            player = MediaPlayer.create(activity, R.raw.lauriel_auth_background);
-            if (player == null) { reveal.run(); return; }
+            player = MediaPlayer.create(
+                activity,
+                R.raw.lauriel_auth_background
+            );
+            if (player == null) {
+                reveal.run();
+                return;
+            }
             Surface surface = new Surface(texture);
             player.setSurface(surface);
             surface.release();
@@ -100,16 +135,31 @@ final class AuthVideoIntro {
     }
 
     private void applyCenterCrop() {
-        if (videoWidth <= 0 || videoHeight <= 0 || video.getWidth() <= 0 || video.getHeight() <= 0) return;
-        float scale = Math.max((float) video.getWidth() / videoWidth, (float) video.getHeight() / videoHeight);
-        float scaleX = scale * videoWidth / video.getWidth();
-        float scaleY = scale * videoHeight / video.getHeight();
+        if (
+            videoWidth <= 0 ||
+            videoHeight <= 0 ||
+            video.getWidth() <= 0 ||
+            video.getHeight() <= 0
+        ) return;
+        float scale = Math.max(
+            (float) video.getWidth() / videoWidth,
+            (float) video.getHeight() / videoHeight
+        );
+        float scaleX = (scale * videoWidth) / video.getWidth();
+        float scaleY = (scale * videoHeight) / video.getHeight();
         Matrix matrix = new Matrix();
-        matrix.setScale(scaleX, scaleY, video.getWidth() / 2f, video.getHeight() / 2f);
+        matrix.setScale(
+            scaleX,
+            scaleY,
+            video.getWidth() / 2f,
+            video.getHeight() / 2f
+        );
         video.setTransform(matrix);
     }
 
-    void save(Bundle out) { out.putBoolean(KEY_DONE, done); }
+    void save(Bundle out) {
+        out.putBoolean(KEY_DONE, done);
+    }
 
     void destroy() {
         handler.removeCallbacksAndMessages(null);
@@ -119,12 +169,16 @@ final class AuthVideoIntro {
 
     private void releasePlayer() {
         if (player == null) return;
-        try { player.setSurface(null); player.release(); }
-        catch (RuntimeException ignored) { }
+        try {
+            player.setSurface(null);
+            player.release();
+        } catch (RuntimeException ignored) {}
         player = null;
     }
 
     private int dp(int value) {
-        return Math.round(value * activity.getResources().getDisplayMetrics().density);
+        return Math.round(
+            value * activity.getResources().getDisplayMetrics().density
+        );
     }
 }

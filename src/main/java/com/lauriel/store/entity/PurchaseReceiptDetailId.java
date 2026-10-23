@@ -16,6 +16,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class PurchaseReceiptDetailId implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     @Column(name = "receipt_id", nullable = false)
@@ -23,5 +24,4 @@ public class PurchaseReceiptDetailId implements Serializable {
 
     @Column(name = "variant_id", nullable = false)
     private Long variantId;
-
 }

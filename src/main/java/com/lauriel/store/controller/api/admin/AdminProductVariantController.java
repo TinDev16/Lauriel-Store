@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/product-variants")
 public class AdminProductVariantController {
+
     private final ProductVariantService service;
 
     public AdminProductVariantController(ProductVariantService service) {
@@ -17,8 +18,10 @@ public class AdminProductVariantController {
     }
 
     @PutMapping("/{variantId}")
-    public ProductVariantResponse update(@PathVariable @Positive Long variantId,
-            @Valid @RequestBody ProductVariantRequest request) {
+    public ProductVariantResponse update(
+        @PathVariable @Positive Long variantId,
+        @Valid @RequestBody ProductVariantRequest request
+    ) {
         return service.update(variantId, request);
     }
 }

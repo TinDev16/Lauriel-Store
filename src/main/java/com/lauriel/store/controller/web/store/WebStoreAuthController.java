@@ -12,22 +12,39 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class WebStoreAuthController {
+
     private final AuthService auth;
-    public WebStoreAuthController(AuthService auth) { this.auth = auth; }
+
+    public WebStoreAuthController(AuthService auth) {
+        this.auth = auth;
+    }
 
     @GetMapping("/register")
     public String register(Model model) {
-        if (!model.containsAttribute("form")) model.addAttribute("form", new RegisterRequest("", null, "", "", null));
+        if (!model.containsAttribute("form")) model.addAttribute(
+            "form",
+            new RegisterRequest("", null, "", "", null)
+        );
         return "auth/register";
     }
 
     @PostMapping("/register")
-    public String register(@Valid @ModelAttribute("form") RegisterRequest form, BindingResult errors,
-            RedirectAttributes flash) {
+    public String register(
+        @Valid @ModelAttribute("form") RegisterRequest form,
+        BindingResult errors,
+        RedirectAttributes flash
+    ) {
         if (errors.hasErrors()) return "auth/register";
-        try { auth.registerCustomer(form); }
-        catch (DuplicateResourceException exception) { errors.reject("business", exception.getMessage()); return "auth/register"; }
-        flash.addFlashAttribute("successMessage", "Đăng ký thành công. Bạn có thể đăng nhập ngay.");
+        try {
+            auth.registerCustomer(form);
+        } catch (DuplicateResourceException exception) {
+            errors.reject("business", exception.getMessage());
+            return "auth/register";
+        }
+        flash.addFlashAttribute(
+            "successMessage",
+            "Đăng ký thành công. Bạn có thể đăng nhập ngay."
+        );
         return "redirect:/login";
     }
 }

@@ -1,7 +1,7 @@
 package com.lauriel.store.service;
 
-import com.lauriel.store.dto.request.*;
 import com.lauriel.store.config.StoreCommerceProperties;
+import com.lauriel.store.dto.request.*;
 import com.lauriel.store.dto.response.*;
 import com.lauriel.store.entity.*;
 import com.lauriel.store.entity.enums.ActiveStatus;
@@ -17,14 +17,20 @@ import org.springframework.transaction.annotation.*;
 
 @Service
 public class VoucherService {
+
     public record AppliedVoucher(Voucher voucher, BigDecimal discount) {}
+
     private final VoucherRepository vouchers;
     private final ProductVariantRepository variants;
     private final PricingService pricing;
     private final StoreCommerceProperties commerce;
 
-    public VoucherService(VoucherRepository vouchers, ProductVariantRepository variants, PricingService pricing,
-            StoreCommerceProperties commerce) {
+    public VoucherService(
+        VoucherRepository vouchers,
+        ProductVariantRepository variants,
+        PricingService pricing,
+        StoreCommerceProperties commerce
+    ) {
         this.vouchers = vouchers;
         this.variants = variants;
         this.pricing = pricing;
@@ -41,33 +47,79 @@ public class VoucherService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<VoucherResponse> list(int page, int size, String keyword, ActiveStatus status,
-            com.lauriel.store.entity.enums.DiscountType discountType) {
-        String term = keyword == null || keyword.isBlank() ? null : "%" + keyword.strip().toLowerCase(Locale.ROOT) + "%";
-        org.springframework.data.jpa.domain.Specification<Voucher> filter = (root, query, builder) -> {
-            var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
-            if (status != null) predicates.add(builder.equal(root.get("status"), status));
-            if (discountType != null) predicates.add(builder.equal(root.get("discountType"), discountType));
-            if (term != null) predicates.add(builder.or(
+    public PageResponse<VoucherResponse> list(
+        int page,
+        int size,
+        String keyword,
+        ActiveStatus status,
+        com.lauriel.store.entity.enums.DiscountType discountType
+    ) {
+        String term =
+            keyword == null || keyword.isBlank()
+                ? null
+                : "%" + keyword.strip().toLowerCase(Locale.ROOT) + "%";
+        org.springframework.data.jpa.domain.Specification<Voucher> filter = (
+            root,
+            query,
+            builder
+        ) -> {
+            var predicates =
+                new ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (status != null) predicates.add(
+                builder.equal(root.get("status"), status)
+            );
+            if (discountType != null) predicates.add(
+                builder.equal(root.get("discountType"), discountType)
+            );
+            if (term != null) predicates.add(
+                builder.or(
                     builder.like(builder.lower(root.get("code")), term),
-                    builder.like(builder.lower(root.get("voucherName")), term)));
-            return builder.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+                    builder.like(builder.lower(root.get("voucherName")), term)
+                )
+            );
+            return builder.and(
+                predicates.toArray(
+                    jakarta.persistence.criteria.Predicate[]::new
+                )
+            );
         };
-        return InventoryPagination.response(vouchers.findAll(filter, InventoryPagination.page(page, size,
-                        Sort.by(Sort.Order.asc("status"), Sort.Order.asc("voucherId")))),
-                MarketingMapper::voucher);
+        return InventoryPagination.response(
+            vouchers.findAll(
+                filter,
+                InventoryPagination.page(
+                    page,
+                    size,
+                    Sort.by(
+                        Sort.Order.asc("status"),
+                        Sort.Order.asc("voucherId")
+                    )
+                )
+            ),
+            MarketingMapper::voucher
+        );
     }
 
     @Transactional(readOnly = true)
     public PageResponse<VoucherResponse> listAvailable(int page, int size) {
-        return InventoryPagination.response(vouchers.findAvailable(ActiveStatus.ACTIVE, pricing.now(),
-                InventoryPagination.page(page, size, Sort.unsorted())), MarketingMapper::voucher);
+        return InventoryPagination.response(
+            vouchers.findAvailable(
+                ActiveStatus.ACTIVE,
+                pricing.now(),
+                InventoryPagination.page(page, size, Sort.unsorted())
+            ),
+            MarketingMapper::voucher
+        );
     }
 
     @Transactional(readOnly = true)
     public VoucherResponse detail(Long id) {
-        return MarketingMapper.voucher(vouchers.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Voucher")));
+        return MarketingMapper.voucher(
+            vouchers
+                .findById(id)
+                .orElseThrow(() ->
+                    new ResourceNotFoundException("Không tìm thấy Voucher")
+                )
+        );
     }
 
     @Transactional
@@ -79,15 +131,22 @@ public class VoucherService {
 
     @Transactional
     public VoucherResponse update(Long id, VoucherRequest request) {
-        var voucher = vouchers.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Voucher"));
+        var voucher = vouchers
+            .findByIdForUpdate(id)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy Voucher")
+            );
         apply(voucher, request);
         return MarketingMapper.voucher(vouchers.saveAndFlush(voucher));
     }
 
     @Transactional
-    public VoucherResponse updateStatus(Long id,ActiveStatus status) {
-        var voucher=vouchers.findByIdForUpdate(id).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy mã giảm giá"));
+    public VoucherResponse updateStatus(Long id, ActiveStatus status) {
+        var voucher = vouchers
+            .findByIdForUpdate(id)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy mã giảm giá")
+            );
         voucher.setStatus(status);
         return MarketingMapper.voucher(vouchers.saveAndFlush(voucher));
     }
@@ -102,12 +161,24 @@ public class VoucherService {
         return previewAmounts(request.items(), request.voucherCode());
     }
 
-    private VoucherValidationResponse previewAmounts(List<CheckoutItemRequest> requestedItems, String requestedCode) {
+    private VoucherValidationResponse previewAmounts(
+        List<CheckoutItemRequest> requestedItems,
+        String requestedCode
+    ) {
         var quantities = CheckoutItems.normalize(requestedItems);
         var found = variants.findByVariantIdIn(quantities.keySet());
-        if (found.size() != quantities.size()) throw new ResourceNotFoundException("Không tìm thấy thuộc tính");
-        if (found.stream().anyMatch(v -> v.getStatus() != ActiveStatus.ACTIVE
-                || v.getProduct().getStatus() != ActiveStatus.ACTIVE)) {
+        if (
+            found.size() != quantities.size()
+        ) throw new ResourceNotFoundException("Không tìm thấy thuộc tính");
+        if (
+            found
+                .stream()
+                .anyMatch(
+                    v ->
+                        v.getStatus() != ActiveStatus.ACTIVE ||
+                        v.getProduct().getStatus() != ActiveStatus.ACTIVE
+                )
+        ) {
             throw new BadRequestException("Sản phẩm không còn hoạt động");
         }
         var now = pricing.now();
@@ -115,33 +186,83 @@ public class VoucherService {
         BigDecimal amount = BigDecimal.ZERO;
         BigDecimal productPromotionDiscount = BigDecimal.ZERO;
         for (var variant : found) {
-            amount = pricing.checkedAmount(amount.add(pricing.lineTotal(
-                    prices.get(variant.getVariantId()).effectivePrice(), quantities.get(variant.getVariantId()))));
-            productPromotionDiscount = pricing.checkedAmount(productPromotionDiscount.add(pricing.lineTotal(
-                    prices.get(variant.getVariantId()).promotionDiscount(), quantities.get(variant.getVariantId()))));
+            amount = pricing.checkedAmount(
+                amount.add(
+                    pricing.lineTotal(
+                        prices.get(variant.getVariantId()).effectivePrice(),
+                        quantities.get(variant.getVariantId())
+                    )
+                )
+            );
+            productPromotionDiscount = pricing.checkedAmount(
+                productPromotionDiscount.add(
+                    pricing.lineTotal(
+                        prices.get(variant.getVariantId()).promotionDiscount(),
+                        quantities.get(variant.getVariantId())
+                    )
+                )
+            );
         }
         var threshold = pricing.orderPromotion(amount, now);
         var amountAfterOrderPromotion = threshold.amountAfter(amount);
         Voucher voucher = null;
         BigDecimal discount = BigDecimal.ZERO.setScale(2);
         if (requestedCode != null && !requestedCode.isBlank()) {
-            voucher = vouchers.findByCodeIgnoreCase(normalizeCode(requestedCode))
-                    .orElseThrow(() -> new BadRequestException("Voucher không hợp lệ hoặc không đủ điều kiện sử dụng"));
-            discount = pricing.voucherDiscount(voucher, amountAfterOrderPromotion, now);
+            voucher = vouchers
+                .findByCodeIgnoreCase(normalizeCode(requestedCode))
+                .orElseThrow(() ->
+                    new BadRequestException(
+                        "Voucher không hợp lệ hoặc không đủ điều kiện sử dụng"
+                    )
+                );
+            discount = pricing.voucherDiscount(
+                voucher,
+                amountAfterOrderPromotion,
+                now
+            );
         }
         var shipping = pricing.checkedAmount(commerce.getShippingFee());
-        return new VoucherValidationResponse(true, voucher == null ? null : voucher.getCode(),
-                voucher == null ? null : voucher.getVoucherName(), amount, amount,
-                productPromotionDiscount, threshold.promotion() == null ? null : threshold.promotion().getOrderPromotionId(),
-                threshold.promotion() == null ? null : threshold.promotion().getPromotionName(),
-                threshold.promotion() == null ? null : threshold.promotion().getDiscountPercent(), threshold.discount(),
-                discount, shipping, pricing.checkedAmount(amountAfterOrderPromotion.subtract(discount).add(shipping)));
+        return new VoucherValidationResponse(
+            true,
+            voucher == null ? null : voucher.getCode(),
+            voucher == null ? null : voucher.getVoucherName(),
+            amount,
+            amount,
+            productPromotionDiscount,
+            threshold.promotion() == null
+                ? null
+                : threshold.promotion().getOrderPromotionId(),
+            threshold.promotion() == null
+                ? null
+                : threshold.promotion().getPromotionName(),
+            threshold.promotion() == null
+                ? null
+                : threshold.promotion().getDiscountPercent(),
+            threshold.discount(),
+            discount,
+            shipping,
+            pricing.checkedAmount(
+                amountAfterOrderPromotion.subtract(discount).add(shipping)
+            )
+        );
     }
+
     @Transactional(propagation = Propagation.MANDATORY)
-    public AppliedVoucher consume(String requestedCode, BigDecimal amount, LocalDateTime now) {
-        if (requestedCode == null || requestedCode.isBlank()) return new AppliedVoucher(null, BigDecimal.ZERO);
-        var voucher = vouchers.findByCodeForUpdate(normalizeCode(requestedCode))
-                .orElseThrow(() -> new BadRequestException("Voucher không hợp lệ hoặc không đủ điều kiện sử dụng"));
+    public AppliedVoucher consume(
+        String requestedCode,
+        BigDecimal amount,
+        LocalDateTime now
+    ) {
+        if (
+            requestedCode == null || requestedCode.isBlank()
+        ) return new AppliedVoucher(null, BigDecimal.ZERO);
+        var voucher = vouchers
+            .findByCodeForUpdate(normalizeCode(requestedCode))
+            .orElseThrow(() ->
+                new BadRequestException(
+                    "Voucher không hợp lệ hoặc không đủ điều kiện sử dụng"
+                )
+            );
         var discount = pricing.voucherDiscount(voucher, amount, now);
         voucher.setQuantity(voucher.getQuantity() - 1);
         vouchers.saveAndFlush(voucher);
@@ -152,10 +273,15 @@ public class VoucherService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void restore(Long voucherId) {
         if (voucherId == null) return;
-        var voucher = vouchers.findByIdForUpdate(voucherId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Voucher"));
+        var voucher = vouchers
+            .findByIdForUpdate(voucherId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Không tìm thấy Voucher")
+            );
         if (voucher.getQuantity() == Integer.MAX_VALUE) {
-            throw new ResourceConflictException("Số lượt Voucher vượt giới hạn Integer");
+            throw new ResourceConflictException(
+                "Số lượt Voucher vượt giới hạn Integer"
+            );
         }
         voucher.setQuantity(voucher.getQuantity() + 1); // Restore even when expired or inactive.
         vouchers.saveAndFlush(voucher);
@@ -163,10 +289,19 @@ public class VoucherService {
 
     private void apply(Voucher voucher, VoucherRequest request) {
         String code = normalizeCode(request.code());
-        if (code.isEmpty() || code.length() > 50) throw new BadRequestException("Code Voucher không hợp lệ");
-        boolean duplicate = voucher.getVoucherId() == null ? vouchers.existsByCodeIgnoreCase(code)
-                : vouchers.existsByCodeIgnoreCaseAndVoucherIdNot(code, voucher.getVoucherId());
-        if (duplicate) throw new DuplicateResourceException("Code Voucher đã tồn tại");
+        if (code.isEmpty() || code.length() > 50) throw new BadRequestException(
+            "Code Voucher không hợp lệ"
+        );
+        boolean duplicate =
+            voucher.getVoucherId() == null
+                ? vouchers.existsByCodeIgnoreCase(code)
+                : vouchers.existsByCodeIgnoreCaseAndVoucherIdNot(
+                      code,
+                      voucher.getVoucherId()
+                  );
+        if (duplicate) throw new DuplicateResourceException(
+            "Code Voucher đã tồn tại"
+        );
         voucher.setCode(code);
         voucher.setVoucherName(request.voucherName().strip());
         voucher.setDiscountType(request.discountType());

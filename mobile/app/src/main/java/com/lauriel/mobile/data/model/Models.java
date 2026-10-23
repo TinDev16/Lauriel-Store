@@ -4,95 +4,260 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public final class Models {
+
     private Models() {}
+
     public static final class LoginRequest {
+
         public String username, password;
-        public LoginRequest(String username,String password){this.username=username;this.password=password;}
+
+        public LoginRequest(String username, String password) {
+            this.username = username;
+            this.password = password;
+        }
     }
+
     public static final class RegisterRequest {
-        public String username,email,password,fullName,phone;
-        public RegisterRequest(String username,String email,String password,String fullName,String phone){
-            this.username=username;this.email=email;this.password=password;this.fullName=fullName;this.phone=phone;
+
+        public String username, email, password, fullName, phone;
+
+        public RegisterRequest(
+            String username,
+            String email,
+            String password,
+            String fullName,
+            String phone
+        ) {
+            this.username = username;
+            this.email = email;
+            this.password = password;
+            this.fullName = fullName;
+            this.phone = phone;
         }
     }
-    public static final class LoginResponse { public String token,tokenType,username,role; public long expiresIn,userId; }
-    public static final class RegisterResponse { public long userId; public String username,email,role,message; }
-    public static final class Me { public long userId; public String username,role; }
+
+    public static final class LoginResponse {
+
+        public String token, tokenType, username, role;
+        public long expiresIn, userId;
+    }
+
+    public static final class RegisterResponse {
+
+        public long userId;
+        public String username, email, role, message;
+    }
+
+    public static final class Me {
+
+        public long userId;
+        public String username, role;
+    }
+
     public static final class Profile {
-        public long customerId,userId; public String username,fullName,email,phone,address;
+
+        public long customerId, userId;
+        public String username, fullName, email, phone, address;
     }
+
     public static final class ProfileUpdate {
-        public String fullName,email,phone,address;
-        public ProfileUpdate(String fullName,String email,String phone,String address){
-            this.fullName=fullName;this.email=email;this.phone=phone;this.address=address;
+
+        public String fullName, email, phone, address;
+
+        public ProfileUpdate(
+            String fullName,
+            String email,
+            String phone,
+            String address
+        ) {
+            this.fullName = fullName;
+            this.email = email;
+            this.phone = phone;
+            this.address = address;
         }
     }
-    public static final class Page<T> { public List<T> content; public int page,size,totalPages; public long totalElements; }
-    public static final class Category { public long categoryId; public String categoryName; }
-    public static final class Size { public long sizeId; public String sizeName; }
-    public static final class Color { public long colorId; public String colorName; }
-    public static final class Promotion { public long promotionId; public String promotionName,description,startDate,endDate,status; public BigDecimal discountPercent; }
-    public static final class PromotionInfo { public long promotionId; public String promotionName,startDate,endDate; public BigDecimal discountPercent; }
+
+    public static final class Page<T> {
+
+        public List<T> content;
+        public int page, size, totalPages;
+        public long totalElements;
+    }
+
+    public static final class Category {
+
+        public long categoryId;
+        public String categoryName;
+    }
+
+    public static final class Size {
+
+        public long sizeId;
+        public String sizeName;
+    }
+
+    public static final class Color {
+
+        public long colorId;
+        public String colorName;
+    }
+
+    public static final class Promotion {
+
+        public long promotionId;
+        public String promotionName, description, startDate, endDate, status;
+        public BigDecimal discountPercent;
+    }
+
+    public static final class PromotionInfo {
+
+        public long promotionId;
+        public String promotionName, startDate, endDate;
+        public BigDecimal discountPercent;
+    }
+
     public static final class OrderPromotion {
-        public long orderPromotionId; public String promotionName,description,startDate,endDate,status;
-        public BigDecimal minOrderAmount,discountPercent,maxDiscountAmount;
+
+        public long orderPromotionId;
+        public String promotionName, description, startDate, endDate, status;
+        public BigDecimal minOrderAmount, discountPercent, maxDiscountAmount;
     }
+
     public static final class ProductImage {
-        public long id; public String url,colorName; public Long colorId; public boolean primary; public int order;
+
+        public long id;
+        public String url, colorName;
+        public Long colorId;
+        public boolean primary;
+        public int order;
     }
+
     public static final class Product {
-        public long productId; public String productName,description,imgUrl,status;
-        public BigDecimal price,basePrice,effectivePrice; public PromotionInfo promotion; public Category category; public List<Variant> variants;
+
+        public long productId;
+        public String productName, description, imgUrl, status;
+        public BigDecimal price, basePrice, effectivePrice;
+        public PromotionInfo promotion;
+        public Category category;
+        public List<Variant> variants;
         public List<ProductImage> images;
     }
+
     public static final class Variant {
-        public long variantId,productId; public String sku,status;
-        public Size size; public Color color; public int quantity;
-        public BigDecimal price,effectivePrice; public PromotionInfo promotion;
+
+        public long variantId, productId;
+        public String sku, status;
+        public Size size;
+        public Color color;
+        public int quantity;
+        public BigDecimal price, effectivePrice;
+        public PromotionInfo promotion;
     }
+
     public static final class Item {
-        public long variantId; public int quantity;
-        public Item(long variantId,int quantity){this.variantId=variantId;this.quantity=quantity;}
-    }
-    public static final class CartSnapshot {
-        public List<Item> items;
-        public CartSnapshot(List<Item> items){this.items=items;}
-    }
-    public static final class Voucher {
-        public long voucherId; public String code,voucherName,discountType,startDate,endDate,status;
-        public BigDecimal discountValue,minOrderAmount,maxDiscountAmount; public int quantity;
-    }
-    public static final class VoucherRequest {
-        public String code; public List<Item> items;
-        public VoucherRequest(String code,List<Item> items){this.code=code;this.items=items;}
-    }
-    public static final class VoucherPreview {
-        public boolean valid; public String code,voucherName;
-        public Long orderPromotionId; public String orderPromotionName;
-        public BigDecimal orderAmount,subtotal,productPromotionDiscount,orderPromotionPercent,orderPromotionDiscount,discountAmount,shippingFee,finalAmount;
-    }
-    public static final class OrderPreviewRequest {
-        public List<Item> items; public String voucherCode;
-        public OrderPreviewRequest(List<Item> items,String voucherCode){this.items=items;this.voucherCode=voucherCode;}
-    }
-    public static final class CheckoutRequest {
-        public List<Item> items; public String shippingAddress,voucherCode;
-        public CheckoutRequest(List<Item> items,String shippingAddress,String voucherCode){
-            this.items=items;this.shippingAddress=shippingAddress;this.voucherCode=voucherCode;
+
+        public long variantId;
+        public int quantity;
+
+        public Item(long variantId, int quantity) {
+            this.variantId = variantId;
+            this.quantity = quantity;
         }
     }
+
+    public static final class CartSnapshot {
+
+        public List<Item> items;
+
+        public CartSnapshot(List<Item> items) {
+            this.items = items;
+        }
+    }
+
+    public static final class Voucher {
+
+        public long voucherId;
+        public String code, voucherName, discountType, startDate, endDate, status;
+        public BigDecimal discountValue, minOrderAmount, maxDiscountAmount;
+        public int quantity;
+    }
+
+    public static final class VoucherRequest {
+
+        public String code;
+        public List<Item> items;
+
+        public VoucherRequest(String code, List<Item> items) {
+            this.code = code;
+            this.items = items;
+        }
+    }
+
+    public static final class VoucherPreview {
+
+        public boolean valid;
+        public String code, voucherName;
+        public Long orderPromotionId;
+        public String orderPromotionName;
+        public BigDecimal orderAmount, subtotal, productPromotionDiscount, orderPromotionPercent, orderPromotionDiscount, discountAmount, shippingFee, finalAmount;
+    }
+
+    public static final class OrderPreviewRequest {
+
+        public List<Item> items;
+        public String voucherCode;
+
+        public OrderPreviewRequest(List<Item> items, String voucherCode) {
+            this.items = items;
+            this.voucherCode = voucherCode;
+        }
+    }
+
+    public static final class CheckoutRequest {
+
+        public List<Item> items;
+        public String shippingAddress, voucherCode;
+
+        public CheckoutRequest(
+            List<Item> items,
+            String shippingAddress,
+            String voucherCode
+        ) {
+            this.items = items;
+            this.shippingAddress = shippingAddress;
+            this.voucherCode = voucherCode;
+        }
+    }
+
     public static final class OrderSummary {
-        public long orderId,customerId; public String status,createdAt;
-        public BigDecimal totalAmount,orderPromotionDiscount,discountAmount,shippingFee,finalAmount;
+
+        public long orderId, customerId;
+        public String status, createdAt;
+        public BigDecimal totalAmount, orderPromotionDiscount, discountAmount, shippingFee, finalAmount;
     }
+
     public static final class OrderLine {
-        public long variantId; public String sku,productName,imageUrl;
-        public Size size; public Color color; public int quantity;
-        public BigDecimal unitPrice,discountAmount,subtotal;
+
+        public long variantId;
+        public String sku, productName, imageUrl;
+        public Size size;
+        public Color color;
+        public int quantity;
+        public BigDecimal unitPrice, discountAmount, subtotal;
     }
+
     public static final class Order {
-        public long orderId,customerId; public Long orderPromotionId; public String status,createdAt,updatedAt,shippingAddress,voucherCode,orderPromotionName;
-        public BigDecimal totalAmount,orderPromotionDiscount,orderPromotionPercent,discountAmount,shippingFee,finalAmount; public List<OrderLine> items;
+
+        public long orderId, customerId;
+        public Long orderPromotionId;
+        public String status, createdAt, updatedAt, shippingAddress, voucherCode, orderPromotionName;
+        public BigDecimal totalAmount, orderPromotionDiscount, orderPromotionPercent, discountAmount, shippingFee, finalAmount;
+        public List<OrderLine> items;
     }
-    public static final class ApiError { public int status; public String error,message; }
+
+    public static final class ApiError {
+
+        public int status;
+        public String error, message;
+    }
 }

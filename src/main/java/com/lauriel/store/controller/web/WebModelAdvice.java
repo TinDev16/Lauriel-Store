@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 
 @ControllerAdvice(basePackages = "com.lauriel.store.controller.web")
 public class WebModelAdvice {
+
     @InitBinder
     void bind(WebDataBinder binder) {
         // Bind validated record constructor arguments; no entity/property mass assignment.
@@ -22,15 +23,30 @@ public class WebModelAdvice {
 
     @ModelAttribute("isAdmin")
     boolean isAdmin(Authentication auth) {
-        return auth != null && auth.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN")
-                        || authority.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        return (
+            auth != null &&
+            auth
+                .getAuthorities()
+                .stream()
+                .anyMatch(
+                    authority ->
+                        authority.getAuthority().equals("ROLE_ADMIN") ||
+                        authority.getAuthority().equals("ROLE_SUPER_ADMIN")
+                )
+        );
     }
 
     @ModelAttribute("isSuperAdmin")
     boolean isSuperAdmin(Authentication auth) {
-        return auth != null && auth.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        return (
+            auth != null &&
+            auth
+                .getAuthorities()
+                .stream()
+                .anyMatch(authority ->
+                    authority.getAuthority().equals("ROLE_SUPER_ADMIN")
+                )
+        );
     }
 
     @ModelAttribute("username")
@@ -39,20 +55,32 @@ public class WebModelAdvice {
     }
 
     @ModelAttribute("statuses")
-    ActiveStatus[] statuses() { return ActiveStatus.values(); }
+    ActiveStatus[] statuses() {
+        return ActiveStatus.values();
+    }
 
     @ModelAttribute("orderStatuses")
-    OrderStatus[] orderStatuses() { return OrderStatus.values(); }
+    OrderStatus[] orderStatuses() {
+        return OrderStatus.values();
+    }
 
     @ModelAttribute("receiptStatuses")
-    PurchaseReceiptStatus[] receiptStatuses() { return PurchaseReceiptStatus.values(); }
+    PurchaseReceiptStatus[] receiptStatuses() {
+        return PurchaseReceiptStatus.values();
+    }
 
     @ModelAttribute("userStatuses")
-    UserStatus[] userStatuses() { return UserStatus.values(); }
+    UserStatus[] userStatuses() {
+        return UserStatus.values();
+    }
 
     @ModelAttribute("discountTypes")
-    DiscountType[] discountTypes() { return DiscountType.values(); }
+    DiscountType[] discountTypes() {
+        return DiscountType.values();
+    }
 
     @ModelAttribute("transactionTypes")
-    InventoryTransactionType[] transactionTypes() { return InventoryTransactionType.values(); }
+    InventoryTransactionType[] transactionTypes() {
+        return InventoryTransactionType.values();
+    }
 }

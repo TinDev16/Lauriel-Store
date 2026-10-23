@@ -5,9 +5,21 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record OrderResponse(Long orderId, Long customerId, OrderStatus status, LocalDateTime createdAt,
-                            LocalDateTime updatedAt, String shippingAddress, BigDecimal totalAmount,
-                            BigDecimal orderPromotionDiscount, String orderPromotionName, BigDecimal orderPromotionPercent,
-                            BigDecimal discountAmount, BigDecimal shippingFee, BigDecimal finalAmount,
-                            List<OrderDetailResponse> items, String voucherCode, Long orderPromotionId) {
-}
+public record OrderResponse(
+    Long orderId,
+    Long customerId,
+    OrderStatus status,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt,
+    String shippingAddress,
+    BigDecimal totalAmount,
+    BigDecimal orderPromotionDiscount,
+    String orderPromotionName,
+    BigDecimal orderPromotionPercent,
+    BigDecimal discountAmount,
+    BigDecimal shippingFee,
+    BigDecimal finalAmount,
+    List<OrderDetailResponse> items,
+    String voucherCode,
+    Long orderPromotionId
+) {}

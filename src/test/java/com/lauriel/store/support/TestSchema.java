@@ -17,7 +17,10 @@ public final class TestSchema {
 
     public static Map<String, String> migratedTableDefinitions()
         throws Exception {
-        String dump = Files.readString(Path.of("database/lariel.sql"));
+        Path schemaPath = Files.exists(Path.of("database/lauriel.sql"))
+            ? Path.of("database/lauriel.sql")
+            : Path.of("database/lariel.sql");
+        String dump = Files.readString(schemaPath);
         Map<String, String> definitions = new LinkedHashMap<>();
         var tables = Pattern.compile(
             "CREATE TABLE `(\\w+)` \\((.*?)\\) ENGINE=",
@@ -71,6 +74,12 @@ public final class TestSchema {
             );
         }
         definitions.put("orders", orders);
+
+        String addresses = definitions.get("customer_addresses");
+        if (addresses != null) {
+            addresses = addresses.replace("`is_default` tinyint(1)", "`is_default` boolean");
+            definitions.put("customer_addresses", addresses);
+        }
 
         definitions.put(
             "product_images",

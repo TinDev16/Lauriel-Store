@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div class="order-preview-content">
+    <!-- Header info card -->
+    <div class="card mb-3 border-0 bg-light shadow-sm">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h5 class="mb-1 text-primary fw-bold" th:text="|Đơn #${order.orderId}|">#123</h5>
+                    <small class="text-muted">
+                        <i class="bi bi-clock me-1"></i><span th:text="${@view.date(order.createdAt)}">dd/MM/yyyy HH:mm</span>
+                    </small>
+                </div>
+                <span class="badge fs-6" 
+                      th:classappend="${order.status.name() == 'DELIVERED' ? 'bg-success' : (order.status.name() == 'CANCELLED' || order.status.name() == 'RETURNED' ? 'bg-danger' : (order.status.name() == 'PENDING' ? 'bg-warning text-dark' : (order.status.name() == 'CONFIRMED' ? 'bg-info text-dark' : 'bg-primary')))}" 
+                      th:text="${@view.label(order.status)}">
+                    Trạng thái
+                </span>
+            </div>
+            <div class="mt-2 pt-2 border-top small">
+                <div class="mb-1 d-flex">
+                    <span class="text-muted text-nowrap me-2" style="width: 105px;">
+                        <i class="bi bi-person me-1"></i>Khách hàng:
+                    </span>
+                    <span class="fw-semibold">
+                        <span th:text="${customer.fullName}">Nguyễn Văn A</span>
+                        <small class="text-muted" th:text="| (#${customer.customerId})|">(#1)</small>
+                    </span>
+                </div>
+                <div class="mb-1 d-flex">
+                    <span class="text-muted text-nowrap me-2" style="width: 105px;">
+                        <i class="bi bi-telephone me-1"></i>Điện thoại:
+                    </span>
+                    <span>
+                        <a th:if="${customer.phone != null}" th:href="|tel:${customer.phone}|" class="text-decoration-none fw-semibold" th:text="${customer.phone}">0912345678</a>
+                        <span th:if="${customer.phone == null}" class="text-muted">—</span>
+                    </span>
+                </div>
+                <div class="d-flex">
+                    <span class="text-muted text-nowrap me-2" style="width: 105px;">
+                        <i class="bi bi-geo-alt me-1"></i>Giao đến:
+                    </span>
+                    <span class="preserve-lines text-break" th:text="${order.shippingAddress}">Địa chỉ giao hàng</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items list -->
+    <div class="card mb-3 border shadow-sm">
+        <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+            <strong class="small text-uppercase text-secondary">
+                <i class="bi bi-bag-check me-1"></i>Sản phẩm trong đơn
+            </strong>
+            <span class="badge bg-secondary-subtle text-secondary rounded-pill" th:text="|${#lists.size(order.items)} món|">0 món</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Phân loại</th>
+                        <th class="text-center">SL</th>
+                        <th class="text-end">Đơn giá</th>
+                        <th class="text-end">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r:${order.items}">
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <img th:if="${r.imageUrl != null && !#strings.isEmpty(r.imageUrl)}" 
+                                     th:src="@{${r.imageUrl}}" 
+                                     alt="Ảnh" class="rounded border" style="width: 36px; height: 36px; object-fit: cover; flex-shrink: 0;">
+                                <div class="overflow-hidden">
+                                    <span class="fw-semibold text-truncate d-block" style="max-width: 130px;" th:text="${r.productName}">Tên SP</span>
+                                    <small class="text-muted d-block text-truncate" style="max-width: 130px;" th:text="${r.sku}">SKU</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border" th:text="|${r.size.sizeName} / ${r.color.colorName}|">S / Đen</span>
+                        </td>
+                        <td class="text-center fw-bold" th:text="${r.quantity}">1</td>
+                        <td class="text-end text-muted" th:text="${@view.money(r.unitPrice)}">100.000 ₫</td>
+                        <td class="text-end fw-semibold" th:text="${@view.money(r.subtotal)}">100.000 ₫</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Financial summary -->
+    <div class="card mb-3 border shadow-sm">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between mb-1 small">
+                <span class="text-muted">Tổng tiền hàng:</span>
+                <span class="fw-semibold" th:text="${@view.money(order.totalAmount)}">0 ₫</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1 small" th:if="${order.orderPromotionDiscount != null && order.orderPromotionDiscount > 0}">
+                <span class="text-muted" th:text="|Khuyến mãi${order.orderPromotionName == null ? '' : ' (' + order.orderPromotionName + ')'}:|">Khuyến mãi:</span>
+                <span class="text-danger fw-semibold" th:text="|- ${@view.money(order.orderPromotionDiscount)}|">- 0 ₫</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1 small" th:if="${order.voucherCode != null}">
+                <span class="text-muted" th:text="|Mã voucher (${order.voucherCode}):|">Voucher:</span>
+                <span class="text-danger fw-semibold" th:text="|- ${@view.money(order.discountAmount)}|">- 0 ₫</span>
+            </div>
+            <hr class="my-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <strong class="h6 mb-0 text-dark">Số tiền phải trả:</strong>
+                <strong class="h5 mb-0 text-success fw-bold" th:text="${@view.money(order.finalAmount)}">0 ₫</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status transition form -->
+    <div class="card mb-3 border border-primary-subtle bg-light" th:if="${!#lists.isEmpty(transitions)}">
+        <div class="card-body p-3">
+            <label class="form-label small fw-bold mb-2 text-primary">
+                <i class="bi bi-arrow-repeat me-1"></i>Chuyển trạng thái đơn:
+            </label>
+            <form class="order-status-quick-form" method="post" th:action="@{/admin/orders/{id}/status(id=${order.orderId})}" th:data-order-id="${order.orderId}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <div class="input-group input-group-sm">
+                    <select name="status" class="form-select">
+                        <option th:each="s:${transitions}" th:value="${s}" th:text="${@view.label(s)}"></option>
+                    </select>
+                    <button type="submit" class="btn btn-primary px-3">
+                        <i class="bi bi-check2-circle me-1"></i>Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer actions -->
+    <div class="d-flex justify-content-between align-items-center pt-2">
+        <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/orders/{id}(id=${order.orderId})}" target="_blank">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Mở trang chi tiết riêng
+        </a>
+        <button type="button" class="btn btn-outline-secondary btn-sm btn-order-quickview-close">
+            <i class="bi bi-x-lg me-1"></i>Đóng
+        </button>
+    </div>
+</div>
+</body>
+</html>
+

@@ -290,4 +290,158 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   overlay?.addEventListener('click', close);
   document.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
+
+  // --- Order Quick View Side Panel ---
+  const orderQuickviewPanel = document.getElementById('orderQuickviewPanel');
+  const orderQuickviewBody = document.getElementById('orderQuickviewBody');
+  const orderQuickviewTitle = document.getElementById('orderQuickviewTitle');
+  const orderQuickviewSubtitle = document.getElementById('orderQuickviewSubtitle');
+  const orderQuickviewFullLink = document.getElementById('orderQuickviewFullLink');
+  const orderQuickviewClose = document.getElementById('orderQuickviewClose');
+  const orderQuickviewBackdrop = document.getElementById('orderQuickviewBackdrop');
+  let currentQuickviewOrderId = null;
+
+  const closeOrderQuickview = () => {
+    if (!orderQuickviewPanel) return;
+    orderQuickviewPanel.classList.remove('is-open');
+    orderQuickviewBackdrop?.classList.remove('show');
+    document.querySelectorAll('tr.order-row-active').forEach(r => r.classList.remove('order-row-active'));
+    currentQuickviewOrderId = null;
+  };
+
+  const bindQuickviewForm = (container, orderId) => {
+    const form = container.querySelector('.order-status-quick-form');
+    if (!form) return;
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Đang lưu...';
+      }
+      try {
+        const formData = new FormData(form);
+        const response = await fetch(form.action, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: formData
+        });
+        const data = await response.json().catch(() => null);
+        if (response.ok && data?.success) {
+          const row = document.getElementById(`order-row-${orderId}`);
+          if (row) {
+            const badge = row.querySelector('.order-status-badge');
+            if (badge) {
+              const statusName = data.status;
+              const statusLabel = form.querySelector(`option[value="${statusName}"]`)?.textContent?.trim() || statusName;
+              badge.textContent = statusLabel;
+              badge.className = 'order-status-badge badge ' + (
+                statusName === 'DELIVERED' ? 'bg-success' :
+                (statusName === 'CANCELLED' || statusName === 'RETURNED') ? 'bg-danger' :
+                statusName === 'PENDING' ? 'bg-warning text-dark' :
+                statusName === 'CONFIRMED' ? 'bg-info text-dark' : 'bg-primary'
+              );
+            }
+          }
+          loadOrderQuickview(orderId, row);
+        } else {
+          window.alert(data?.message || 'Không thể cập nhật trạng thái đơn hàng.');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+          }
+        }
+      } catch (err) {
+        window.alert('Lỗi kết nối khi cập nhật đơn hàng.');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        }
+      }
+    });
+
+    container.querySelectorAll('.btn-order-quickview-close').forEach(btn => {
+      btn.addEventListener('click', closeOrderQuickview);
+    });
+  };
+
+  const loadOrderQuickview = async (orderId, targetRow) => {
+    if (!orderQuickviewPanel || !orderQuickviewBody) return;
+    currentQuickviewOrderId = orderId;
+
+    document.querySelectorAll('tr.order-row-active').forEach(r => r.classList.remove('order-row-active'));
+    targetRow?.classList.add('order-row-active');
+
+    orderQuickviewPanel.classList.add('is-open');
+    orderQuickviewBackdrop?.classList.add('show');
+    if (orderQuickviewTitle) orderQuickviewTitle.textContent = `Đơn hàng #${orderId}`;
+    if (orderQuickviewSubtitle) orderQuickviewSubtitle.textContent = 'Đang tải thông tin chi tiết...';
+    if (orderQuickviewFullLink) orderQuickviewFullLink.href = `/admin/orders/${orderId}`;
+
+    orderQuickviewBody.innerHTML = `
+      <div class="text-center py-5 text-muted">
+        <div class="spinner-border text-primary mb-3" style="width: 2.2rem; height: 2.2rem;" role="status">
+          <span class="visually-hidden">Đang tải...</span>
+        </div>
+        <p class="mb-0 fw-semibold">Đang tải chi tiết đơn #${orderId}...</p>
+      </div>
+    `;
+
+    try {
+      const response = await fetch(`/admin/orders/${orderId}/preview`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!response.ok) throw new Error('Không thể tải chi tiết');
+      const html = await response.text();
+      if (currentQuickviewOrderId === orderId) {
+        orderQuickviewBody.innerHTML = html;
+        if (orderQuickviewSubtitle) orderQuickviewSubtitle.textContent = 'Thông tin chi tiết hóa đơn';
+        bindQuickviewForm(orderQuickviewBody, orderId);
+      }
+    } catch (e) {
+      if (currentQuickviewOrderId === orderId) {
+        orderQuickviewBody.innerHTML = `
+          <div class="alert alert-danger my-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Không thể tải thông tin đơn hàng #${orderId}. Vui lòng thử lại.
+          </div>
+        `;
+        if (orderQuickviewSubtitle) orderQuickviewSubtitle.textContent = 'Lỗi tải dữ liệu';
+      }
+    }
+  };
+
+  if (orderQuickviewPanel) {
+    orderQuickviewClose?.addEventListener('click', closeOrderQuickview);
+    orderQuickviewBackdrop?.addEventListener('click', closeOrderQuickview);
+
+    document.addEventListener('click', event => {
+      const previewBtn = event.target.closest('.btn-order-preview');
+      if (previewBtn) {
+        event.preventDefault();
+        const orderId = previewBtn.dataset.orderId;
+        const row = previewBtn.closest('tr');
+        loadOrderQuickview(orderId, row);
+        return;
+      }
+
+      const row = event.target.closest('tr.order-row');
+      if (row && !event.target.closest('a, button, input, select, textarea')) {
+        const orderId = row.dataset.orderId;
+        if (orderId) {
+          loadOrderQuickview(orderId, row);
+        }
+      }
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && orderQuickviewPanel.classList.contains('is-open')) {
+        closeOrderQuickview();
+      }
+    });
+  }
+
 });

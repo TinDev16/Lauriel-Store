@@ -66,14 +66,46 @@ public class WebOrderController {
         return "admin/orders/detail";
     }
 
+    @GetMapping("/{id}/preview")
+    public String preview(@PathVariable Long id, Model m) {
+        var order = orders.staffDetail(id);
+        m.addAttribute("order", order);
+        m.addAttribute("customer", customers.detail(order.customerId()));
+        m.addAttribute(
+            "transitions",
+            orders.allowedStaffTransitions(order.status())
+        );
+        return "admin/orders/preview";
+    }
+
     @PostMapping("/{id}/status")
-    public String status(
+    public Object status(
         @PathVariable Long id,
         @Valid @ModelAttribute OrderStatusRequest form,
         BindingResult errors,
         @AuthenticationPrincipal StoreUserDetails actor,
+        @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
         RedirectAttributes flash
     ) {
+        if ("XMLHttpRequest".equalsIgnoreCase(requestedWith)) {
+            if (errors.hasErrors()) {
+                return org.springframework.http.ResponseEntity.badRequest()
+                    .body(java.util.Map.of("success", false, "message", "Trạng thái không hợp lệ."));
+            }
+            try {
+                var updated = orders.updateStatus(id, form.status(), actor.getUserId());
+                return org.springframework.http.ResponseEntity.ok(
+                    java.util.Map.of(
+                        "success", true,
+                        "message", "Đã cập nhật trạng thái đơn thành công.",
+                        "status", updated.status().name()
+                    )
+                );
+            } catch (Exception e) {
+                return org.springframework.http.ResponseEntity.badRequest()
+                    .body(java.util.Map.of("success", false, "message", e.getMessage()));
+            }
+        }
         if (errors.hasErrors()) {
             flash.addFlashAttribute("errorMessage", "Trạng thái không hợp lệ.");
             return "redirect:/admin/orders/" + id;

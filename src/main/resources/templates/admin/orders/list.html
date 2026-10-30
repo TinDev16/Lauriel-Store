@@ -1,81 +1,123 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Đơn hàng','orders')}">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{fragments/layout :: layout(~{::section},'Đơn hàng','orders')}">
+
 <body>
-<section>
-<form class="card card-body row g-2 mb-3" method="get" th:action="@{/admin/orders}" data-live-filter>
-<div class="col-md-3"><label class="form-label">Tìm đơn hàng</label>
-<input class="form-control" type="search" name="keyword" placeholder="Mã đơn, tên hoặc SĐT khách..." th:value="${keyword}"></div>
-<div class="col-md-3">
-<label class="form-label">Trạng thái</label>
-<select name="status" class="form-select">
-<option value="">Tất cả</option>
-<option th:each="s:${orderStatuses}" th:value="${s}" th:text="${@view.label(s)}" th:selected="${s == status}">
-</option>
-</select>
-</div>
-<div class="col-md-3">
-<label class="form-label">Từ</label>
-<input class="form-control" type="datetime-local" name="from" th:value="${from}">
-</div>
-<div class="col-md-3">
-<label class="form-label">Đến</label>
-<input class="form-control" type="datetime-local" name="to" th:value="${to}">
-</div>
-<div class="col-auto">
-<button class="btn btn-primary">Lọc</button>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/orders}">Đặt lại</a>
-</div>
-</form>
-<div class="card">
-<div class="table-responsive">
-<table class="table table-hover align-middle mb-0">
-<thead>
-<tr>
-<th>Mã</th>
-<th>Khách hàng</th>
-<th>Trạng thái</th>
-<th>Tổng tiền</th>
-<th>Khuyến mãi đơn hàng</th>
-<th>Giảm bằng mã</th>
-<th>Số tiền phải trả</th>
-<th>Thời gian</th>
-<th>Thao tác</th>
-</tr>
-</thead>
-<tbody>
-<tr th:each="r:${page.content}">
-<td th:text="${r.orderId}">
-</td>
-<td>
-<span th:text="${customerNames.get(r.customerId)}">
-</span>
-<small th:text="| (#${r.customerId})|">
-</small>
-</td>
-<td th:text="${@view.label(r.status)}">
-</td>
-<td th:text="${@view.money(r.totalAmount)}">
-</td>
-<td th:text="${@view.money(r.orderPromotionDiscount)}"></td>
-<td th:text="${@view.money(r.discountAmount)}">
-</td>
-<td th:text="${@view.money(r.finalAmount)}">
-</td>
-<td th:text="${@view.date(r.createdAt)}">
-</td>
-<td>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/orders/{id}(id=${r.orderId})}">Chi tiết</a>
-</td>
-</tr>
-<tr th:if="${#lists.isEmpty(page.content)}">
-<td colspan="9" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div th:replace="~{fragments/pagination :: pagination}">
-</div>
-</section>
+    <section>
+        <form class="card card-body row g-2 mb-3" method="get" th:action="@{/admin/orders}" data-live-filter>
+            <div class="col-md-3"><label class="form-label">Tìm đơn hàng</label>
+                <input class="form-control" type="search" name="keyword" placeholder="Mã đơn, tên hoặc SĐT khách..."
+                    th:value="${keyword}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trạng thái</label>
+                <select name="status" class="form-select">
+                    <option value="">Tất cả</option>
+                    <option th:each="s:${orderStatuses}" th:value="${s}" th:text="${@view.label(s)}"
+                        th:selected="${s == status}">
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Từ</label>
+                <input class="form-control" type="datetime-local" name="from" th:value="${from}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Đến</label>
+                <input class="form-control" type="datetime-local" name="to" th:value="${to}">
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary">Lọc</button>
+                <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/orders}">Đặt lại</a>
+            </div>
+        </form>
+        <div class="card">
+            <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="ordersTable">
+                        <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Khách hàng</th>
+                                <th>Trạng thái</th>
+                                <th>Tổng tiền</th>
+                                <th>Khuyến mãi đơn hàng</th>
+                                <th>Giảm bằng mã</th>
+                                <th>Số tiền phải trả</th>
+                                <th>Thời gian</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="r:${page.content}" th:id="|order-row-${r.orderId}|"
+                                th:data-order-id="${r.orderId}" class="order-row">
+                                <td th:text="${r.orderId}">
+                                </td>
+                                <td>
+                                    <span th:text="${customerNames.get(r.customerId)}">
+                                    </span>
+                                    <small th:text="| (#${r.customerId})|">
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="order-status-badge badge"
+                                        th:classappend="${r.status.name() == 'DELIVERED' ? 'bg-success' : (r.status.name() == 'CANCELLED' || r.status.name() == 'RETURNED' ? 'bg-danger' : (r.status.name() == 'PENDING' ? 'bg-warning text-dark' : (r.status.name() == 'CONFIRMED' ? 'bg-info text-dark' : 'bg-primary')))}"
+                                        th:text="${@view.label(r.status)}">
+                                    </span>
+                                </td>
+                                <td th:text="${@view.money(r.totalAmount)}">
+                                </td>
+                                <td th:text="${@view.money(r.orderPromotionDiscount)}"></td>
+                                <td th:text="${@view.money(r.discountAmount)}">
+                                </td>
+                                <td class="fw-bold" th:text="${@view.money(r.finalAmount)}">
+                                </td>
+                                <td th:text="${@view.date(r.createdAt)}">
+                                </td>
+                                <td>
+                                    <a class="btn btn-outline-primary btn-sm btn-order-preview"
+                                        th:href="@{/admin/orders/{id}(id=${r.orderId})}" th:data-order-id="${r.orderId}"
+                                        title="Xem nhanh bên phải">
+                                        <i class="bi bi-layout-sidebar-inset-reverse me-1"></i>Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(page.content)}">
+                                <td colspan="9" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+            </div>
+        </div>
+        <div th:replace="~{fragments/pagination :: pagination}">
+        </div>
+
+        <!-- Order Quick View Side Panel -->
+        <div class="order-quickview-backdrop" id="orderQuickviewBackdrop"></div>
+        <aside class="order-quickview-panel shadow-lg" id="orderQuickviewPanel" aria-hidden="true">
+            <div class="order-quickview-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="order-quickview-icon"><i class="bi bi-receipt"></i></span>
+                    <div>
+                        <h2 class="h6 mb-0 fw-bold" id="orderQuickviewTitle">Chi tiết đơn hàng</h2>
+                        <small class="text-muted" id="orderQuickviewSubtitle">Xem nhanh thông tin hóa đơn</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <a href="#" id="orderQuickviewFullLink" class="btn btn-sm btn-outline-secondary" target="_blank"
+                        title="Mở trang chi tiết đầy đủ trong tab mới">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    <button type="button" class="btn-close ms-2" id="orderQuickviewClose" aria-label="Đóng"></button>
+                </div>
+            </div>
+            <div class="order-quickview-body" id="orderQuickviewBody">
+                <div class="order-quickview-empty text-center p-5 text-muted">
+                    <i class="bi bi-inbox fs-1 mb-2 d-block"></i>
+                    <p>Vui lòng chọn một đơn hàng để xem chi tiết.</p>
+                </div>
+            </div>
+        </aside>
+    </section>
 </body>
+
 </html>

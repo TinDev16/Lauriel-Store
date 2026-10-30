@@ -1,5 +1,6 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,28 +9,32 @@
     <link rel="stylesheet" th:href="@{/assets/libs/bootstrap-icons/bootstrap-icons.css}">
     <link rel="stylesheet" th:href="@{/assets/css/store.css}">
 </head>
+
 <body class="store-auth">
-<a class="store-auth-brand" th:href="@{/shop}">LAURIEL</a>
-<main class="store-auth-card">
-    <span>CHÀO MỪNG TRỞ LẠI</span>
-    <h1>Đăng nhập</h1>
-    <p>Dùng tài khoản khách hàng, quản trị viên hoặc nhân viên của bạn.</p>
-    <div class="alert alert-danger" th:if="${param.error}">Không thể đăng nhập. Kiểm tra tài khoản và mật khẩu.</div>
-    <div class="alert alert-warning" th:if="${param.checkout}">Vui lòng đăng nhập để tiếp tục thanh toán.</div>
-    <div class="alert alert-success" th:if="${param.logout}">Bạn đã đăng xuất.</div>
-    <div class="alert alert-warning" th:if="${param.disabled}">Tài khoản đã bị khóa, ngừng hoạt động hoặc thay đổi quyền. Vui lòng đăng nhập lại.</div>
-    <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
-    <form method="post" th:action="@{/login}">
-        <label>Tên đăng nhập
-            <input class="form-control" name="username" required maxlength="100" autocomplete="username" autofocus>
-        </label>
-        <label>Mật khẩu
-            <input class="form-control" type="password" name="password" required autocomplete="current-password">
-        </label>
-        <button class="store-btn store-btn-dark w-100">Đăng nhập</button>
-    </form>
-    <p class="store-auth-switch">Chưa có tài khoản? <a th:href="@{/register}">Đăng ký ngay</a></p>
-    <a class="store-continue" th:href="@{/shop}"><i class="bi bi-arrow-left"></i> Tiếp tục xem cửa hàng</a>
-</main>
+    <a class="store-auth-brand" th:href="@{/shop}">LAURIEL</a>
+    <main class="store-auth-card">
+        <span>CHÀO MỪNG TRỞ LẠI</span>
+        <h1>Đăng nhập</h1>
+        <p>Dùng tài khoản khách hàng, quản trị viên hoặc nhân viên của bạn.</p>
+        <div class="alert alert-danger" th:if="${param.error}">Không thể đăng nhập. Kiểm tra tài khoản và mật khẩu.
+        </div>
+        <div class="alert alert-warning" th:if="${param.checkout}">Vui lòng đăng nhập để mua hàng.</div>
+        <div class="alert alert-success" th:if="${param.logout}">Bạn đã đăng xuất.</div>
+        <div class="alert alert-warning" th:if="${param.disabled}">Tài khoản đã bị khóa, ngừng hoạt động hoặc thay đổi
+            quyền. Vui lòng đăng nhập lại.</div>
+        <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+        <form method="post" th:action="@{/login}">
+            <label>Tên đăng nhập
+                <input class="form-control" name="username" required maxlength="100" autocomplete="username" autofocus>
+            </label>
+            <label>Mật khẩu
+                <input class="form-control" type="password" name="password" required autocomplete="current-password">
+            </label>
+            <button class="store-btn store-btn-dark w-100">Đăng nhập</button>
+        </form>
+        <p class="store-auth-switch">Chưa có tài khoản? <a th:href="@{/register}">Đăng ký ngay</a></p>
+        <a class="store-continue" th:href="@{/shop}"><i class="bi bi-arrow-left"></i> Tiếp tục xem cửa hàng</a>
+    </main>
 </body>
+
 </html>

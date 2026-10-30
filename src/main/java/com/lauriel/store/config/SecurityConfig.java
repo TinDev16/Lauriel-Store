@@ -19,9 +19,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.NullRequestCache;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.AnyRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 
 @Configuration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -166,8 +168,11 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/uploads/products/**")
                     .permitAll()
                     .requestMatchers(
+                        "/shop/checkout",
                         "/shop/checkout/**",
+                        "/shop/orders",
                         "/shop/orders/**",
+                        "/shop/profile",
                         "/shop/profile/**"
                     )
                     .hasRole("CUSTOMER")
@@ -221,12 +226,18 @@ public class SecurityConfig {
                     .failureUrl("/login?error")
                     .permitAll()
             )
-            .exceptionHandling(errors ->
+            .exceptionHandling(errors -> {
+                var requestCache = new HttpSessionRequestCache();
                 errors
                     .defaultAuthenticationEntryPointFor(
                         new LoginUrlAuthenticationEntryPoint("/login?checkout"),
-                        PathPatternRequestMatcher.pathPattern(
-                            "/shop/checkout/**"
+                        new OrRequestMatcher(
+                            PathPatternRequestMatcher.pathPattern(
+                                "/shop/checkout"
+                            ),
+                            PathPatternRequestMatcher.pathPattern(
+                                "/shop/checkout/**"
+                            )
                         )
                     )
                     .defaultAuthenticationEntryPointFor(
@@ -234,12 +245,28 @@ public class SecurityConfig {
                         AnyRequestMatcher.INSTANCE
                     )
                     .accessDeniedHandler((request, response, exception) -> {
+                        String uri = request.getRequestURI();
+                        if (
+                            uri != null &&
+                            (uri.equals("/shop/checkout") ||
+                                uri.startsWith("/shop/checkout/") ||
+                                uri.equals("/shop/orders") ||
+                                uri.startsWith("/shop/orders/") ||
+                                uri.equals("/shop/profile") ||
+                                uri.startsWith("/shop/profile/"))
+                        ) {
+                            requestCache.saveRequest(request, response);
+                            response.sendRedirect(
+                                request.getContextPath() + "/login?checkout"
+                            );
+                            return;
+                        }
                         response.setStatus(403);
                         request
                             .getRequestDispatcher("/403")
                             .forward(request, response);
-                    })
-            )
+                    });
+            })
             .logout(logout ->
                 logout
                     .addLogoutHandler((request, response, authentication) -> {

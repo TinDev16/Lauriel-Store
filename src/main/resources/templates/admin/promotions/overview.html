@@ -1,1107 +1,971 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-    th:replace="~{fragments/layout :: layout(~{::section},'Trung tâm tiếp thị & Khuyến mãi','promotions-overview')}">
-
+      th:replace="~{fragments/layout :: layout(~{::section},'Trung tâm tiếp thị & Khuyến mãi','promotions-overview')}">
 <body>
-    <section class="marketing-overview-page">
-        <style>
-            .hover-shadow {
-                transition: transform 0.15s ease, box-shadow 0.15s ease;
-                cursor: pointer;
-            }
+<section class="marketing-overview-page">
+    <style>
+        .hover-shadow {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            cursor: pointer;
+        }
+        .hover-shadow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.12) !important;
+        }
+    </style>
+    <!-- Top Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h2 class="h4 mb-1">Trung tâm tiếp thị &amp; Khuyến mãi</h2>
+            <p class="text-muted mb-0">Quản lý tập trung toàn bộ chương trình khuyến mãi sản phẩm, mã giảm giá và ưu đãi đơn hàng.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-primary" th:href="@{/admin/promotions/new}">
+                <i class="bi bi-plus-lg"></i> Thêm khuyến mãi SP
+            </a>
+            <a class="btn btn-outline-primary" th:href="@{/admin/vouchers/new}">
+                <i class="bi bi-ticket-perforated"></i> Thêm mã giảm giá
+            </a>
+            <a class="btn btn-outline-primary" th:href="@{/admin/order-promotions/new}">
+                <i class="bi bi-cash-coin"></i> Thêm ưu đãi đơn
+            </a>
+        </div>
+    </div>
 
-            .hover-shadow:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.12) !important;
-            }
-        </style>
-        <!-- Top Header -->
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <!-- Navigation Pills / Tabs -->
+    <ul class="nav nav-pills mb-4 gap-2">
+        <li class="nav-item">
+            <a class="nav-link fw-semibold"
+               th:classappend="${currentTab == 'overview' or currentTab == null} ? 'active' : 'bg-white border text-dark'"
+               th:href="@{/admin/promotions/overview(tab='overview')}">
+                <i class="bi bi-grid-1x2"></i> Tổng quan
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-semibold"
+               th:classappend="${currentTab == 'promotions'} ? 'active' : 'bg-white border text-dark'"
+               th:href="@{/admin/promotions/overview(tab='promotions')}">
+                <i class="bi bi-megaphone"></i> Khuyến mãi sản phẩm
+                <span class="badge ms-1"
+                      th:classappend="${currentTab == 'promotions'} ? 'text-bg-light text-dark' : 'text-bg-success'"
+                      th:text="${overview.activeProductPromotionsCount}">0</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-semibold"
+               th:classappend="${currentTab == 'vouchers'} ? 'active' : 'bg-white border text-dark'"
+               th:href="@{/admin/promotions/overview(tab='vouchers')}">
+                <i class="bi bi-ticket-perforated"></i> Mã giảm giá
+                <span class="badge ms-1"
+                      th:classappend="${currentTab == 'vouchers'} ? 'text-bg-light text-dark' : 'text-bg-primary'"
+                      th:text="${overview.activeVouchersCount}">0</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-semibold"
+               th:classappend="${currentTab == 'order-promotions'} ? 'active' : 'bg-white border text-dark'"
+               th:href="@{/admin/promotions/overview(tab='order-promotions')}">
+                <i class="bi bi-cash-coin"></i> Khuyến mãi đơn hàng
+                <span class="badge ms-1"
+                      th:classappend="${currentTab == 'order-promotions'} ? 'text-bg-light text-dark' : 'text-bg-warning text-dark'"
+                      th:text="${overview.activeOrderPromotionsCount}">0</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 1: TỔNG QUAN                                                          -->
+    <!-- ========================================================================= -->
+    <div th:if="${currentTab == 'overview' or currentTab == null}">
+        <!-- KPI Metric Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #10b981 !important;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Đang hoạt động</span>
+                            <span class="badge text-bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                                <span class="d-inline-block rounded-circle bg-success" style="width:6px;height:6px;"></span> Trực tuyến
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-success" th:text="${overview.totalActiveCampaigns}">0</div>
+                        <div class="small text-muted" th:text="|Trên tổng ${overview.totalCampaigns} chương trình đã thiết lập|"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 border-0 shadow-sm transition-all text-dark hover-shadow"
+                   style="border-left: 4px solid #087f63 !important;"
+                   th:href="@{/admin/promotions/overview(tab='promotions')}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Khuyến mãi sản phẩm</span>
+                            <div class="p-2 rounded-3 bg-light text-success"><i class="bi bi-megaphone fs-5"></i></div>
+                        </div>
+                        <div class="h2 mb-1 fw-bold" th:text="${overview.activeProductPromotionsCount}">0</div>
+                        <div class="small text-muted" th:text="|Tổng ${overview.totalProductPromotionsCount} chương trình|"></div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 border-0 shadow-sm transition-all text-dark hover-shadow"
+                   style="border-left: 4px solid #3b82f6 !important;"
+                   th:href="@{/admin/promotions/overview(tab='vouchers')}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Mã giảm giá (Vouchers)</span>
+                            <div class="p-2 rounded-3 bg-light text-primary"><i class="bi bi-ticket-perforated fs-5"></i></div>
+                        </div>
+                        <div class="h2 mb-1 fw-bold" th:text="${overview.activeVouchersCount}">0</div>
+                        <div class="small text-muted" th:text="|Tổng ${overview.totalVouchersCount} mã voucher|"></div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 border-0 shadow-sm transition-all text-dark hover-shadow"
+                   style="border-left: 4px solid #f59e0b !important;"
+                   th:href="@{/admin/promotions/overview(tab='order-promotions')}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Khuyến mãi đơn hàng</span>
+                            <div class="p-2 rounded-3 bg-light text-warning"><i class="bi bi-cash-coin fs-5"></i></div>
+                        </div>
+                        <div class="h2 mb-1 fw-bold" th:text="${overview.activeOrderPromotionsCount}">0</div>
+                        <div class="small text-muted" th:text="|Tổng ${overview.totalOrderPromotionsCount} mức ưu đãi|"></div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Khuyến mãi sản phẩm đang hoạt động -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-megaphone text-success fs-5"></i>
+                    <h3 class="h6 mb-0 fw-bold">Khuyến mãi sản phẩm đang hoạt động</h3>
+                    <span class="badge text-bg-success rounded-pill" th:text="${overview.activeProductPromotionsCount}">0</span>
+                </div>
+                <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/promotions/overview(tab='promotions')}">
+                    Quản lý tất cả <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tên chương trình</th>
+                            <th>Mức giảm</th>
+                            <th>Sản phẩm áp dụng</th>
+                            <th>Thời gian áp dụng</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="p : ${overview.activeProductPromotions}">
+                            <td>
+                                <div class="fw-semibold" th:text="${p.promotionName}">Tên khuyến mãi</div>
+                                <small class="text-muted" th:if="${p.description}" th:text="${p.description}"></small>
+                            </td>
+                            <td>
+                                <span class="badge text-bg-danger fs-6" th:text="|-${@view.number(p.discountPercent)}%|">-10%</span>
+                            </td>
+                            <td>
+                                <span class="badge text-bg-light border" th:text="|${p.appliedProductCount} sản phẩm|">0 sản phẩm</span>
+                            </td>
+                            <td>
+                                <div class="small text-muted">
+                                    Từ: <strong th:text="${@view.date(p.startDate)}"></strong><br>
+                                    Đến: <strong th:text="${@view.date(p.endDate)}"></strong>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge text-bg-success d-inline-flex align-items-center gap-1">
+                                    <i class="bi bi-broadcast"></i> Đang chạy
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/promotions/{id}/products(id=${p.promotionId})}">
+                                    <i class="bi bi-box-seam"></i> Sản phẩm
+                                </a>
+                                <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/promotions/{id}/edit(id=${p.promotionId})}">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(overview.activeProductPromotions)}">
+                            <td colspan="6" class="text-muted text-center py-4">
+                                <i class="bi bi-info-circle me-1"></i> Hiện không có chương trình khuyến mãi sản phẩm nào đang hoạt động.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Mã giảm giá đang khả dụng -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-ticket-perforated text-primary fs-5"></i>
+                    <h3 class="h6 mb-0 fw-bold">Mã giảm giá (Vouchers) đang khả dụng</h3>
+                    <span class="badge text-bg-primary rounded-pill" th:text="${overview.activeVouchersCount}">0</span>
+                </div>
+                <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/promotions/overview(tab='vouchers')}">
+                    Quản lý tất cả <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã Voucher</th>
+                            <th>Tên Voucher</th>
+                            <th>Mức giảm</th>
+                            <th>Đơn tối thiểu</th>
+                            <th>Lượt còn lại</th>
+                            <th>Thời hạn</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="v : ${overview.activeVouchers}">
+                            <td>
+                                <code class="fs-6 fw-bold text-primary bg-light px-2 py-1 rounded" th:text="${v.code}">CODE</code>
+                            </td>
+                            <td class="fw-semibold" th:text="${v.voucherName}">Tên voucher</td>
+                            <td>
+                                <span class="fw-bold text-danger" th:if="${v.discountType.name() == 'PERCENT'}" th:text="|Giảm ${@view.number(v.discountValue)}%|"></span>
+                                <span class="fw-bold text-danger" th:if="${v.discountType.name() == 'FIXED_AMOUNT'}" th:text="|Giảm ${@view.money(v.discountValue)}|"></span>
+                                <div class="small text-muted" th:if="${v.maxDiscountAmount != null}" th:text="|Tối đa: ${@view.money(v.maxDiscountAmount)}|"></div>
+                            </td>
+                            <td>
+                                <span th:text="${@view.money(v.minOrderAmount)}">0 đ</span>
+                            </td>
+                            <td>
+                                <span class="badge" th:classappend="${v.quantity <= 10} ? 'text-bg-warning' : 'text-bg-success'" th:text="|Còn ${v.quantity} lượt|">Còn 0 lượt</span>
+                            </td>
+                            <td>
+                                <div class="small text-muted">
+                                    Hết hạn: <strong th:text="${@view.date(v.endDate)}"></strong>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/vouchers/{id}/edit(id=${v.voucherId})}">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(overview.activeVouchers)}">
+                            <td colspan="7" class="text-muted text-center py-4">
+                                <i class="bi bi-info-circle me-1"></i> Hiện không có mã giảm giá nào đang khả dụng (hoặc đã hết lượt sử dụng).
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Khuyến mãi đơn hàng đang áp dụng -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-cash-coin text-warning fs-5"></i>
+                    <h3 class="h6 mb-0 fw-bold">Khuyến mãi đơn hàng đang áp dụng</h3>
+                    <span class="badge text-bg-warning text-dark rounded-pill" th:text="${overview.activeOrderPromotionsCount}">0</span>
+                </div>
+                <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/promotions/overview(tab='order-promotions')}">
+                    Quản lý tất cả <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tên chương trình</th>
+                            <th>Đơn tối thiểu</th>
+                            <th>Mức giảm</th>
+                            <th>Giảm tối đa</th>
+                            <th>Thời gian áp dụng</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="op : ${overview.activeOrderPromotions}">
+                            <td>
+                                <div class="fw-semibold" th:text="${op.promotionName}">Tên ưu đãi</div>
+                                <small class="text-muted" th:if="${op.description}" th:text="${op.description}"></small>
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-primary" th:text="${@view.money(op.minOrderAmount)}">0 đ</span>
+                            </td>
+                            <td>
+                                <span class="badge text-bg-danger" th:text="|-${@view.number(op.discountPercent)}%|">-5%</span>
+                            </td>
+                            <td>
+                                <span th:text="${op.maxDiscountAmount != null ? @view.money(op.maxDiscountAmount) : 'Không giới hạn'}"></span>
+                            </td>
+                            <td>
+                                <div class="small text-muted">
+                                    Đến: <strong th:text="${@view.date(op.endDate)}"></strong>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/order-promotions/{id}/edit(id=${op.orderPromotionId})}">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(overview.activeOrderPromotions)}">
+                            <td colspan="6" class="text-muted text-center py-4">
+                                <i class="bi bi-info-circle me-1"></i> Hiện không có khuyến mãi đơn hàng nào đang áp dụng.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Chương trình sắp diễn ra (Upcoming) -->
+        <div class="card border-0 shadow-sm mb-4" th:if="${!#lists.isEmpty(overview.upcomingCampaigns)}">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-calendar-event text-info fs-5"></i>
+                    <h3 class="h6 mb-0 fw-bold">Chương trình sắp diễn ra</h3>
+                    <span class="badge text-bg-info text-white rounded-pill" th:text="${#lists.size(overview.upcomingCampaigns)}">0</span>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Loại ưu đãi</th>
+                            <th>Tên chương trình</th>
+                            <th>Nội dung giảm giá</th>
+                            <th>Thời gian bắt đầu</th>
+                            <th>Thời gian kết thúc</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="u : ${overview.upcomingCampaigns}">
+                            <td>
+                                <span class="badge" th:classappend="${u.type == 'PRODUCT'} ? 'text-bg-success' : (${u.type == 'VOUCHER'} ? 'text-bg-primary' : 'text-bg-warning text-dark')" th:text="${u.typeLabel}">Loại</span>
+                            </td>
+                            <td class="fw-semibold" th:text="${u.name}">Tên</td>
+                            <td th:text="${u.discountDetail}">Chi tiết</td>
+                            <td>
+                                <strong class="text-primary" th:text="${@view.date(u.startDate)}"></strong>
+                            </td>
+                            <td>
+                                <span class="text-muted" th:text="${@view.date(u.endDate)}"></span>
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-secondary btn-sm" th:href="@{${u.url}}">
+                                    <i class="bi bi-pencil"></i> Xem / Sửa
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: KHUYẾN MÃI SẢN PHẨM                                                -->
+    <!-- ========================================================================= -->
+    <div th:if="${currentTab == 'promotions'}">
+        <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
-                <h2 class="h4 mb-1">Trung tâm tiếp thị &amp; Khuyến mãi</h2>
-                <p class="text-muted mb-0">Quản lý tập trung toàn bộ chương trình khuyến mãi sản phẩm, mã giảm giá và ưu
-                    đãi đơn hàng.</p>
+                <h3 class="h5 mb-1 fw-bold">Khuyến mãi sản phẩm</h3>
+                <p class="text-muted small mb-0">Quản lý các chương trình chiết khấu trực tiếp trên giá bán sản phẩm.</p>
             </div>
-            <div class="d-flex flex-wrap gap-2">
-                <a class="btn btn-primary" th:href="@{/admin/promotions/new}">
-                    <i class="bi bi-plus-lg"></i> Thêm khuyến mãi SP
+            <a class="btn btn-primary" th:href="@{/admin/promotions/new}">
+                <i class="bi bi-plus-lg"></i> Thêm khuyến mãi sản phẩm
+            </a>
+        </div>
+
+        <!-- Thẻ thống kê tổng quan Khuyến mãi sản phẩm -->
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'RUNNING'} ? 'border-success border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #10b981 !important;"
+                   th:href="@{/admin/promotions/overview(tab='promotions', timeFilter=${timeFilter == 'RUNNING' ? null : 'RUNNING'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Đang diễn ra</span>
+                            <span class="badge text-bg-success-subtle text-success border border-success-subtle">
+                                <i class="bi bi-play-circle me-1"></i>Đang chạy
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-success" th:text="${overview.activeProductPromotionsCount}">0</div>
+                        <div class="small text-muted">Đang áp dụng trực tiếp trên sản phẩm</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'RUNNING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'RUNNING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
+                        </div>
+                    </div>
                 </a>
-                <a class="btn btn-outline-primary" th:href="@{/admin/vouchers/new}">
-                    <i class="bi bi-ticket-perforated"></i> Thêm mã giảm giá
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'UPCOMING'} ? 'border-info border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #06b6d4 !important;"
+                   th:href="@{/admin/promotions/overview(tab='promotions', timeFilter=${timeFilter == 'UPCOMING' ? null : 'UPCOMING'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Sắp diễn ra</span>
+                            <span class="badge text-bg-info-subtle text-info border border-info-subtle">
+                                <i class="bi bi-clock me-1"></i>Lên lịch
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-info" th:text="${overview.upcomingProductPromotionsCount}">0</div>
+                        <div class="small text-muted">Bắt đầu trong thời gian tới</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'UPCOMING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'UPCOMING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
+                        </div>
+                    </div>
                 </a>
-                <a class="btn btn-outline-primary" th:href="@{/admin/order-promotions/new}">
-                    <i class="bi bi-cash-coin"></i> Thêm ưu đãi đơn
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'EXPIRED'} ? 'border-secondary border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #6b7280 !important;"
+                   th:href="@{/admin/promotions/overview(tab='promotions', timeFilter=${timeFilter == 'EXPIRED' ? null : 'EXPIRED'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Đã kết thúc</span>
+                            <span class="badge text-bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                <i class="bi bi-calendar-x me-1"></i>Hết hạn
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-secondary" th:text="${overview.expiredProductPromotionsCount}">0</div>
+                        <div class="small text-muted">Đã quá ngày kết thúc áp dụng</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'EXPIRED' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'EXPIRED' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'INACTIVE'} ? 'border-warning border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #f59e0b !important;"
+                   th:href="@{/admin/promotions/overview(tab='promotions', timeFilter=${timeFilter == 'INACTIVE' ? null : 'INACTIVE'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Tạm ngừng</span>
+                            <span class="badge text-bg-warning-subtle text-warning border border-warning-subtle">
+                                <i class="bi bi-pause-circle me-1"></i>Đang tắt
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-warning" th:text="${overview.inactiveProductPromotionsCount}">0</div>
+                        <div class="small text-muted">Đang vô hiệu hóa hoặc tắt</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'INACTIVE' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'INACTIVE' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
+                        </div>
+                    </div>
                 </a>
             </div>
         </div>
 
-        <!-- Navigation Pills / Tabs -->
-        <ul class="nav nav-pills mb-4 gap-2">
-            <li class="nav-item">
-                <a class="nav-link fw-semibold"
-                    th:classappend="${currentTab == 'overview' or currentTab == null} ? 'active' : 'bg-white border text-dark'"
-                    th:href="@{/admin/promotions/overview(tab='overview')}">
-                    <i class="bi bi-grid-1x2"></i> Tổng quan
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link fw-semibold"
-                    th:classappend="${currentTab == 'promotions'} ? 'active' : 'bg-white border text-dark'"
-                    th:href="@{/admin/promotions/overview(tab='promotions')}">
-                    <i class="bi bi-megaphone"></i> Khuyến mãi sản phẩm
-                    <span class="badge ms-1"
-                        th:classappend="${currentTab == 'promotions'} ? 'text-bg-light text-dark' : 'text-bg-success'"
-                        th:text="${overview.activeProductPromotionsCount}">0</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link fw-semibold"
-                    th:classappend="${currentTab == 'vouchers'} ? 'active' : 'bg-white border text-dark'"
-                    th:href="@{/admin/promotions/overview(tab='vouchers')}">
-                    <i class="bi bi-ticket-perforated"></i> Mã giảm giá
-                    <span class="badge ms-1"
-                        th:classappend="${currentTab == 'vouchers'} ? 'text-bg-light text-dark' : 'text-bg-primary'"
-                        th:text="${overview.activeVouchersCount}">0</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link fw-semibold"
-                    th:classappend="${currentTab == 'order-promotions'} ? 'active' : 'bg-white border text-dark'"
-                    th:href="@{/admin/promotions/overview(tab='order-promotions')}">
-                    <i class="bi bi-cash-coin"></i> Khuyến mãi đơn hàng
-                    <span class="badge ms-1"
-                        th:classappend="${currentTab == 'order-promotions'} ? 'text-bg-light text-dark' : 'text-bg-warning text-dark'"
-                        th:text="${overview.activeOrderPromotionsCount}">0</span>
-                </a>
-            </li>
-        </ul>
+        <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between" th:if="${timeFilter != null}">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-funnel-fill text-primary"></i>
+                <span>Đang lọc danh sách theo ô tổng quan: <strong th:text="${timeFilter == 'RUNNING' ? 'Đang diễn ra' : (timeFilter == 'UPCOMING' ? 'Sắp diễn ra' : (timeFilter == 'EXPIRED' ? 'Đã kết thúc' : (timeFilter == 'INACTIVE' ? 'Tạm ngừng' : timeFilter)))}">Bộ lọc</strong></span>
+            </div>
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/promotions/overview(tab='promotions')}">
+                <i class="bi bi-x-lg"></i> Xóa lọc
+            </a>
+        </div>
 
-        <!-- ========================================================================= -->
-        <!-- TAB 1: TỔNG QUAN                                                          -->
-        <!-- ========================================================================= -->
-        <div th:if="${currentTab == 'overview' or currentTab == null}">
-            <!-- KPI Metric Cards -->
-            <div class="row g-3 mb-4">
-                <div class="col-sm-6 col-xl-3">
-                    <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #10b981 !important;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Đang hoạt động</span>
-                                <span
-                                    class="badge text-bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
-                                    <span class="d-inline-block rounded-circle bg-success"
-                                        style="width:6px;height:6px;"></span> Trực tuyến
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-success" th:text="${overview.totalActiveCampaigns}">0</div>
-                            <div class="small text-muted"
-                                th:text="|Trên tổng ${overview.totalCampaigns} chương trình đã thiết lập|"></div>
+        <form class="card card-body mb-3 border-0 shadow-sm" method="get" th:action="@{/admin/promotions/overview}" data-live-filter>
+            <input type="hidden" name="tab" value="promotions">
+            <input type="hidden" name="timeFilter" th:value="${timeFilter}" th:if="${timeFilter != null}">
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-7">
+                    <label class="form-label small fw-semibold">Tìm khuyến mãi</label>
+                    <input class="form-control" type="search" name="keyword" placeholder="Tên hoặc mô tả khuyến mãi..." th:value="${keyword}">
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label small fw-semibold">Trạng thái</label>
+                    <select class="form-select" name="status">
+                        <option value="">Tất cả trạng thái</option>
+                        <option th:each="item : ${statuses}" th:value="${item}" th:text="${@view.label(item)}" th:selected="${item == status}"></option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <a class="btn btn-outline-secondary w-100" th:href="@{/admin/promotions/overview(tab='promotions')}">Đặt lại</a>
+                </div>
+            </div>
+        </form>
+
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tên chương trình</th>
+                            <th>Mức giảm %</th>
+                            <th>Thời gian bắt đầu</th>
+                            <th>Thời gian kết thúc</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="r : ${page.content}">
+                            <td>
+                                <strong th:text="${r.promotionName}">Tên</strong>
+                                <div class="small text-muted" th:if="${r.description}" th:text="${r.description}"></div>
+                            </td>
+                            <td>
+                                <span class="badge text-bg-danger fs-6" th:text="|-${@view.number(r.discountPercent)}%|">-10%</span>
+                            </td>
+                            <td th:text="${@view.date(r.startDate)}"></td>
+                            <td th:text="${@view.date(r.endDate)}"></td>
+                            <td>
+                                <span class="badge" th:classappend="${r.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
+                                      th:text="${@view.label(r.status)}"></span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/promotions/{id}/products(id=${r.promotionId})}">
+                                    <i class="bi bi-box-seam"></i> Sản phẩm
+                                </a>
+                                <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/promotions/{id}/edit(id=${r.promotionId})}">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </a>
+                                <form class="d-inline" method="post" th:action="@{/admin/promotions/{id}/status(id=${r.promotionId})}"
+                                      data-confirm="Thay đổi trạng thái khuyến mãi này?">
+                                    <input type="hidden" name="status" th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
+                                    <button class="btn btn-sm" th:classappend="${r.status.name() == 'ACTIVE'} ? 'btn-outline-danger' : 'btn-outline-success'"
+                                            th:text="${r.status.name() == 'ACTIVE' ? 'Ngừng' : 'Bật'}"></button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(page.content)}">
+                            <td colspan="6" class="text-muted text-center py-4">Chưa có dữ liệu khuyến mãi phù hợp.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div th:replace="~{fragments/pagination :: pagination}"></div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 3: MÃ GIẢM GIÁ (VOUCHERS)                                             -->
+    <!-- ========================================================================= -->
+    <div th:if="${currentTab == 'vouchers'}">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h3 class="h5 mb-1 fw-bold">Mã giảm giá (Vouchers)</h3>
+                <p class="text-muted small mb-0">Quản lý mã coupon nhập tại trang thanh toán theo số lượng và điều kiện đơn.</p>
+            </div>
+            <a class="btn btn-primary" th:href="@{/admin/vouchers/new}">
+                <i class="bi bi-plus-lg"></i> Thêm mã giảm giá
+            </a>
+        </div>
+
+        <!-- Thẻ thống kê tổng quan Mã giảm giá -->
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'RUNNING'} ? 'border-primary border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #3b82f6 !important;"
+                   th:href="@{/admin/promotions/overview(tab='vouchers', timeFilter=${timeFilter == 'RUNNING' ? null : 'RUNNING'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Đang khả dụng</span>
+                            <span class="badge text-bg-primary-subtle text-primary border border-primary-subtle">
+                                <i class="bi bi-check-circle me-1"></i>Có hiệu lực
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-primary" th:text="${overview.activeVouchersCount}">0</div>
+                        <div class="small text-muted">Còn lượt và trong thời hạn áp dụng</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'RUNNING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'RUNNING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
                         </div>
                     </div>
+                </a>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'OUT_OF_STOCK'} ? 'border-danger border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #ef4444 !important;"
+                   th:href="@{/admin/promotions/overview(tab='vouchers', timeFilter=${timeFilter == 'OUT_OF_STOCK' ? null : 'OUT_OF_STOCK'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Hết lượt dùng</span>
+                            <span class="badge text-bg-danger-subtle text-danger border border-danger-subtle">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Hết số lượng
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-danger" th:text="${overview.outOfStockVouchersCount}">0</div>
+                        <div class="small text-muted">Số lượng mã khả dụng = 0</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'OUT_OF_STOCK' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'OUT_OF_STOCK' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'UPCOMING'} ? 'border-info border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #06b6d4 !important;"
+                   th:href="@{/admin/promotions/overview(tab='vouchers', timeFilter=${timeFilter == 'UPCOMING' ? null : 'UPCOMING'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Sắp diễn ra</span>
+                            <span class="badge text-bg-info-subtle text-info border border-info-subtle">
+                                <i class="bi bi-clock me-1"></i>Chưa bắt đầu
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-info" th:text="${overview.upcomingVouchersCount}">0</div>
+                        <div class="small text-muted">Đã lên lịch, chuẩn bị có hiệu lực</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'UPCOMING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'UPCOMING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'EXPIRED'} ? 'border-secondary border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #6b7280 !important;"
+                   th:href="@{/admin/promotions/overview(tab='vouchers', timeFilter=${timeFilter == 'EXPIRED' ? null : 'EXPIRED'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Đã kết thúc</span>
+                            <span class="badge text-bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                <i class="bi bi-calendar-x me-1"></i>Hết hạn
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-secondary" th:text="${overview.expiredVouchersCount}">0</div>
+                        <div class="small text-muted">Đã quá thời gian hiệu lực</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'EXPIRED' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'EXPIRED' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between" th:if="${timeFilter != null}">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-funnel-fill text-primary"></i>
+                <span>Đang lọc danh sách theo ô tổng quan: <strong th:text="${timeFilter == 'RUNNING' ? 'Đang khả dụng' : (timeFilter == 'OUT_OF_STOCK' ? 'Hết lượt sử dụng' : (timeFilter == 'UPCOMING' ? 'Sắp diễn ra' : (timeFilter == 'EXPIRED' ? 'Đã kết thúc' : timeFilter)))}">Bộ lọc</strong></span>
+            </div>
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/promotions/overview(tab='vouchers')}">
+                <i class="bi bi-x-lg"></i> Xóa lọc
+            </a>
+        </div>
+
+        <form class="card card-body mb-3 border-0 shadow-sm" method="get" th:action="@{/admin/promotions/overview}" data-live-filter>
+            <input type="hidden" name="tab" value="vouchers">
+            <input type="hidden" name="timeFilter" th:value="${timeFilter}" th:if="${timeFilter != null}">
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-5">
+                    <label class="form-label small fw-semibold">Tìm mã giảm giá</label>
+                    <input class="form-control" type="search" name="keyword" placeholder="Mã code hoặc tên voucher..." th:value="${keyword}">
                 </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 border-0 shadow-sm transition-all text-dark hover-shadow"
-                        style="border-left: 4px solid #087f63 !important;"
-                        th:href="@{/admin/promotions/overview(tab='promotions')}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Khuyến mãi sản phẩm</span>
-                                <div class="p-2 rounded-3 bg-light text-success"><i class="bi bi-megaphone fs-5"></i>
+                <div class="col-lg-3">
+                    <label class="form-label small fw-semibold">Loại giảm</label>
+                    <select class="form-select" name="discountType">
+                        <option value="">Tất cả loại giảm</option>
+                        <option th:each="item : ${discountTypes}" th:value="${item}" th:text="${@view.label(item)}" th:selected="${item == discountType}"></option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label small fw-semibold">Trạng thái</label>
+                    <select class="form-select" name="status">
+                        <option value="">Tất cả</option>
+                        <option th:each="item : ${statuses}" th:value="${item}" th:text="${@view.label(item)}" th:selected="${item == status}"></option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <a class="btn btn-outline-secondary w-100" th:href="@{/admin/promotions/overview(tab='vouchers')}">Đặt lại</a>
+                </div>
+            </div>
+        </form>
+
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã Code</th>
+                            <th>Tên Voucher</th>
+                            <th>Loại</th>
+                            <th>Giá trị</th>
+                            <th>Đơn tối thiểu</th>
+                            <th>Giảm tối đa</th>
+                            <th>Còn lại</th>
+                            <th>Thời hạn</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="r : ${page.content}">
+                            <td>
+                                <code class="fs-6 fw-bold text-primary bg-light px-2 py-1 rounded" th:text="${r.code}">CODE</code>
+                            </td>
+                            <td class="fw-semibold" th:text="${r.voucherName}">Tên</td>
+                            <td>
+                                <span class="badge text-bg-light border" th:text="${@view.label(r.discountType)}">Loại</span>
+                            </td>
+                            <td class="fw-bold text-danger">
+                                <span th:if="${r.discountType.name() == 'PERCENT'}" th:text="|-${@view.number(r.discountValue)}%|"></span>
+                                <span th:if="${r.discountType.name() == 'FIXED_AMOUNT'}" th:text="|-${@view.money(r.discountValue)}|"></span>
+                            </td>
+                            <td th:text="${@view.money(r.minOrderAmount)}"></td>
+                            <td th:text="${r.maxDiscountAmount != null ? @view.money(r.maxDiscountAmount) : '—'}"></td>
+                            <td>
+                                <span class="badge" th:classappend="${r.quantity <= 10} ? 'text-bg-warning' : 'text-bg-success'"
+                                      th:text="|Còn ${r.quantity}|"></span>
+                            </td>
+                            <td>
+                                <div class="small text-muted">
+                                    <span th:text="${@view.date(r.startDate)}"></span><br>
+                                    đến <strong th:text="${@view.date(r.endDate)}"></strong>
                                 </div>
-                            </div>
-                            <div class="h2 mb-1 fw-bold" th:text="${overview.activeProductPromotionsCount}">0</div>
-                            <div class="small text-muted"
-                                th:text="|Tổng ${overview.totalProductPromotionsCount} chương trình|"></div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
-                            </div>
+                            </td>
+                            <td>
+                                <span class="badge" th:classappend="${r.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
+                                      th:text="${@view.label(r.status)}"></span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/vouchers/{id}/edit(id=${r.voucherId})}">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </a>
+                                <form class="d-inline" method="post" th:action="@{/admin/vouchers/{id}/status(id=${r.voucherId})}"
+                                      data-confirm="Thay đổi trạng thái mã giảm giá này?">
+                                    <input type="hidden" name="status" th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
+                                    <button class="btn btn-sm" th:classappend="${r.status.name() == 'ACTIVE'} ? 'btn-outline-danger' : 'btn-outline-success'"
+                                            th:text="${r.status.name() == 'ACTIVE' ? 'Ngừng' : 'Bật'}"></button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(page.content)}">
+                            <td colspan="10" class="text-muted text-center py-4">Chưa có dữ liệu mã giảm giá phù hợp.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div th:replace="~{fragments/pagination :: pagination}"></div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 4: KHUYẾN MÃI ĐƠN HÀNG                                                -->
+    <!-- ========================================================================= -->
+    <div th:if="${currentTab == 'order-promotions'}">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h3 class="h5 mb-1 fw-bold">Khuyến mãi đơn hàng</h3>
+                <p class="text-muted small mb-0">Chương trình tự động chiết khấu theo tổng giá trị giỏ hàng khi đạt mốc tối thiểu.</p>
+            </div>
+            <a class="btn btn-primary" th:href="@{/admin/order-promotions/new}">
+                <i class="bi bi-plus-lg"></i> Thêm khuyến mãi đơn hàng
+            </a>
+        </div>
+
+        <!-- Thẻ thống kê tổng quan Khuyến mãi đơn hàng -->
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'RUNNING'} ? 'border-warning border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #f59e0b !important;"
+                   th:href="@{/admin/promotions/overview(tab='order-promotions', timeFilter=${timeFilter == 'RUNNING' ? null : 'RUNNING'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Đang áp dụng</span>
+                            <span class="badge text-bg-warning-subtle text-warning border border-warning-subtle">
+                                <i class="bi bi-cart-check me-1"></i>Tự động áp dụng
+                            </span>
                         </div>
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 border-0 shadow-sm transition-all text-dark hover-shadow"
-                        style="border-left: 4px solid #3b82f6 !important;"
-                        th:href="@{/admin/promotions/overview(tab='vouchers')}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Mã giảm giá (Vouchers)</span>
-                                <div class="p-2 rounded-3 bg-light text-primary"><i
-                                        class="bi bi-ticket-perforated fs-5"></i></div>
-                            </div>
-                            <div class="h2 mb-1 fw-bold" th:text="${overview.activeVouchersCount}">0</div>
-                            <div class="small text-muted" th:text="|Tổng ${overview.totalVouchersCount} mã voucher|">
-                            </div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
-                            </div>
+                        <div class="h2 mb-1 fw-bold text-warning" th:text="${overview.activeOrderPromotionsCount}">0</div>
+                        <div class="small text-muted">Tự động kích hoạt theo giá trị giỏ hàng</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'RUNNING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'RUNNING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
                         </div>
-                    </a>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'UPCOMING'} ? 'border-info border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #06b6d4 !important;"
+                   th:href="@{/admin/promotions/overview(tab='order-promotions', timeFilter=${timeFilter == 'UPCOMING' ? null : 'UPCOMING'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Sắp diễn ra</span>
+                            <span class="badge text-bg-info-subtle text-info border border-info-subtle">
+                                <i class="bi bi-clock me-1"></i>Lên lịch
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-info" th:text="${overview.upcomingOrderPromotionsCount}">0</div>
+                        <div class="small text-muted">Chưa tới ngày bắt đầu ưu đãi</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'UPCOMING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'UPCOMING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'EXPIRED'} ? 'border-secondary border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #6b7280 !important;"
+                   th:href="@{/admin/promotions/overview(tab='order-promotions', timeFilter=${timeFilter == 'EXPIRED' ? null : 'EXPIRED'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Đã kết thúc</span>
+                            <span class="badge text-bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                <i class="bi bi-calendar-x me-1"></i>Hết hạn
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-secondary" th:text="${overview.expiredOrderPromotionsCount}">0</div>
+                        <div class="small text-muted">Đã quá ngày kết thúc áp dụng</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'EXPIRED' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'EXPIRED' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
+                   th:classappend="${timeFilter == 'INACTIVE'} ? 'border-dark border-2 shadow' : 'border-0'"
+                   style="border-left: 4px solid #374151 !important;"
+                   th:href="@{/admin/promotions/overview(tab='order-promotions', timeFilter=${timeFilter == 'INACTIVE' ? null : 'INACTIVE'})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Tạm ngừng</span>
+                            <span class="badge text-bg-secondary-subtle text-dark border">
+                                <i class="bi bi-pause-circle me-1"></i>Đang tắt
+                            </span>
+                        </div>
+                        <div class="h2 mb-1 fw-bold text-dark" th:text="${overview.inactiveOrderPromotionsCount}">0</div>
+                        <div class="small text-muted">Đang vô hiệu hóa hoặc tắt</div>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span th:text="${timeFilter == 'INACTIVE' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
+                            <i class="bi" th:classappend="${timeFilter == 'INACTIVE' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between" th:if="${timeFilter != null}">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-funnel-fill text-primary"></i>
+                <span>Đang lọc danh sách theo ô tổng quan: <strong th:text="${timeFilter == 'RUNNING' ? 'Đang áp dụng' : (timeFilter == 'UPCOMING' ? 'Sắp diễn ra' : (timeFilter == 'EXPIRED' ? 'Đã kết thúc' : (timeFilter == 'INACTIVE' ? 'Tạm ngừng' : timeFilter)))}">Bộ lọc</strong></span>
+            </div>
+            <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/promotions/overview(tab='order-promotions')}">
+                <i class="bi bi-x-lg"></i> Xóa lọc
+            </a>
+        </div>
+
+        <form class="card card-body mb-3 border-0 shadow-sm" method="get" th:action="@{/admin/promotions/overview}" data-live-filter>
+            <input type="hidden" name="tab" value="order-promotions">
+            <input type="hidden" name="timeFilter" th:value="${timeFilter}" th:if="${timeFilter != null}">
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-7">
+                    <label class="form-label small fw-semibold">Tìm kiếm</label>
+                    <input class="form-control" type="search" name="keyword" placeholder="Tên hoặc mô tả ưu đãi đơn hàng..." th:value="${keyword}">
                 </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 border-0 shadow-sm transition-all text-dark hover-shadow"
-                        style="border-left: 4px solid #f59e0b !important;"
-                        th:href="@{/admin/promotions/overview(tab='order-promotions')}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Khuyến mãi đơn hàng</span>
-                                <div class="p-2 rounded-3 bg-light text-warning"><i class="bi bi-cash-coin fs-5"></i>
+                <div class="col-lg-3">
+                    <label class="form-label small fw-semibold">Trạng thái</label>
+                    <select class="form-select" name="status">
+                        <option value="">Tất cả</option>
+                        <option th:each="item : ${statuses}" th:value="${item}" th:text="${@view.label(item)}" th:selected="${item == status}"></option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <a class="btn btn-outline-secondary w-100" th:href="@{/admin/promotions/overview(tab='order-promotions')}">Đặt lại</a>
+                </div>
+            </div>
+        </form>
+
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tên chương trình</th>
+                            <th>Đơn tối thiểu</th>
+                            <th>Mức giảm %</th>
+                            <th>Giảm tối đa</th>
+                            <th>Thời gian áp dụng</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="r : ${page.content}">
+                            <td>
+                                <strong th:text="${r.promotionName}">Tên ưu đãi</strong>
+                                <div class="small text-muted" th:if="${r.description}" th:text="${r.description}"></div>
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-primary" th:text="${@view.money(r.minOrderAmount)}">0 đ</span>
+                            </td>
+                            <td>
+                                <span class="badge text-bg-danger fs-6" th:text="|-${@view.number(r.discountPercent)}%|">-5%</span>
+                            </td>
+                            <td th:text="${r.maxDiscountAmount == null ? 'Không giới hạn' : @view.money(r.maxDiscountAmount)}"></td>
+                            <td>
+                                <div class="small text-muted">
+                                    <span th:text="${@view.date(r.startDate)}"></span><br>
+                                    đến <strong th:text="${@view.date(r.endDate)}"></strong>
                                 </div>
-                            </div>
-                            <div class="h2 mb-1 fw-bold" th:text="${overview.activeOrderPromotionsCount}">0</div>
-                            <div class="small text-muted"
-                                th:text="|Tổng ${overview.totalOrderPromotionsCount} mức ưu đãi|"></div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Khuyến mãi sản phẩm đang hoạt động -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-megaphone text-success fs-5"></i>
-                        <h3 class="h6 mb-0 fw-bold">Khuyến mãi sản phẩm đang hoạt động</h3>
-                        <span class="badge text-bg-success rounded-pill"
-                            th:text="${overview.activeProductPromotionsCount}">0</span>
-                    </div>
-                    <a class="btn btn-outline-secondary btn-sm"
-                        th:href="@{/admin/promotions/overview(tab='promotions')}">
-                        Quản lý tất cả <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Tên chương trình</th>
-                                <th>Mức giảm</th>
-                                <th>Sản phẩm áp dụng</th>
-                                <th>Thời gian áp dụng</th>
-                                <th>Trạng thái</th>
-                                <th class="text-end">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="p : ${overview.activeProductPromotions}">
-                                <td>
-                                    <div class="fw-semibold" th:text="${p.promotionName}">Tên khuyến mãi</div>
-                                    <small class="text-muted" th:if="${p.description}"
-                                        th:text="${p.description}"></small>
-                                </td>
-                                <td>
-                                    <span class="badge text-bg-danger fs-6"
-                                        th:text="|-${@view.number(p.discountPercent)}%|">-10%</span>
-                                </td>
-                                <td>
-                                    <span class="badge text-bg-light border"
-                                        th:text="|${p.appliedProductCount} sản phẩm|">0 sản phẩm</span>
-                                </td>
-                                <td>
-                                    <div class="small text-muted">
-                                        Từ: <strong th:text="${@view.date(p.startDate)}"></strong><br>
-                                        Đến: <strong th:text="${@view.date(p.endDate)}"></strong>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge text-bg-success d-inline-flex align-items-center gap-1">
-                                        <i class="bi bi-broadcast"></i> Đang chạy
-                                    </span>
-                                </td>
-                                <td class="text-end">
-                                    <a class="btn btn-outline-primary btn-sm"
-                                        th:href="@{/admin/promotions/{id}/products(id=${p.promotionId})}">
-                                        <i class="bi bi-box-seam"></i> Sản phẩm
-                                    </a>
-                                    <a class="btn btn-outline-secondary btn-sm"
-                                        th:href="@{/admin/promotions/{id}/edit(id=${p.promotionId})}">
-                                        <i class="bi bi-pencil"></i> Sửa
-                                    </a>
-                                </td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(overview.activeProductPromotions)}">
-                                <td colspan="6" class="text-muted text-center py-4">
-                                    <i class="bi bi-info-circle me-1"></i> Hiện không có chương trình khuyến mãi sản
-                                    phẩm nào đang hoạt động.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Mã giảm giá đang khả dụng -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-ticket-perforated text-primary fs-5"></i>
-                        <h3 class="h6 mb-0 fw-bold">Mã giảm giá (Vouchers) đang khả dụng</h3>
-                        <span class="badge text-bg-primary rounded-pill"
-                            th:text="${overview.activeVouchersCount}">0</span>
-                    </div>
-                    <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/promotions/overview(tab='vouchers')}">
-                        Quản lý tất cả <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Mã Voucher</th>
-                                <th>Tên Voucher</th>
-                                <th>Mức giảm</th>
-                                <th>Đơn tối thiểu</th>
-                                <th>Lượt còn lại</th>
-                                <th>Thời hạn</th>
-                                <th class="text-end">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="v : ${overview.activeVouchers}">
-                                <td>
-                                    <code class="fs-6 fw-bold text-primary bg-light px-2 py-1 rounded"
-                                        th:text="${v.code}">CODE</code>
-                                </td>
-                                <td class="fw-semibold" th:text="${v.voucherName}">Tên voucher</td>
-                                <td>
-                                    <span class="fw-bold text-danger" th:if="${v.discountType.name() == 'PERCENT'}"
-                                        th:text="|Giảm ${@view.number(v.discountValue)}%|"></span>
-                                    <span class="fw-bold text-danger" th:if="${v.discountType.name() == 'FIXED_AMOUNT'}"
-                                        th:text="|Giảm ${@view.money(v.discountValue)}|"></span>
-                                    <div class="small text-muted" th:if="${v.maxDiscountAmount != null}"
-                                        th:text="|Tối đa: ${@view.money(v.maxDiscountAmount)}|"></div>
-                                </td>
-                                <td>
-                                    <span th:text="${@view.money(v.minOrderAmount)}">0 đ</span>
-                                </td>
-                                <td>
-                                    <span class="badge"
-                                        th:classappend="${v.quantity <= 10} ? 'text-bg-warning' : 'text-bg-success'"
-                                        th:text="|Còn ${v.quantity} lượt|">Còn 0 lượt</span>
-                                </td>
-                                <td>
-                                    <div class="small text-muted">
-                                        Hết hạn: <strong th:text="${@view.date(v.endDate)}"></strong>
-                                    </div>
-                                </td>
-                                <td class="text-end">
-                                    <a class="btn btn-outline-secondary btn-sm"
-                                        th:href="@{/admin/vouchers/{id}/edit(id=${v.voucherId})}">
-                                        <i class="bi bi-pencil"></i> Sửa
-                                    </a>
-                                </td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(overview.activeVouchers)}">
-                                <td colspan="7" class="text-muted text-center py-4">
-                                    <i class="bi bi-info-circle me-1"></i> Hiện không có mã giảm giá nào đang khả dụng
-                                    (hoặc đã hết lượt sử dụng).
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Khuyến mãi đơn hàng đang áp dụng -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-cash-coin text-warning fs-5"></i>
-                        <h3 class="h6 mb-0 fw-bold">Khuyến mãi đơn hàng đang áp dụng</h3>
-                        <span class="badge text-bg-warning text-dark rounded-pill"
-                            th:text="${overview.activeOrderPromotionsCount}">0</span>
-                    </div>
-                    <a class="btn btn-outline-secondary btn-sm"
-                        th:href="@{/admin/promotions/overview(tab='order-promotions')}">
-                        Quản lý tất cả <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Tên chương trình</th>
-                                <th>Đơn tối thiểu</th>
-                                <th>Mức giảm</th>
-                                <th>Giảm tối đa</th>
-                                <th>Thời gian áp dụng</th>
-                                <th class="text-end">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="op : ${overview.activeOrderPromotions}">
-                                <td>
-                                    <div class="fw-semibold" th:text="${op.promotionName}">Tên ưu đãi</div>
-                                    <small class="text-muted" th:if="${op.description}"
-                                        th:text="${op.description}"></small>
-                                </td>
-                                <td>
-                                    <span class="fw-semibold text-primary" th:text="${@view.money(op.minOrderAmount)}">0
-                                        đ</span>
-                                </td>
-                                <td>
-                                    <span class="badge text-bg-danger"
-                                        th:text="|-${@view.number(op.discountPercent)}%|">-5%</span>
-                                </td>
-                                <td>
-                                    <span
-                                        th:text="${op.maxDiscountAmount != null ? @view.money(op.maxDiscountAmount) : 'Không giới hạn'}"></span>
-                                </td>
-                                <td>
-                                    <div class="small text-muted">
-                                        Đến: <strong th:text="${@view.date(op.endDate)}"></strong>
-                                    </div>
-                                </td>
-                                <td class="text-end">
-                                    <a class="btn btn-outline-secondary btn-sm"
-                                        th:href="@{/admin/order-promotions/{id}/edit(id=${op.orderPromotionId})}">
-                                        <i class="bi bi-pencil"></i> Sửa
-                                    </a>
-                                </td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(overview.activeOrderPromotions)}">
-                                <td colspan="6" class="text-muted text-center py-4">
-                                    <i class="bi bi-info-circle me-1"></i> Hiện không có khuyến mãi đơn hàng nào đang áp
-                                    dụng.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Chương trình sắp diễn ra (Upcoming) -->
-            <div class="card border-0 shadow-sm mb-4" th:if="${!#lists.isEmpty(overview.upcomingCampaigns)}">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-calendar-event text-info fs-5"></i>
-                        <h3 class="h6 mb-0 fw-bold">Chương trình sắp diễn ra</h3>
-                        <span class="badge text-bg-info text-white rounded-pill"
-                            th:text="${#lists.size(overview.upcomingCampaigns)}">0</span>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Loại ưu đãi</th>
-                                <th>Tên chương trình</th>
-                                <th>Nội dung giảm giá</th>
-                                <th>Thời gian bắt đầu</th>
-                                <th>Thời gian kết thúc</th>
-                                <th class="text-end">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="u : ${overview.upcomingCampaigns}">
-                                <td>
-                                    <span class="badge"
-                                        th:classappend="${u.type == 'PRODUCT'} ? 'text-bg-success' : (${u.type == 'VOUCHER'} ? 'text-bg-primary' : 'text-bg-warning text-dark')"
-                                        th:text="${u.typeLabel}">Loại</span>
-                                </td>
-                                <td class="fw-semibold" th:text="${u.name}">Tên</td>
-                                <td th:text="${u.discountDetail}">Chi tiết</td>
-                                <td>
-                                    <strong class="text-primary" th:text="${@view.date(u.startDate)}"></strong>
-                                </td>
-                                <td>
-                                    <span class="text-muted" th:text="${@view.date(u.endDate)}"></span>
-                                </td>
-                                <td class="text-end">
-                                    <a class="btn btn-outline-secondary btn-sm" th:href="@{${u.url}}">
-                                        <i class="bi bi-pencil"></i> Xem / Sửa
-                                    </a>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ========================================================================= -->
-        <!-- TAB 2: KHUYẾN MÃI SẢN PHẨM                                                -->
-        <!-- ========================================================================= -->
-        <div th:if="${currentTab == 'promotions'}">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h3 class="h5 mb-1 fw-bold">Khuyến mãi sản phẩm</h3>
-                    <p class="text-muted small mb-0">Quản lý các chương trình chiết khấu trực tiếp trên giá bán sản
-                        phẩm.</p>
-                </div>
-                <a class="btn btn-primary" th:href="@{/admin/promotions/new}">
-                    <i class="bi bi-plus-lg"></i> Thêm khuyến mãi sản phẩm
-                </a>
-            </div>
-
-            <!-- Thẻ thống kê tổng quan Khuyến mãi sản phẩm -->
-            <div class="row g-3 mb-3">
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'RUNNING'} ? 'border-success border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #10b981 !important;"
-                        th:href="@{/admin/promotions/overview(tab='promotions', timeFilter=${timeFilter == 'RUNNING' ? null : 'RUNNING'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Đang diễn ra</span>
-                                <span class="badge text-bg-success-subtle text-success border border-success-subtle">
-                                    <i class="bi bi-play-circle me-1"></i>Đang chạy
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-success"
-                                th:text="${overview.activeProductPromotionsCount}">0</div>
-                            <div class="small text-muted">Đang áp dụng trực tiếp trên sản phẩm</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'RUNNING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'RUNNING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'UPCOMING'} ? 'border-info border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #06b6d4 !important;"
-                        th:href="@{/admin/promotions/overview(tab='promotions', timeFilter=${timeFilter == 'UPCOMING' ? null : 'UPCOMING'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Sắp diễn ra</span>
-                                <span class="badge text-bg-info-subtle text-info border border-info-subtle">
-                                    <i class="bi bi-clock me-1"></i>Lên lịch
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-info" th:text="${overview.upcomingProductPromotionsCount}">
-                                0</div>
-                            <div class="small text-muted">Bắt đầu trong thời gian tới</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'UPCOMING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'UPCOMING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'EXPIRED'} ? 'border-secondary border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #6b7280 !important;"
-                        th:href="@{/admin/promotions/overview(tab='promotions', timeFilter=${timeFilter == 'EXPIRED' ? null : 'EXPIRED'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Đã kết thúc</span>
-                                <span
-                                    class="badge text-bg-secondary-subtle text-secondary border border-secondary-subtle">
-                                    <i class="bi bi-calendar-x me-1"></i>Hết hạn
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-secondary"
-                                th:text="${overview.expiredProductPromotionsCount}">0</div>
-                            <div class="small text-muted">Đã quá ngày kết thúc áp dụng</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'EXPIRED' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'EXPIRED' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'INACTIVE'} ? 'border-warning border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #f59e0b !important;"
-                        th:href="@{/admin/promotions/overview(tab='promotions', timeFilter=${timeFilter == 'INACTIVE' ? null : 'INACTIVE'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Tạm ngừng</span>
-                                <span class="badge text-bg-warning-subtle text-warning border border-warning-subtle">
-                                    <i class="bi bi-pause-circle me-1"></i>Đang tắt
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-warning"
-                                th:text="${overview.inactiveProductPromotionsCount}">0</div>
-                            <div class="small text-muted">Đang vô hiệu hóa hoặc tắt</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'INACTIVE' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'INACTIVE' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-
-            <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between"
-                th:if="${timeFilter != null}">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-funnel-fill text-primary"></i>
-                    <span>Đang lọc danh sách theo ô tổng quan: <strong
-                            th:text="${timeFilter == 'RUNNING' ? 'Đang diễn ra' : (timeFilter == 'UPCOMING' ? 'Sắp diễn ra' : (timeFilter == 'EXPIRED' ? 'Đã kết thúc' : (timeFilter == 'INACTIVE' ? 'Tạm ngừng' : timeFilter)))}">Bộ
-                            lọc</strong></span>
-                </div>
-                <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/promotions/overview(tab='promotions')}">
-                    <i class="bi bi-x-lg"></i> Xóa lọc
-                </a>
-            </div>
-
-            <form class="card card-body mb-3 border-0 shadow-sm" method="get" th:action="@{/admin/promotions/overview}"
-                data-live-filter>
-                <input type="hidden" name="tab" value="promotions">
-                <input type="hidden" name="timeFilter" th:value="${timeFilter}" th:if="${timeFilter != null}">
-                <div class="row g-3 align-items-end">
-                    <div class="col-lg-7">
-                        <label class="form-label small fw-semibold">Tìm khuyến mãi</label>
-                        <input class="form-control" type="search" name="keyword"
-                            placeholder="Tên hoặc mô tả khuyến mãi..." th:value="${keyword}">
-                    </div>
-                    <div class="col-lg-3">
-                        <label class="form-label small fw-semibold">Trạng thái</label>
-                        <select class="form-select" name="status">
-                            <option value="">Tất cả trạng thái</option>
-                            <option th:each="item : ${statuses}" th:value="${item}" th:text="${@view.label(item)}"
-                                th:selected="${item == status}"></option>
-                        </select>
-                    </div>
-                    <div class="col-lg-2">
-                        <a class="btn btn-outline-secondary w-100"
-                            th:href="@{/admin/promotions/overview(tab='promotions')}">Đặt lại</a>
-                    </div>
-                </div>
-            </form>
-
-            <div class="card border-0 shadow-sm">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Tên chương trình</th>
-                                <th>Mức giảm %</th>
-                                <th>Thời gian bắt đầu</th>
-                                <th>Thời gian kết thúc</th>
-                                <th>Trạng thái</th>
-                                <th class="text-end">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="r : ${page.content}">
-                                <td>
-                                    <strong th:text="${r.promotionName}">Tên</strong>
-                                    <div class="small text-muted" th:if="${r.description}" th:text="${r.description}">
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge text-bg-danger fs-6"
-                                        th:text="|-${@view.number(r.discountPercent)}%|">-10%</span>
-                                </td>
-                                <td th:text="${@view.date(r.startDate)}"></td>
-                                <td th:text="${@view.date(r.endDate)}"></td>
-                                <td>
-                                    <span class="badge"
-                                        th:classappend="${r.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
-                                        th:text="${@view.label(r.status)}"></span>
-                                </td>
-                                <td class="text-end text-nowrap">
-                                    <a class="btn btn-outline-primary btn-sm"
-                                        th:href="@{/admin/promotions/{id}/products(id=${r.promotionId})}">
-                                        <i class="bi bi-box-seam"></i> Sản phẩm
-                                    </a>
-                                    <a class="btn btn-outline-secondary btn-sm"
-                                        th:href="@{/admin/promotions/{id}/edit(id=${r.promotionId})}">
-                                        <i class="bi bi-pencil"></i> Sửa
-                                    </a>
-                                    <form class="d-inline" method="post"
-                                        th:action="@{/admin/promotions/{id}/status(id=${r.promotionId})}"
-                                        data-confirm="Thay đổi trạng thái khuyến mãi này?">
-                                        <input type="hidden" name="status"
-                                            th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
-                                        <button class="btn btn-sm"
-                                            th:classappend="${r.status.name() == 'ACTIVE'} ? 'btn-outline-danger' : 'btn-outline-success'"
+                            </td>
+                            <td>
+                                <span class="badge" th:classappend="${r.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
+                                      th:text="${@view.label(r.status)}"></span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/order-promotions/{id}/edit(id=${r.orderPromotionId})}">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </a>
+                                <form class="d-inline" method="post" th:action="@{/admin/order-promotions/{id}/status(id=${r.orderPromotionId})}"
+                                      data-confirm="Thay đổi trạng thái ưu đãi này?">
+                                    <input type="hidden" name="status" th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
+                                    <button class="btn btn-sm" th:classappend="${r.status.name() == 'ACTIVE'} ? 'btn-outline-danger' : 'btn-outline-success'"
                                             th:text="${r.status.name() == 'ACTIVE' ? 'Ngừng' : 'Bật'}"></button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(page.content)}">
-                                <td colspan="6" class="text-muted text-center py-4">Chưa có dữ liệu khuyến mãi phù hợp.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(page.content)}">
+                            <td colspan="7" class="text-muted text-center py-4">Chưa có dữ liệu khuyến mãi đơn hàng phù hợp.</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div th:replace="~{fragments/pagination :: pagination}"></div>
         </div>
-
-        <!-- ========================================================================= -->
-        <!-- TAB 3: MÃ GIẢM GIÁ (VOUCHERS)                                             -->
-        <!-- ========================================================================= -->
-        <div th:if="${currentTab == 'vouchers'}">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h3 class="h5 mb-1 fw-bold">Mã giảm giá (Vouchers)</h3>
-                    <p class="text-muted small mb-0">Quản lý mã coupon nhập tại trang thanh toán theo số lượng và điều
-                        kiện đơn.</p>
-                </div>
-                <a class="btn btn-primary" th:href="@{/admin/vouchers/new}">
-                    <i class="bi bi-plus-lg"></i> Thêm mã giảm giá
-                </a>
-            </div>
-
-            <!-- Thẻ thống kê tổng quan Mã giảm giá -->
-            <div class="row g-3 mb-3">
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'RUNNING'} ? 'border-primary border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #3b82f6 !important;"
-                        th:href="@{/admin/promotions/overview(tab='vouchers', timeFilter=${timeFilter == 'RUNNING' ? null : 'RUNNING'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Đang khả dụng</span>
-                                <span class="badge text-bg-primary-subtle text-primary border border-primary-subtle">
-                                    <i class="bi bi-check-circle me-1"></i>Có hiệu lực
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-primary" th:text="${overview.activeVouchersCount}">0</div>
-                            <div class="small text-muted">Còn lượt và trong thời hạn áp dụng</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'RUNNING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'RUNNING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'OUT_OF_STOCK'} ? 'border-danger border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #ef4444 !important;"
-                        th:href="@{/admin/promotions/overview(tab='vouchers', timeFilter=${timeFilter == 'OUT_OF_STOCK' ? null : 'OUT_OF_STOCK'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Hết lượt dùng</span>
-                                <span class="badge text-bg-danger-subtle text-danger border border-danger-subtle">
-                                    <i class="bi bi-exclamation-triangle me-1"></i>Hết số lượng
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-danger" th:text="${overview.outOfStockVouchersCount}">0
-                            </div>
-                            <div class="small text-muted">Số lượng mã khả dụng = 0</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'OUT_OF_STOCK' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'OUT_OF_STOCK' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'UPCOMING'} ? 'border-info border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #06b6d4 !important;"
-                        th:href="@{/admin/promotions/overview(tab='vouchers', timeFilter=${timeFilter == 'UPCOMING' ? null : 'UPCOMING'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Sắp diễn ra</span>
-                                <span class="badge text-bg-info-subtle text-info border border-info-subtle">
-                                    <i class="bi bi-clock me-1"></i>Chưa bắt đầu
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-info" th:text="${overview.upcomingVouchersCount}">0</div>
-                            <div class="small text-muted">Đã lên lịch, chuẩn bị có hiệu lực</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'UPCOMING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'UPCOMING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'EXPIRED'} ? 'border-secondary border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #6b7280 !important;"
-                        th:href="@{/admin/promotions/overview(tab='vouchers', timeFilter=${timeFilter == 'EXPIRED' ? null : 'EXPIRED'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Đã kết thúc</span>
-                                <span
-                                    class="badge text-bg-secondary-subtle text-secondary border border-secondary-subtle">
-                                    <i class="bi bi-calendar-x me-1"></i>Hết hạn
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-secondary" th:text="${overview.expiredVouchersCount}">0
-                            </div>
-                            <div class="small text-muted">Đã quá thời gian hiệu lực</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'EXPIRED' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'EXPIRED' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-
-            <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between"
-                th:if="${timeFilter != null}">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-funnel-fill text-primary"></i>
-                    <span>Đang lọc danh sách theo ô tổng quan: <strong
-                            th:text="${timeFilter == 'RUNNING' ? 'Đang khả dụng' : (timeFilter == 'OUT_OF_STOCK' ? 'Hết lượt sử dụng' : (timeFilter == 'UPCOMING' ? 'Sắp diễn ra' : (timeFilter == 'EXPIRED' ? 'Đã kết thúc' : timeFilter)))}">Bộ
-                            lọc</strong></span>
-                </div>
-                <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/promotions/overview(tab='vouchers')}">
-                    <i class="bi bi-x-lg"></i> Xóa lọc
-                </a>
-            </div>
-
-            <form class="card card-body mb-3 border-0 shadow-sm" method="get" th:action="@{/admin/promotions/overview}"
-                data-live-filter>
-                <input type="hidden" name="tab" value="vouchers">
-                <input type="hidden" name="timeFilter" th:value="${timeFilter}" th:if="${timeFilter != null}">
-                <div class="row g-3 align-items-end">
-                    <div class="col-lg-5">
-                        <label class="form-label small fw-semibold">Tìm mã giảm giá</label>
-                        <input class="form-control" type="search" name="keyword"
-                            placeholder="Mã code hoặc tên voucher..." th:value="${keyword}">
-                    </div>
-                    <div class="col-lg-3">
-                        <label class="form-label small fw-semibold">Loại giảm</label>
-                        <select class="form-select" name="discountType">
-                            <option value="">Tất cả loại giảm</option>
-                            <option th:each="item : ${discountTypes}" th:value="${item}" th:text="${@view.label(item)}"
-                                th:selected="${item == discountType}"></option>
-                        </select>
-                    </div>
-                    <div class="col-lg-2">
-                        <label class="form-label small fw-semibold">Trạng thái</label>
-                        <select class="form-select" name="status">
-                            <option value="">Tất cả</option>
-                            <option th:each="item : ${statuses}" th:value="${item}" th:text="${@view.label(item)}"
-                                th:selected="${item == status}"></option>
-                        </select>
-                    </div>
-                    <div class="col-lg-2">
-                        <a class="btn btn-outline-secondary w-100"
-                            th:href="@{/admin/promotions/overview(tab='vouchers')}">Đặt lại</a>
-                    </div>
-                </div>
-            </form>
-
-            <div class="card border-0 shadow-sm">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Mã Code</th>
-                                <th>Tên Voucher</th>
-                                <th>Loại</th>
-                                <th>Giá trị</th>
-                                <th>Đơn tối thiểu</th>
-                                <th>Giảm tối đa</th>
-                                <th>Còn lại</th>
-                                <th>Thời hạn</th>
-                                <th>Trạng thái</th>
-                                <th class="text-end">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="r : ${page.content}">
-                                <td>
-                                    <code class="fs-6 fw-bold text-primary bg-light px-2 py-1 rounded"
-                                        th:text="${r.code}">CODE</code>
-                                </td>
-                                <td class="fw-semibold" th:text="${r.voucherName}">Tên</td>
-                                <td>
-                                    <span class="badge text-bg-light border"
-                                        th:text="${@view.label(r.discountType)}">Loại</span>
-                                </td>
-                                <td class="fw-bold text-danger">
-                                    <span th:if="${r.discountType.name() == 'PERCENT'}"
-                                        th:text="|-${@view.number(r.discountValue)}%|"></span>
-                                    <span th:if="${r.discountType.name() == 'FIXED_AMOUNT'}"
-                                        th:text="|-${@view.money(r.discountValue)}|"></span>
-                                </td>
-                                <td th:text="${@view.money(r.minOrderAmount)}"></td>
-                                <td th:text="${r.maxDiscountAmount != null ? @view.money(r.maxDiscountAmount) : '—'}">
-                                </td>
-                                <td>
-                                    <span class="badge"
-                                        th:classappend="${r.quantity <= 10} ? 'text-bg-warning' : 'text-bg-success'"
-                                        th:text="|Còn ${r.quantity}|"></span>
-                                </td>
-                                <td>
-                                    <div class="small text-muted">
-                                        <span th:text="${@view.date(r.startDate)}"></span><br>
-                                        đến <strong th:text="${@view.date(r.endDate)}"></strong>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge"
-                                        th:classappend="${r.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
-                                        th:text="${@view.label(r.status)}"></span>
-                                </td>
-                                <td class="text-end text-nowrap">
-                                    <a class="btn btn-outline-secondary btn-sm"
-                                        th:href="@{/admin/vouchers/{id}/edit(id=${r.voucherId})}">
-                                        <i class="bi bi-pencil"></i> Sửa
-                                    </a>
-                                    <form class="d-inline" method="post"
-                                        th:action="@{/admin/vouchers/{id}/status(id=${r.voucherId})}"
-                                        data-confirm="Thay đổi trạng thái mã giảm giá này?">
-                                        <input type="hidden" name="status"
-                                            th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
-                                        <button class="btn btn-sm"
-                                            th:classappend="${r.status.name() == 'ACTIVE'} ? 'btn-outline-danger' : 'btn-outline-success'"
-                                            th:text="${r.status.name() == 'ACTIVE' ? 'Ngừng' : 'Bật'}"></button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(page.content)}">
-                                <td colspan="10" class="text-muted text-center py-4">Chưa có dữ liệu mã giảm giá phù
-                                    hợp.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div th:replace="~{fragments/pagination :: pagination}"></div>
-        </div>
-
-        <!-- ========================================================================= -->
-        <!-- TAB 4: KHUYẾN MÃI ĐƠN HÀNG                                                -->
-        <!-- ========================================================================= -->
-        <div th:if="${currentTab == 'order-promotions'}">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h3 class="h5 mb-1 fw-bold">Khuyến mãi đơn hàng</h3>
-                    <p class="text-muted small mb-0">Chương trình tự động chiết khấu theo tổng giá trị giỏ hàng khi đạt
-                        mốc tối thiểu.</p>
-                </div>
-                <a class="btn btn-primary" th:href="@{/admin/order-promotions/new}">
-                    <i class="bi bi-plus-lg"></i> Thêm khuyến mãi đơn hàng
-                </a>
-            </div>
-
-            <!-- Thẻ thống kê tổng quan Khuyến mãi đơn hàng -->
-            <div class="row g-3 mb-3">
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'RUNNING'} ? 'border-warning border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #f59e0b !important;"
-                        th:href="@{/admin/promotions/overview(tab='order-promotions', timeFilter=${timeFilter == 'RUNNING' ? null : 'RUNNING'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Đang áp dụng</span>
-                                <span class="badge text-bg-warning-subtle text-warning border border-warning-subtle">
-                                    <i class="bi bi-cart-check me-1"></i>Tự động áp dụng
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-warning" th:text="${overview.activeOrderPromotionsCount}">0
-                            </div>
-                            <div class="small text-muted">Tự động kích hoạt theo giá trị giỏ hàng</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'RUNNING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'RUNNING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'UPCOMING'} ? 'border-info border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #06b6d4 !important;"
-                        th:href="@{/admin/promotions/overview(tab='order-promotions', timeFilter=${timeFilter == 'UPCOMING' ? null : 'UPCOMING'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Sắp diễn ra</span>
-                                <span class="badge text-bg-info-subtle text-info border border-info-subtle">
-                                    <i class="bi bi-clock me-1"></i>Lên lịch
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-info" th:text="${overview.upcomingOrderPromotionsCount}">0
-                            </div>
-                            <div class="small text-muted">Chưa tới ngày bắt đầu ưu đãi</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'UPCOMING' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'UPCOMING' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'EXPIRED'} ? 'border-secondary border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #6b7280 !important;"
-                        th:href="@{/admin/promotions/overview(tab='order-promotions', timeFilter=${timeFilter == 'EXPIRED' ? null : 'EXPIRED'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Đã kết thúc</span>
-                                <span
-                                    class="badge text-bg-secondary-subtle text-secondary border border-secondary-subtle">
-                                    <i class="bi bi-calendar-x me-1"></i>Hết hạn
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-secondary"
-                                th:text="${overview.expiredOrderPromotionsCount}">0</div>
-                            <div class="small text-muted">Đã quá ngày kết thúc áp dụng</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'EXPIRED' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'EXPIRED' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a class="card text-decoration-none h-100 shadow-sm transition-all text-dark hover-shadow"
-                        th:classappend="${timeFilter == 'INACTIVE'} ? 'border-dark border-2 shadow' : 'border-0'"
-                        style="border-left: 4px solid #374151 !important;"
-                        th:href="@{/admin/promotions/overview(tab='order-promotions', timeFilter=${timeFilter == 'INACTIVE' ? null : 'INACTIVE'})}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="text-muted small fw-semibold text-uppercase">Tạm ngừng</span>
-                                <span class="badge text-bg-secondary-subtle text-dark border">
-                                    <i class="bi bi-pause-circle me-1"></i>Đang tắt
-                                </span>
-                            </div>
-                            <div class="h2 mb-1 fw-bold text-dark" th:text="${overview.inactiveOrderPromotionsCount}">0
-                            </div>
-                            <div class="small text-muted">Đang vô hiệu hóa hoặc tắt</div>
-                            <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
-                                <span
-                                    th:text="${timeFilter == 'INACTIVE' ? 'Đang lọc • Nhấn để bỏ lọc' : 'Nhấn để lọc chi tiết'}"></span>
-                                <i class="bi"
-                                    th:classappend="${timeFilter == 'INACTIVE' ? 'bi-x-circle' : 'bi-arrow-right'}"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-
-            <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between"
-                th:if="${timeFilter != null}">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-funnel-fill text-primary"></i>
-                    <span>Đang lọc danh sách theo ô tổng quan: <strong
-                            th:text="${timeFilter == 'RUNNING' ? 'Đang áp dụng' : (timeFilter == 'UPCOMING' ? 'Sắp diễn ra' : (timeFilter == 'EXPIRED' ? 'Đã kết thúc' : (timeFilter == 'INACTIVE' ? 'Tạm ngừng' : timeFilter)))}">Bộ
-                            lọc</strong></span>
-                </div>
-                <a class="btn btn-sm btn-outline-primary"
-                    th:href="@{/admin/promotions/overview(tab='order-promotions')}">
-                    <i class="bi bi-x-lg"></i> Xóa lọc
-                </a>
-            </div>
-
-            <form class="card card-body mb-3 border-0 shadow-sm" method="get" th:action="@{/admin/promotions/overview}"
-                data-live-filter>
-                <input type="hidden" name="tab" value="order-promotions">
-                <input type="hidden" name="timeFilter" th:value="${timeFilter}" th:if="${timeFilter != null}">
-                <div class="row g-3 align-items-end">
-                    <div class="col-lg-7">
-                        <label class="form-label small fw-semibold">Tìm kiếm</label>
-                        <input class="form-control" type="search" name="keyword"
-                            placeholder="Tên hoặc mô tả ưu đãi đơn hàng..." th:value="${keyword}">
-                    </div>
-                    <div class="col-lg-3">
-                        <label class="form-label small fw-semibold">Trạng thái</label>
-                        <select class="form-select" name="status">
-                            <option value="">Tất cả</option>
-                            <option th:each="item : ${statuses}" th:value="${item}" th:text="${@view.label(item)}"
-                                th:selected="${item == status}"></option>
-                        </select>
-                    </div>
-                    <div class="col-lg-2">
-                        <a class="btn btn-outline-secondary w-100"
-                            th:href="@{/admin/promotions/overview(tab='order-promotions')}">Đặt lại</a>
-                    </div>
-                </div>
-            </form>
-
-            <div class="card border-0 shadow-sm">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Tên chương trình</th>
-                                <th>Đơn tối thiểu</th>
-                                <th>Mức giảm %</th>
-                                <th>Giảm tối đa</th>
-                                <th>Thời gian áp dụng</th>
-                                <th>Trạng thái</th>
-                                <th class="text-end">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="r : ${page.content}">
-                                <td>
-                                    <strong th:text="${r.promotionName}">Tên ưu đãi</strong>
-                                    <div class="small text-muted" th:if="${r.description}" th:text="${r.description}">
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="fw-semibold text-primary" th:text="${@view.money(r.minOrderAmount)}">0
-                                        đ</span>
-                                </td>
-                                <td>
-                                    <span class="badge text-bg-danger fs-6"
-                                        th:text="|-${@view.number(r.discountPercent)}%|">-5%</span>
-                                </td>
-                                <td
-                                    th:text="${r.maxDiscountAmount == null ? 'Không giới hạn' : @view.money(r.maxDiscountAmount)}">
-                                </td>
-                                <td>
-                                    <div class="small text-muted">
-                                        <span th:text="${@view.date(r.startDate)}"></span><br>
-                                        đến <strong th:text="${@view.date(r.endDate)}"></strong>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge"
-                                        th:classappend="${r.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
-                                        th:text="${@view.label(r.status)}"></span>
-                                </td>
-                                <td class="text-end text-nowrap">
-                                    <a class="btn btn-outline-secondary btn-sm"
-                                        th:href="@{/admin/order-promotions/{id}/edit(id=${r.orderPromotionId})}">
-                                        <i class="bi bi-pencil"></i> Sửa
-                                    </a>
-                                    <form class="d-inline" method="post"
-                                        th:action="@{/admin/order-promotions/{id}/status(id=${r.orderPromotionId})}"
-                                        data-confirm="Thay đổi trạng thái ưu đãi này?">
-                                        <input type="hidden" name="status"
-                                            th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
-                                        <button class="btn btn-sm"
-                                            th:classappend="${r.status.name() == 'ACTIVE'} ? 'btn-outline-danger' : 'btn-outline-success'"
-                                            th:text="${r.status.name() == 'ACTIVE' ? 'Ngừng' : 'Bật'}"></button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(page.content)}">
-                                <td colspan="7" class="text-muted text-center py-4">Chưa có dữ liệu khuyến mãi đơn hàng
-                                    phù hợp.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div th:replace="~{fragments/pagination :: pagination}"></div>
-        </div>
-    </section>
+        <div th:replace="~{fragments/pagination :: pagination}"></div>
+    </div>
+</section>
 </body>
-
 </html>

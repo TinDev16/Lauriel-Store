@@ -44,42 +44,43 @@
                             <tr>
                                 <th>Mã</th>
                                 <th>Khách hàng</th>
-                                <th>Trạng thái</th>
-                                <th>Tổng tiền</th>
-                                <th>Khuyến mãi đơn hàng</th>
-                                <th>Giảm bằng mã</th>
-                                <th>Số tiền phải trả</th>
                                 <th>Thời gian</th>
-                                <th>Thao tác</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end">Tiền hàng</th>
+                                <th class="text-end">Khuyến mãi đơn</th>
+                                <th class="text-end">Giảm bằng mã</th>
+                                <th class="text-end">Số tiền đơn hàng</th>
+                                <th class="text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:each="r:${page.content}" th:id="|order-row-${r.orderId}|"
                                 th:data-order-id="${r.orderId}" class="order-row">
-                                <td th:text="${r.orderId}">
-                                </td>
+                                <td class="fw-semibold" th:text="|#${r.orderId}|"></td>
                                 <td>
-                                    <span th:text="${customerNames.get(r.customerId)}">
-                                    </span>
-                                    <small th:text="| (#${r.customerId})|">
-                                    </small>
+                                    <span th:text="${customerNames.get(r.customerId)}"></span>
+                                    <small class="text-muted" th:text="| (#${r.customerId})|"></small>
                                 </td>
+                                <td class="text-nowrap" th:text="${@view.date(r.createdAt)}"></td>
                                 <td>
                                     <span class="order-status-badge badge"
                                         th:classappend="${r.status.name() == 'DELIVERED' ? 'bg-success' : (r.status.name() == 'CANCELLED' || r.status.name() == 'RETURNED' ? 'bg-danger' : (r.status.name() == 'PENDING' ? 'bg-warning text-dark' : (r.status.name() == 'CONFIRMED' ? 'bg-info text-dark' : 'bg-primary')))}"
                                         th:text="${@view.label(r.status)}">
                                     </span>
                                 </td>
-                                <td th:text="${@view.money(r.totalAmount)}">
+                                <td class="text-end text-nowrap" th:text="${@view.money(r.totalAmount)}"></td>
+                                <td class="text-end text-nowrap">
+                                    <span th:if="${r.orderPromotionDiscount != null and r.orderPromotionDiscount > 0}"
+                                          class="text-danger" th:text="|-${@view.money(r.orderPromotionDiscount)}|"></span>
+                                    <span th:unless="${r.orderPromotionDiscount != null and r.orderPromotionDiscount > 0}" class="text-muted">—</span>
                                 </td>
-                                <td th:text="${@view.money(r.orderPromotionDiscount)}"></td>
-                                <td th:text="${@view.money(r.discountAmount)}">
+                                <td class="text-end text-nowrap">
+                                    <span th:if="${r.discountAmount != null and r.discountAmount > 0}"
+                                          class="text-danger" th:text="|-${@view.money(r.discountAmount)}|"></span>
+                                    <span th:unless="${r.discountAmount != null and r.discountAmount > 0}" class="text-muted">—</span>
                                 </td>
-                                <td class="fw-bold" th:text="${@view.money(r.finalAmount)}">
-                                </td>
-                                <td th:text="${@view.date(r.createdAt)}">
-                                </td>
-                                <td>
+                                <td class="text-end text-nowrap fw-bold text-primary fs-6" th:text="${@view.money(r.finalAmount)}"></td>
+                                <td class="text-center text-nowrap">
                                     <a class="btn btn-outline-primary btn-sm btn-order-preview"
                                         th:href="@{/admin/orders/{id}(id=${r.orderId})}" th:data-order-id="${r.orderId}"
                                         title="Xem nhanh bên phải">
@@ -91,6 +92,16 @@
                                 <td colspan="9" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
                             </tr>
                         </tbody>
+                        <tfoot th:if="${!#lists.isEmpty(page.content)}">
+                            <tr class="table-light border-top">
+                                <td colspan="7" class="text-end fw-bold py-3 text-secondary">
+                                    Tổng số tiền đơn hàng (trang này):
+                                </td>
+                                <td class="text-end fw-bold fs-6 text-danger py-3 text-nowrap"
+                                    th:text="${@view.money(pageTotalAmount)}">0 đ</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
                     </table>
             </div>
         </div>

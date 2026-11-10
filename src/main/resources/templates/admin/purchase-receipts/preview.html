@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div class="receipt-preview-content">
+    <!-- Header info card -->
+    <div class="card mb-3 border-0 bg-light shadow-sm">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h5 class="mb-1 text-primary fw-bold" th:text="|Phiếu nhập #PN-${receipt.receiptId}|">#PN-123</h5>
+                    <small class="text-muted">
+                        <i class="bi bi-clock me-1"></i><span th:text="${@view.date(receipt.createdAt)}">dd/MM/yyyy HH:mm</span>
+                    </small>
+                </div>
+                <span class="badge fs-6 px-3 py-2"
+                      th:classappend="${receipt.status.name() == 'DRAFT'} ? 'text-bg-warning' : (${receipt.status.name() == 'COMPLETED'} ? 'text-bg-success' : 'text-bg-secondary')"
+                      th:text="${@view.label(receipt.status)}">
+                    Trạng thái
+                </span>
+            </div>
+            <div class="mt-2 pt-2 border-top small">
+                <div class="mb-1 d-flex" th:if="${receipt.supplier != null}">
+                    <span class="text-muted text-nowrap me-2" style="width: 110px;">
+                        <i class="bi bi-building me-1"></i>Nhà cung cấp:
+                    </span>
+                    <span class="fw-semibold" th:text="${receipt.supplier.supplierName}">Tên nhà cung cấp</span>
+                </div>
+                <div class="mb-1 d-flex" th:if="${receipt.supplier != null and receipt.supplier.phone != null and !#strings.isEmpty(receipt.supplier.phone)}">
+                    <span class="text-muted text-nowrap me-2" style="width: 110px;">
+                        <i class="bi bi-telephone me-1"></i>Điện thoại:
+                    </span>
+                    <span>
+                        <a th:href="|tel:${receipt.supplier.phone}|" class="text-decoration-none fw-semibold" th:text="${receipt.supplier.phone}">0912345678</a>
+                    </span>
+                </div>
+                <div class="d-flex">
+                    <span class="text-muted text-nowrap me-2" style="width: 110px;">
+                        <i class="bi bi-person me-1"></i>Người lập phiếu:
+                    </span>
+                    <span class="fw-semibold" th:if="${receipt.createdBy != null}" th:text="${receipt.createdBy.fullName != null and !#strings.isEmpty(receipt.createdBy.fullName) ? receipt.createdBy.fullName : receipt.createdBy.username}">Admin</span>
+                    <span class="text-muted" th:if="${receipt.createdBy == null}">Không có thông tin</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items list -->
+    <div class="card mb-3 border shadow-sm">
+        <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+            <strong class="small text-uppercase text-secondary">
+                <i class="bi bi-box-seam me-1"></i>Mặt hàng nhập kho
+            </strong>
+            <span class="badge bg-secondary-subtle text-secondary rounded-pill" th:text="|${#lists.size(receipt.items)} dòng hàng|">0 dòng</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Phân loại</th>
+                        <th class="text-center">SL</th>
+                        <th class="text-end">Đơn giá</th>
+                        <th class="text-end">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="item:${receipt.items}">
+                        <td>
+                            <div>
+                                <span class="fw-semibold d-block text-truncate" style="max-width: 150px;" th:text="${item.productName}">Tên sản phẩm</span>
+                                <small class="text-muted font-monospace d-block text-truncate" style="max-width: 150px;" th:text="${item.sku}">SKU</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-light text-dark border" th:if="${item.size != null}" th:text="|Size ${item.size.sizeName}|">Size M</span>
+                                <span class="badge bg-light text-dark border" th:if="${item.color != null}" th:text="${item.color.colorName}">Đen</span>
+                                <span class="text-muted small" th:if="${item.size == null and item.color == null}">—</span>
+                            </div>
+                        </td>
+                        <td class="text-center fw-bold" th:text="${item.quantity}">10</td>
+                        <td class="text-end text-muted" th:text="${@view.money(item.unitPrice)}">100.000 ₫</td>
+                        <td class="text-end fw-semibold text-primary" th:text="${@view.money(item.lineTotal)}">1.000.000 ₫</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(receipt.items)}">
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-4 d-block mb-1"></i>
+                            Phiếu chưa có mặt hàng nào.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Financial summary -->
+    <div class="card mb-3 border shadow-sm">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-secondary fw-semibold">Tổng giá trị phiếu nhập:</span>
+                <span class="fs-5 fw-bold text-success" th:text="${@view.money(receipt.totalAmount)}">0 ₫</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="d-flex flex-column gap-2 mb-2">
+        <a class="btn btn-primary d-flex align-items-center justify-content-center gap-1"
+           th:href="@{/admin/purchase-receipts/{id}(id=${receipt.receiptId})}">
+            <i class="bi bi-pencil-square"></i>
+            <span>Xem &amp; Chỉnh sửa chi tiết</span>
+        </a>
+
+        <div class="d-flex gap-2" th:if="${receipt.status.name() == 'DRAFT'}">
+            <form class="flex-grow-1" method="post"
+                  th:action="@{/admin/purchase-receipts/{id}/complete(id=${receipt.receiptId})}"
+                  data-confirm="Xác nhận hoàn tất phiếu nhập này và cập nhật số lượng tồn kho?">
+                <button class="btn btn-success w-100 d-flex align-items-center justify-content-center gap-1">
+                    <i class="bi bi-check-circle"></i>
+                    <span>Hoàn tất phiếu</span>
+                </button>
+            </form>
+            <form class="flex-grow-1" method="post"
+                  th:action="@{/admin/purchase-receipts/{id}/cancel(id=${receipt.receiptId})}"
+                  data-confirm="Xác nhận hủy phiếu nhập này?">
+                <button class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-1">
+                    <i class="bi bi-x-circle"></i>
+                    <span>Hủy phiếu</span>
+                </button>
+            </form>
+        </div>
+
+        <button type="button" class="btn btn-outline-secondary btn-receipt-quickview-close">
+            <i class="bi bi-x-lg me-1"></i>Đóng
+        </button>
+    </div>
+</div>
+</body>
+</html>

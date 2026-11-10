@@ -1,42 +1,129 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Phiếu nhập hàng','purchase-receipts')}">
-<body><section>
-<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-<div><h2 class="h4 mb-1">Danh sách phiếu nhập</h2><p class="text-muted mb-0">Theo dõi nhà cung cấp, người tạo và toàn bộ hàng hóa trong từng phiếu.</p></div>
-<a class="btn btn-primary" th:href="@{/admin/purchase-receipts/new}">Tạo phiếu nhập</a></div>
-<form class="card card-body mb-4" method="get" th:action="@{/admin/purchase-receipts}" data-live-filter>
-<div class="row g-3 align-items-end">
-<div class="col-lg-4"><label class="form-label" for="receipt-keyword">Tìm phiếu nhập</label>
-<input id="receipt-keyword" class="form-control" type="search" name="keyword"
-       placeholder="Mã phiếu, nhà cung cấp, người tạo..." th:value="${keyword}"></div>
-<div class="col-md-4 col-lg-2"><label class="form-label" for="receipt-status">Trạng thái</label>
-<select id="receipt-status" class="form-select" name="status"><option value="">Tất cả trạng thái</option>
-<option th:each="item:${receiptStatuses}" th:value="${item}" th:text="${@view.label(item)}"
-        th:selected="${item == status}"></option></select></div>
-<div class="col-md-4 col-lg-2"><label class="form-label" for="receipt-from">Từ thời gian</label>
-<input id="receipt-from" class="form-control" type="datetime-local" name="from" th:value="${from}"></div>
-<div class="col-md-4 col-lg-2"><label class="form-label" for="receipt-to">Đến thời gian</label>
-<input id="receipt-to" class="form-control" type="datetime-local" name="to" th:value="${to}"></div>
-<div class="col-lg-2 d-flex gap-2"><button class="btn btn-primary flex-grow-1">Lọc</button>
-<a class="btn btn-outline-secondary" th:href="@{/admin/purchase-receipts}" title="Xóa bộ lọc">Đặt lại</a></div>
-</div></form>
-<div class="card"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
-<thead><tr><th>Phiếu nhập</th><th>Nhà cung cấp / Người tạo</th><th style="min-width: 420px">Nội dung phiếu</th><th>Trạng thái</th><th class="text-end">Tổng tiền</th><th class="text-end">Thao tác</th></tr></thead>
-<tbody><tr th:each="r:${page.content}">
-<td class="text-nowrap"><div class="fw-semibold" th:text="|PN-${r.receiptId}|"></div><div class="small text-muted" th:text="${@view.date(r.createdAt)}"></div></td>
-<td><div class="fw-semibold" th:text="${r.supplier.supplierName}"></div>
-<div class="small text-muted" th:if="${r.createdBy != null}" th:text="|Người tạo: ${r.createdBy.fullName != null and !#strings.isEmpty(r.createdBy.fullName) ? r.createdBy.fullName : r.createdBy.username}|"></div>
-<div class="small text-muted" th:if="${r.createdBy == null}">Không có thông tin người tạo</div></td>
-<td><div th:if="${#lists.isEmpty(r.items)}" class="text-muted">Chưa có mặt hàng</div>
-<div th:each="item,stat:${r.items}" class="py-2" th:classappend="${!stat.last} ? ' border-bottom'"><div class="d-flex justify-content-between gap-3">
-<div><div class="fw-semibold" th:text="${item.productName}"></div><div class="d-flex flex-wrap gap-1 mt-1">
-<span class="badge text-bg-light border" th:text="|Kích cỡ: ${item.size.sizeName}|"></span><span class="badge text-bg-light border" th:text="|Màu: ${item.color.colorName}|"></span>
-<span class="small text-muted align-self-center" th:text="|SKU: ${item.sku}|"></span></div></div>
-<div class="text-end text-nowrap"><div th:text="|${item.quantity} × ${@view.money(item.unitPrice)}|"></div><strong th:text="${@view.money(item.lineTotal)}"></strong></div>
-</div></div></td>
-<td><span class="badge" th:classappend="${r.status.name() == 'COMPLETED'} ? ' text-bg-success' : (${r.status.name() == 'CANCELLED'} ? ' text-bg-secondary' : ' text-bg-warning')" th:text="${@view.label(r.status)}"></span></td>
-<td class="text-end fw-semibold text-nowrap" th:text="${@view.money(r.totalAmount)}"></td>
-<td class="text-end"><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/purchase-receipts/{id}(id=${r.receiptId})}">Chi tiết</a></td>
-</tr><tr th:if="${#lists.isEmpty(page.content)}"><td colspan="6" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td></tr>
-</tbody></table></div></div><div th:replace="~{fragments/pagination :: pagination}"></div>
-</section></body></html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{fragments/layout :: layout(~{::section},'Phiếu nhập hàng','purchase-receipts')}">
+
+<body>
+    <section>
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+            <div>
+                <h2 class="h4 mb-1">Danh sách phiếu nhập</h2>
+                <p class="text-muted mb-0">Theo dõi nhà cung cấp, người tạo và toàn bộ hàng hóa trong từng phiếu.</p>
+            </div>
+            <a class="btn btn-primary" th:href="@{/admin/purchase-receipts/new}">Tạo phiếu nhập</a>
+        </div>
+        <form class="card card-body mb-4" method="get" th:action="@{/admin/purchase-receipts}" data-live-filter>
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-4"><label class="form-label" for="receipt-keyword">Tìm phiếu nhập</label>
+                    <input id="receipt-keyword" class="form-control" type="search" name="keyword"
+                        placeholder="Mã phiếu, nhà cung cấp, người tạo..." th:value="${keyword}">
+                </div>
+                <div class="col-md-4 col-lg-2"><label class="form-label" for="receipt-status">Trạng thái</label>
+                    <select id="receipt-status" class="form-select" name="status">
+                        <option value="">Tất cả trạng thái</option>
+                        <option th:each="item:${receiptStatuses}" th:value="${item}" th:text="${@view.label(item)}"
+                            th:selected="${item == status}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4 col-lg-2"><label class="form-label" for="receipt-from">Từ thời gian</label>
+                    <input id="receipt-from" class="form-control" type="datetime-local" name="from" th:value="${from}">
+                </div>
+                <div class="col-md-4 col-lg-2"><label class="form-label" for="receipt-to">Đến thời gian</label>
+                    <input id="receipt-to" class="form-control" type="datetime-local" name="to" th:value="${to}">
+                </div>
+                <div class="col-lg-2 d-flex gap-2"><button class="btn btn-primary flex-grow-1">Lọc</button>
+                    <a class="btn btn-outline-secondary" th:href="@{/admin/purchase-receipts}" title="Xóa bộ lọc">Đặt
+                        lại</a>
+                </div>
+            </div>
+        </form>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                        <tr>
+                            <th>Mã phiếu</th>
+                            <th>Nhà cung cấp</th>
+                            <th>Thời gian</th>
+                            <th>Người lập</th>
+                            <th class="text-center">Số mặt hàng</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Tổng tiền</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                        </thead>
+                    <tbody>
+                        <tr th:each="r:${page.content}" th:id="|receipt-row-${r.receiptId}|"
+                            th:data-receipt-id="${r.receiptId}" class="receipt-row">
+        <td class="fw-semibold text-nowrap" th:text="|#PN-${r.receiptId}|"></td>
+        <td><span class="fw-semibold" th:text="${r.supplier.supplierName}"></span></td>
+        <td class="text-nowrap" th:text="${@view.date(r.createdAt)}"></td>
+        <td>
+            <span th:if="${r.createdBy != null}"
+                th:text="${r.createdBy.fullName != null and !#strings.isEmpty(r.createdBy.fullName) ? r.createdBy.fullName : r.createdBy.username}"></span>
+            <span class="text-muted" th:if="${r.createdBy == null}">—</span>
+        </td>
+        <td class="text-center">
+            <span class="badge bg-light text-dark border" th:text="|${#lists.size(r.items)} mặt hàng|">0 mặt hàng</span>
+        </td>
+        <td>
+            <span class="badge"
+                th:classappend="${r.status.name() == 'COMPLETED'} ? ' text-bg-success' : (${r.status.name() == 'CANCELLED'} ? ' text-bg-secondary' : ' text-bg-warning')"
+                th:text="${@view.label(r.status)}"></span>
+        </td>
+        <td class="text-end fw-bold text-success text-nowrap" th:text="${@view.money(r.totalAmount)}"></td>
+        <td class="text-center text-nowrap">
+            <a class="btn btn-outline-primary btn-sm btn-receipt-preview"
+                th:href="@{/admin/purchase-receipts/{id}(id=${r.receiptId})}" th:data-receipt-id="${r.receiptId}"
+                title="Xem nhanh bên phải">
+                <i class="bi bi-layout-sidebar-inset-reverse me-1"></i>Chi tiết
+            </a>
+        </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(page.content)}">
+            <td colspan="8" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+        </tr>
+        </tbody>
+        <tfoot th:if="${!#lists.isEmpty(page.content)}">
+            <tr class="table-light border-top">
+                <td colspan="6" class="text-end fw-bold py-3 text-secondary">
+                    Tổng giá trị phiếu nhập (trang này):
+                </td>
+                <td class="text-end fw-bold fs-6 text-success py-3 text-nowrap"
+                    th:text="${@view.money(pageTotalAmount)}">0 đ</td>
+                <td></td>
+            </tr>
+        </tfoot>
+        </table>
+        </div>
+        </div>
+        <div th:replace="~{fragments/pagination :: pagination}"></div>
+
+        <!-- Purchase Receipt Quick View Side Panel -->
+        <div class="receipt-quickview-backdrop" id="receiptQuickviewBackdrop"></div>
+        <aside class="receipt-quickview-panel shadow-lg" id="receiptQuickviewPanel" aria-hidden="true">
+            <div class="receipt-quickview-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="receipt-quickview-icon"><i class="bi bi-box-seam"></i></span>
+                    <div>
+                        <h2 class="h6 mb-0 fw-bold" id="receiptQuickviewTitle">Chi tiết phiếu nhập</h2>
+                        <small class="text-muted" id="receiptQuickviewSubtitle">Xem nhanh thông tin nhập hàng</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <a href="#" id="receiptQuickviewFullLink" class="btn btn-sm btn-outline-secondary" target="_blank"
+                        title="Mở trang chi tiết đầy đủ trong tab mới">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    <button type="button" class="btn-close ms-2" id="receiptQuickviewClose" aria-label="Đóng"></button>
+                </div>
+            </div>
+            <div class="receipt-quickview-body" id="receiptQuickviewBody">
+                <div class="receipt-quickview-empty text-center p-5 text-muted">
+                    <i class="bi bi-box-seam fs-1 mb-2 d-block"></i>
+                    <p>Vui lòng chọn một phiếu nhập để xem chi tiết.</p>
+                </div>
+            </div>
+        </aside>
+    </section>
+</body>
+
+</html>

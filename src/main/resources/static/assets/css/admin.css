@@ -178,9 +178,10 @@
 @media(max-width:575.98px){.account-hero{align-items:flex-start;flex-direction:column}.account-hero .btn{width:100%}.account-filter,.account-info-grid,.account-readonly-access{grid-template-columns:1fr}.account-wide{grid-column:auto}.account-table-card{border-radius:10px}.account-detail-head{padding:1rem}}
 
 /* ==========================================================================
-   Order Quick View Side Panel (Drawer)
+   Order & Receipt Quick View Side Panel (Drawer)
    ========================================================================== */
-.order-quickview-panel {
+.order-quickview-panel,
+.receipt-quickview-panel {
   position: fixed;
   top: 0;
   right: 0;
@@ -197,11 +198,13 @@
   border-left: 1px solid var(--bs-border-color, #e5e7eb);
 }
 
-.order-quickview-panel.is-open {
+.order-quickview-panel.is-open,
+.receipt-quickview-panel.is-open {
   transform: translateX(0);
 }
 
-.order-quickview-header {
+.order-quickview-header,
+.receipt-quickview-header {
   padding: 1.1rem 1.35rem;
   border-bottom: 1px solid var(--bs-border-color, #e5e7eb);
   display: flex;
@@ -211,7 +214,8 @@
   flex-shrink: 0;
 }
 
-.order-quickview-icon {
+.order-quickview-icon,
+.receipt-quickview-icon {
   width: 40px;
   height: 40px;
   border-radius: 12px;
@@ -223,37 +227,44 @@
   flex-shrink: 0;
 }
 
-.order-quickview-body {
+.order-quickview-body,
+.receipt-quickview-body {
   padding: 1.25rem;
   overflow-y: auto;
   flex: 1 1 auto;
 }
 
-.order-quickview-body::-webkit-scrollbar {
+.order-quickview-body::-webkit-scrollbar,
+.receipt-quickview-body::-webkit-scrollbar {
   width: 6px;
 }
-.order-quickview-body::-webkit-scrollbar-thumb {
+.order-quickview-body::-webkit-scrollbar-thumb,
+.receipt-quickview-body::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
 }
 
 /* Row active styling */
-tr.order-row {
+tr.order-row,
+tr.receipt-row {
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
-tr.order-row-active {
+tr.order-row-active,
+tr.receipt-row-active {
   background-color: rgba(var(--bs-primary-rgb, 6, 78, 59), 0.08) !important;
   box-shadow: inset 4px 0 0 var(--bs-primary, #064e3b);
 }
 
-tr.order-row-active td {
+tr.order-row-active td,
+tr.receipt-row-active td {
   background-color: transparent !important;
 }
 
 /* Quickview backdrop for mobile only */
-.order-quickview-backdrop {
+.order-quickview-backdrop,
+.receipt-quickview-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
@@ -264,7 +275,8 @@ tr.order-row-active td {
 }
 
 @media (max-width: 767.98px) {
-  .order-quickview-backdrop.show {
+  .order-quickview-backdrop.show,
+  .receipt-quickview-backdrop.show {
     opacity: 1;
     visibility: visible;
   }

@@ -5,6 +5,7 @@ import com.lauriel.store.entity.enums.OrderStatus;
 import com.lauriel.store.security.StoreUserDetails;
 import com.lauriel.store.service.*;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -36,7 +37,13 @@ public class WebOrderController {
         Model m
     ) {
         var result = orders.staffList(page, size, keyword, status, from, to);
+        var pageTotalAmount = result
+            .content()
+            .stream()
+            .map(o -> o.finalAmount() != null ? o.finalAmount() : BigDecimal.ZERO)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
         m.addAttribute("page", result);
+        m.addAttribute("pageTotalAmount", pageTotalAmount);
         m.addAttribute(
             "customerNames",
             customers.names(

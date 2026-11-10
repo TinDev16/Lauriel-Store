@@ -444,4 +444,100 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // --- Purchase Receipt Quick View Side Panel ---
+  const receiptQuickviewPanel = document.getElementById('receiptQuickviewPanel');
+  const receiptQuickviewBody = document.getElementById('receiptQuickviewBody');
+  const receiptQuickviewTitle = document.getElementById('receiptQuickviewTitle');
+  const receiptQuickviewSubtitle = document.getElementById('receiptQuickviewSubtitle');
+  const receiptQuickviewFullLink = document.getElementById('receiptQuickviewFullLink');
+  const receiptQuickviewClose = document.getElementById('receiptQuickviewClose');
+  const receiptQuickviewBackdrop = document.getElementById('receiptQuickviewBackdrop');
+  let currentQuickviewReceiptId = null;
+
+  const closeReceiptQuickview = () => {
+    if (!receiptQuickviewPanel) return;
+    receiptQuickviewPanel.classList.remove('is-open');
+    receiptQuickviewBackdrop?.classList.remove('show');
+    document.querySelectorAll('tr.receipt-row-active').forEach(r => r.classList.remove('receipt-row-active'));
+    currentQuickviewReceiptId = null;
+  };
+
+  const loadReceiptQuickview = async (receiptId, targetRow) => {
+    if (!receiptQuickviewPanel || !receiptQuickviewBody) return;
+    currentQuickviewReceiptId = receiptId;
+
+    document.querySelectorAll('tr.receipt-row-active').forEach(r => r.classList.remove('receipt-row-active'));
+    targetRow?.classList.add('receipt-row-active');
+
+    receiptQuickviewPanel.classList.add('is-open');
+    receiptQuickviewBackdrop?.classList.add('show');
+    if (receiptQuickviewTitle) receiptQuickviewTitle.textContent = `Phiếu nhập #PN-${receiptId}`;
+    if (receiptQuickviewSubtitle) receiptQuickviewSubtitle.textContent = 'Đang tải thông tin chi tiết...';
+    if (receiptQuickviewFullLink) receiptQuickviewFullLink.href = `/admin/purchase-receipts/${receiptId}`;
+
+    receiptQuickviewBody.innerHTML = `
+      <div class="text-center py-5 text-muted">
+        <div class="spinner-border text-primary mb-3" style="width: 2.2rem; height: 2.2rem;" role="status">
+          <span class="visually-hidden">Đang tải...</span>
+        </div>
+        <p class="mb-0 fw-semibold">Đang tải chi tiết phiếu nhập #PN-${receiptId}...</p>
+      </div>
+    `;
+
+    try {
+      const response = await fetch(`/admin/purchase-receipts/${receiptId}/preview`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!response.ok) throw new Error('Không thể tải chi tiết');
+      const html = await response.text();
+      if (currentQuickviewReceiptId === receiptId) {
+        receiptQuickviewBody.innerHTML = html;
+        if (receiptQuickviewSubtitle) receiptQuickviewSubtitle.textContent = 'Thông tin chi tiết phiếu nhập hàng';
+        receiptQuickviewBody.querySelectorAll('.btn-receipt-quickview-close').forEach(btn => {
+          btn.addEventListener('click', closeReceiptQuickview);
+        });
+      }
+    } catch (e) {
+      if (currentQuickviewReceiptId === receiptId) {
+        receiptQuickviewBody.innerHTML = `
+          <div class="alert alert-danger my-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Không thể tải thông tin phiếu nhập #PN-${receiptId}. Vui lòng thử lại.
+          </div>
+        `;
+        if (receiptQuickviewSubtitle) receiptQuickviewSubtitle.textContent = 'Lỗi tải dữ liệu';
+      }
+    }
+  };
+
+  if (receiptQuickviewPanel) {
+    receiptQuickviewClose?.addEventListener('click', closeReceiptQuickview);
+    receiptQuickviewBackdrop?.addEventListener('click', closeReceiptQuickview);
+
+    document.addEventListener('click', event => {
+      const previewBtn = event.target.closest('.btn-receipt-preview');
+      if (previewBtn) {
+        event.preventDefault();
+        const receiptId = previewBtn.dataset.receiptId;
+        const row = previewBtn.closest('tr');
+        loadReceiptQuickview(receiptId, row);
+        return;
+      }
+
+      const row = event.target.closest('tr.receipt-row');
+      if (row && !event.target.closest('a, button, input, select, textarea')) {
+        const receiptId = row.dataset.receiptId;
+        if (receiptId) {
+          loadReceiptQuickview(receiptId, row);
+        }
+      }
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && receiptQuickviewPanel.classList.contains('is-open')) {
+        closeReceiptQuickview();
+      }
+    });
+  }
+
 });

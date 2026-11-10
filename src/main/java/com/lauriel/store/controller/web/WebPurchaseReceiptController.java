@@ -10,6 +10,7 @@ import com.lauriel.store.service.InventoryService;
 import com.lauriel.store.service.PurchaseReceiptService;
 import com.lauriel.store.service.SupplierService;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -49,10 +50,14 @@ public class WebPurchaseReceiptController {
         @RequestParam(required = false) java.time.LocalDateTime to,
         Model model
     ) {
-        model.addAttribute(
-            "page",
-            receipts.listDetailed(page, size, keyword, status, from, to)
-        );
+        var resultPage = receipts.listDetailed(page, size, keyword, status, from, to);
+        var pageTotalAmount = resultPage
+            .content()
+            .stream()
+            .map(r -> r.totalAmount() != null ? r.totalAmount() : BigDecimal.ZERO)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        model.addAttribute("page", resultPage);
+        model.addAttribute("pageTotalAmount", pageTotalAmount);
         model.addAttribute("keyword", keyword);
         model.addAttribute("status", status);
         model.addAttribute("from", from);
@@ -109,6 +114,12 @@ public class WebPurchaseReceiptController {
             );
         }
         return detailModel(id, model);
+    }
+
+    @GetMapping("/{id}/preview")
+    public String preview(@PathVariable Long id, Model model) {
+        model.addAttribute("receipt", receipts.detail(id));
+        return "admin/purchase-receipts/preview";
     }
 
     @PostMapping("/{id}/items")

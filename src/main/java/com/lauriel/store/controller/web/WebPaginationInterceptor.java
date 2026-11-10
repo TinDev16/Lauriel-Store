@@ -11,9 +11,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class WebPaginationInterceptor implements HandlerInterceptor {
 
     private static final Set<String> FILTERS = Set.of(
+        "tab",
+        "timeFilter",
         "keyword",
         "candidateKeyword",
         "status",
+        "discountType",
         "from",
         "to",
         "size",

@@ -54,10 +54,23 @@ public class VoucherService {
         ActiveStatus status,
         com.lauriel.store.entity.enums.DiscountType discountType
     ) {
+        return list(page, size, keyword, status, discountType, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<VoucherResponse> list(
+        int page,
+        int size,
+        String keyword,
+        ActiveStatus status,
+        com.lauriel.store.entity.enums.DiscountType discountType,
+        String timeFilter
+    ) {
         String term =
             keyword == null || keyword.isBlank()
                 ? null
                 : "%" + keyword.strip().toLowerCase(Locale.ROOT) + "%";
+        var now = pricing.now();
         org.springframework.data.jpa.domain.Specification<Voucher> filter = (
             root,
             query,
@@ -68,6 +81,31 @@ public class VoucherService {
             if (status != null) predicates.add(
                 builder.equal(root.get("status"), status)
             );
+            if ("RUNNING".equalsIgnoreCase(timeFilter)) {
+                predicates.add(builder.equal(root.get("status"), ActiveStatus.ACTIVE));
+                predicates.add(builder.greaterThan(root.get("quantity"), 0));
+                predicates.add(builder.or(
+                    builder.isNull(root.get("startDate")),
+                    builder.lessThanOrEqualTo(root.get("startDate"), now)
+                ));
+                predicates.add(builder.or(
+                    builder.isNull(root.get("endDate")),
+                    builder.greaterThanOrEqualTo(root.get("endDate"), now)
+                ));
+            } else if ("OUT_OF_STOCK".equalsIgnoreCase(timeFilter)) {
+                predicates.add(builder.equal(root.get("status"), ActiveStatus.ACTIVE));
+                predicates.add(builder.or(
+                    builder.isNull(root.get("quantity")),
+                    builder.lessThanOrEqualTo(root.get("quantity"), 0)
+                ));
+            } else if ("UPCOMING".equalsIgnoreCase(timeFilter)) {
+                predicates.add(builder.equal(root.get("status"), ActiveStatus.ACTIVE));
+                predicates.add(builder.greaterThan(root.get("startDate"), now));
+            } else if ("EXPIRED".equalsIgnoreCase(timeFilter)) {
+                predicates.add(builder.lessThan(root.get("endDate"), now));
+            } else if ("INACTIVE".equalsIgnoreCase(timeFilter)) {
+                predicates.add(builder.equal(root.get("status"), ActiveStatus.INACTIVE));
+            }
             if (discountType != null) predicates.add(
                 builder.equal(root.get("discountType"), discountType)
             );

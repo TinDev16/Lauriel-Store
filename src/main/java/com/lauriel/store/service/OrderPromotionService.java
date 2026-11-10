@@ -34,10 +34,22 @@ public class OrderPromotionService {
         String keyword,
         ActiveStatus status
     ) {
+        return list(page, size, keyword, status, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<OrderPromotionResponse> list(
+        int page,
+        int size,
+        String keyword,
+        ActiveStatus status,
+        String timeFilter
+    ) {
         String term =
             keyword == null || keyword.isBlank()
                 ? null
                 : "%" + keyword.strip().toLowerCase(Locale.ROOT) + "%";
+        var now = java.time.LocalDateTime.now(clock);
         var filter =
             (org.springframework.data.jpa.domain.Specification<OrderPromotion>) (
                 root,
@@ -46,6 +58,24 @@ public class OrderPromotionService {
             ) -> {
                 var p = new ArrayList<jakarta.persistence.criteria.Predicate>();
                 if (status != null) p.add(b.equal(root.get("status"), status));
+                if ("RUNNING".equalsIgnoreCase(timeFilter)) {
+                    p.add(b.equal(root.get("status"), ActiveStatus.ACTIVE));
+                    p.add(b.or(
+                        b.isNull(root.get("startDate")),
+                        b.lessThanOrEqualTo(root.get("startDate"), now)
+                    ));
+                    p.add(b.or(
+                        b.isNull(root.get("endDate")),
+                        b.greaterThanOrEqualTo(root.get("endDate"), now)
+                    ));
+                } else if ("UPCOMING".equalsIgnoreCase(timeFilter)) {
+                    p.add(b.equal(root.get("status"), ActiveStatus.ACTIVE));
+                    p.add(b.greaterThan(root.get("startDate"), now));
+                } else if ("EXPIRED".equalsIgnoreCase(timeFilter)) {
+                    p.add(b.lessThan(root.get("endDate"), now));
+                } else if ("INACTIVE".equalsIgnoreCase(timeFilter)) {
+                    p.add(b.equal(root.get("status"), ActiveStatus.INACTIVE));
+                }
                 if (term != null) p.add(
                     b.or(
                         b.like(b.lower(root.get("promotionName")), term),

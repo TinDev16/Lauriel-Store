@@ -269,3 +269,84 @@ tr.order-row-active td {
     visibility: visible;
   }
 }
+
+/* ==========================================================================
+   Order Filter Bar (Horizontal Layout)
+   ========================================================================== */
+.order-filter-card {
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--bs-border-color);
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.04);
+}
+
+@media (min-width: 992px) {
+  .order-filter-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+  }
+  .order-filter-row > .col-filter-search {
+    flex: 1 1 260px;
+    min-width: 200px;
+  }
+  .order-filter-row > .col-filter-status {
+    flex: 0 0 170px;
+    min-width: 145px;
+  }
+  .order-filter-row > .col-filter-date {
+    flex: 0 0 195px;
+    min-width: 175px;
+  }
+  .order-filter-row > .col-filter-actions {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .order-filter-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  .order-filter-row > .col-filter-search {
+    grid-column: 1 / -1;
+  }
+  .order-filter-row > .col-filter-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .order-filter-row {
+    grid-template-columns: 1fr;
+  }
+  .order-filter-row > .col-filter-actions {
+    width: 100%;
+  }
+  .order-filter-row > .col-filter-actions .btn {
+    flex: 1;
+  }
+}
+
+/* ==========================================================================
+   Marketing Hub & Promotions Overview
+   ========================================================================== */
+.marketing-overview-page .nav-pills .nav-link {
+  padding: 0.65rem 1.15rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.marketing-overview-page .nav-pills .nav-link:not(.active):hover {
+  background-color: #f1f5f3 !important;
+  color: var(--bs-primary) !important;
+}
+
+.marketing-overview-page .card {
+  border-radius: 14px;
+}

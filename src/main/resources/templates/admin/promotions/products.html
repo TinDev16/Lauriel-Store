@@ -6,7 +6,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
   <div>
     <h2 class="h5 mb-1" th:text="${promotion.promotionName}">Khuyến mãi</h2>
-    <p class="text-muted mb-0">Chọn nhanh nhiều sản phẩm theo tên hoặc danh mục.</p>
+    <p class="text-muted mb-0">Chọn nhanh nhiều sản phẩm theo tên hoặc phân loại.</p>
   </div>
   <a class="btn btn-outline-secondary" th:href="@{/admin/promotions}">Quay lại khuyến mãi</a>
 </div>
@@ -33,9 +33,9 @@
                placeholder="Nhập tên sản phẩm..." th:value="${candidateKeyword}">
       </div>
       <div class="col-lg-4">
-        <label class="form-label" for="categoryId">Danh mục</label>
+        <label class="form-label" for="categoryId">Phân loại</label>
         <select id="categoryId" class="form-select" name="categoryId">
-          <option value="">Tất cả danh mục</option>
+          <option value="">Tất cả phân loại</option>
           <option th:each="category:${categories}" th:value="${category.categoryId}"
                   th:text="${category.categoryName}"
                   th:selected="${category.categoryId == categoryId}"></option>
@@ -113,7 +113,7 @@
 <div class="card">
   <div class="table-responsive">
     <table class="table table-hover align-middle mb-0">
-      <thead><tr><th>Mã</th><th>Sản phẩm</th><th>Danh mục</th><th>Giá gốc</th><th>Giá đang bán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <thead><tr><th>Mã</th><th>Sản phẩm</th><th>Phân loại</th><th>Giá gốc</th><th>Giá đang bán</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
       <tbody>
       <tr th:each="r:${page.content}">
         <td th:text="${r.productId}"></td>

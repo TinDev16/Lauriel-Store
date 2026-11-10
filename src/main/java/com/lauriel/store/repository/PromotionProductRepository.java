@@ -27,6 +27,8 @@ public interface PromotionProductRepository
         Pageable pageable
     );
 
+    long countById_PromotionId(Long promotionId);
+
     @EntityGraph(attributePaths = { "product" })
     @Query(
         value = "select pp from PromotionProduct pp where pp.id.promotionId = :promotionId " +

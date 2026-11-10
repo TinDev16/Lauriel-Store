@@ -66,7 +66,7 @@ public class CategoryService {
     public CategoryResponse create(CategoryRequest request) {
         String name = normalize(request.categoryName());
         if (repository.existsByCategoryNameIgnoreCase(name)) {
-            throw new DuplicateResourceException("Danh mục đã tồn tại");
+            throw new DuplicateResourceException("Phân loại đã tồn tại");
         }
         Category category = new Category();
         category.setCategoryName(name);
@@ -82,7 +82,7 @@ public class CategoryService {
         if (
             repository.existsByCategoryNameIgnoreCaseAndCategoryIdNot(name, id)
         ) {
-            throw new DuplicateResourceException("Danh mục đã tồn tại");
+            throw new DuplicateResourceException("Phân loại đã tồn tại");
         }
         category.setCategoryName(name);
         category.setStatus(request.status());
@@ -103,7 +103,7 @@ public class CategoryService {
         Category category = require(id);
         if (category.getStatus() != ActiveStatus.ACTIVE) {
             throw new com.lauriel.store.exception.BadRequestException(
-                "Không thể gán sản phẩm vào danh mục ngừng hoạt động"
+                "Không thể gán sản phẩm vào phân loại ngừng hoạt động"
             );
         }
         return category;
@@ -113,7 +113,7 @@ public class CategoryService {
         return repository
             .findById(id)
             .orElseThrow(() ->
-                new ResourceNotFoundException("Không tìm thấy danh mục")
+                new ResourceNotFoundException("Không tìm thấy phân loại")
             );
     }
 

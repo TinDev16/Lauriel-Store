@@ -2,7 +2,11 @@ package com.lauriel.store.controller.web;
 
 import com.lauriel.store.dto.request.*;
 import com.lauriel.store.entity.enums.*;
+import com.lauriel.store.service.CategoryService;
+import com.lauriel.store.service.MarketingOverviewService;
+import com.lauriel.store.service.OrderPromotionService;
 import com.lauriel.store.service.PromotionService;
+import com.lauriel.store.service.VoucherService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,14 +19,63 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class WebPromotionController {
 
     private final PromotionService promotions;
-    private final com.lauriel.store.service.CategoryService categories;
+    private final CategoryService categories;
+    private final MarketingOverviewService marketingOverview;
+    private final VoucherService vouchers;
+    private final OrderPromotionService orderPromotions;
 
     public WebPromotionController(
         PromotionService promotions,
-        com.lauriel.store.service.CategoryService categories
+        CategoryService categories,
+        MarketingOverviewService marketingOverview,
+        VoucherService vouchers,
+        OrderPromotionService orderPromotions
     ) {
         this.promotions = promotions;
         this.categories = categories;
+        this.marketingOverview = marketingOverview;
+        this.vouchers = vouchers;
+        this.orderPromotions = orderPromotions;
+    }
+
+    @GetMapping("/overview")
+    public String overview(
+        @RequestParam(defaultValue = "overview") String tab,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "12") int size,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) ActiveStatus status,
+        @RequestParam(required = false) DiscountType discountType,
+        @RequestParam(required = false) String timeFilter,
+        Model m
+    ) {
+        var overviewData = marketingOverview.getOverview();
+        m.addAttribute("overview", overviewData);
+        m.addAttribute("currentTab", tab);
+        m.addAttribute("statuses", ActiveStatus.values());
+        m.addAttribute("discountTypes", DiscountType.values());
+        m.addAttribute("keyword", keyword);
+        m.addAttribute("status", status);
+        m.addAttribute("discountType", discountType);
+        m.addAttribute("timeFilter", timeFilter);
+
+        if ("promotions".equalsIgnoreCase(tab)) {
+            m.addAttribute(
+                "page",
+                promotions.list(page, size, false, keyword, status, timeFilter)
+            );
+        } else if ("vouchers".equalsIgnoreCase(tab)) {
+            m.addAttribute(
+                "page",
+                vouchers.list(page, size, keyword, status, discountType, timeFilter)
+            );
+        } else if ("order-promotions".equalsIgnoreCase(tab)) {
+            m.addAttribute(
+                "page",
+                orderPromotions.list(page, size, keyword, status, timeFilter)
+            );
+        }
+        return "admin/promotions/overview";
     }
 
     @GetMapping
@@ -30,16 +83,16 @@ public class WebPromotionController {
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "12") int size,
         @RequestParam(required = false) String keyword,
-        @RequestParam(required = false) ActiveStatus status,
-        Model m
+        @RequestParam(required = false) ActiveStatus status
     ) {
-        m.addAttribute(
-            "page",
-            promotions.list(page, size, false, keyword, status)
-        );
-        m.addAttribute("keyword", keyword);
-        m.addAttribute("status", status);
-        return "admin/promotions/list";
+        String query = "?tab=promotions";
+        if (page > 0) query += "&page=" + page;
+        if (size != 12) query += "&size=" + size;
+        if (keyword != null && !keyword.isBlank()) {
+            query += "&keyword=" + java.net.URLEncoder.encode(keyword, java.nio.charset.StandardCharsets.UTF_8);
+        }
+        if (status != null) query += "&status=" + status.name();
+        return "redirect:/admin/promotions/overview" + query;
     }
 
     @GetMapping("/new")
@@ -86,7 +139,7 @@ public class WebPromotionController {
             m,
             null
         );
-        return WebActions.saved("/admin/promotions", flash);
+        return WebActions.saved("/admin/promotions/overview?tab=promotions", flash);
     }
 
     @PostMapping("/{id}")
@@ -101,7 +154,7 @@ public class WebPromotionController {
             m,
             id
         );
-        return WebActions.saved("/admin/promotions", flash);
+        return WebActions.saved("/admin/promotions/overview?tab=promotions", flash);
     }
 
     @PostMapping("/{id}/status")
@@ -113,11 +166,11 @@ public class WebPromotionController {
     ) {
         if (e.hasErrors()) {
             flash.addFlashAttribute("errorMessage", "Trạng thái không hợp lệ.");
-            return "redirect:/admin/promotions";
+            return "redirect:/admin/promotions/overview?tab=promotions";
         }
         return WebActions.action(
             () -> promotions.updateStatus(id, f.status()),
-            "/admin/promotions",
+            "/admin/promotions/overview?tab=promotions",
             flash
         );
     }

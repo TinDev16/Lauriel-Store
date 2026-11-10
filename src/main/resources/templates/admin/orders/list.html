@@ -4,31 +4,37 @@
 
 <body>
     <section>
-        <form class="card card-body row g-2 mb-3" method="get" th:action="@{/admin/orders}" data-live-filter>
-            <div class="col-md-3"><label class="form-label">Tìm đơn hàng</label>
-                <input class="form-control" type="search" name="keyword" placeholder="Mã đơn, tên hoặc SĐT khách..."
-                    th:value="${keyword}">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Trạng thái</label>
-                <select name="status" class="form-select">
-                    <option value="">Tất cả</option>
-                    <option th:each="s:${orderStatuses}" th:value="${s}" th:text="${@view.label(s)}"
-                        th:selected="${s == status}">
-                    </option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Từ</label>
-                <input class="form-control" type="datetime-local" name="from" th:value="${from}">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Đến</label>
-                <input class="form-control" type="datetime-local" name="to" th:value="${to}">
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-primary">Lọc</button>
-                <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/orders}">Đặt lại</a>
+        <form class="card card-body mb-3 order-filter-card" method="get" th:action="@{/admin/orders}" data-live-filter>
+            <div class="order-filter-row">
+                <div class="col-filter-search">
+                    <label class="form-label small fw-semibold mb-1">Tìm đơn hàng</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
+                        <input class="form-control border-start-0 ps-0" type="search" name="keyword" placeholder="Mã đơn, tên hoặc SĐT khách..."
+                            th:value="${keyword}">
+                    </div>
+                </div>
+                <div class="col-filter-status">
+                    <label class="form-label small fw-semibold mb-1">Trạng thái</label>
+                    <select name="status" class="form-select">
+                        <option value="">Tất cả trạng thái</option>
+                        <option th:each="s:${orderStatuses}" th:value="${s}" th:text="${@view.label(s)}"
+                            th:selected="${s == status}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-filter-date">
+                    <label class="form-label small fw-semibold mb-1">Từ ngày</label>
+                    <input class="form-control" type="datetime-local" name="from" th:value="${from}">
+                </div>
+                <div class="col-filter-date">
+                    <label class="form-label small fw-semibold mb-1">Đến ngày</label>
+                    <input class="form-control" type="datetime-local" name="to" th:value="${to}">
+                </div>
+                <div class="col-filter-actions d-flex gap-2">
+                    <button class="btn btn-primary text-nowrap"><i class="bi bi-funnel"></i> Lọc</button>
+                    <a class="btn btn-outline-secondary text-nowrap" th:href="@{/admin/orders}" title="Xóa bộ lọc"><i class="bi bi-arrow-counterclockwise"></i> Đặt lại</a>
+                </div>
             </div>
         </form>
         <div class="card">

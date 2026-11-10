@@ -25,13 +25,16 @@ public class WebOrderPromotionController {
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "12") int size,
         @RequestParam(required = false) String keyword,
-        @RequestParam(required = false) ActiveStatus status,
-        Model m
+        @RequestParam(required = false) ActiveStatus status
     ) {
-        m.addAttribute("page", service.list(page, size, keyword, status));
-        m.addAttribute("keyword", keyword);
-        m.addAttribute("status", status);
-        return "admin/order-promotions/list";
+        String query = "?tab=order-promotions";
+        if (page > 0) query += "&page=" + page;
+        if (size != 12) query += "&size=" + size;
+        if (keyword != null && !keyword.isBlank()) {
+            query += "&keyword=" + java.net.URLEncoder.encode(keyword, java.nio.charset.StandardCharsets.UTF_8);
+        }
+        if (status != null) query += "&status=" + status.name();
+        return "redirect:/admin/promotions/overview" + query;
     }
 
     @GetMapping("/new")
@@ -79,7 +82,7 @@ public class WebOrderPromotionController {
         RedirectAttributes f
     ) {
         if (!WebActions.save(() -> service.create(r), e)) return form(m, null);
-        return WebActions.saved("/admin/order-promotions", f);
+        return WebActions.saved("/admin/promotions/overview?tab=order-promotions", f);
     }
 
     @PostMapping("/{id}")
@@ -94,7 +97,7 @@ public class WebOrderPromotionController {
             m,
             id
         );
-        return WebActions.saved("/admin/order-promotions", f);
+        return WebActions.saved("/admin/promotions/overview?tab=order-promotions", f);
     }
 
     @PostMapping("/{id}/status")
@@ -105,7 +108,7 @@ public class WebOrderPromotionController {
     ) {
         return WebActions.action(
             () -> service.updateStatus(id, status),
-            "/admin/order-promotions",
+            "/admin/promotions/overview?tab=order-promotions",
             f
         );
     }

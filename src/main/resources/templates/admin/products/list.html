@@ -4,13 +4,13 @@
 <div class="mb-3"><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/new}">Thêm sản phẩm</a></div>
 <form class="row g-2 mb-3" method="get" data-live-filter data-preserve-scroll th:action="@{/admin/products}">
 <div class="col-lg-4"><input class="form-control" type="search" name="keyword" placeholder="Tìm tên sản phẩm" th:value="${keyword}"></div>
-<div class="col-lg-3"><select name="categoryId" class="form-select"><option value="">Tất cả danh mục</option><option th:each="c:${categories}" th:value="${c.categoryId}" th:text="${c.categoryName}" th:selected="${c.categoryId == categoryId}"></option></select></div>
+<div class="col-lg-3"><select name="categoryId" class="form-select"><option value="">Tất cả phân loại</option><option th:each="c:${categories}" th:value="${c.categoryId}" th:text="${c.categoryName}" th:selected="${c.categoryId == categoryId}"></option></select></div>
 <div class="col-lg-2"><select name="status" class="form-select"><option value="">Tất cả trạng thái</option><option th:each="s:${statuses}" th:value="${s}" th:text="${@view.label(s)}" th:selected="${s == status}"></option></select></div>
 <div class="col-auto"><button class="btn btn-primary">Lọc</button> <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Đặt lại</a></div>
 </form>
 <div class="card"><div class="table-responsive">
 <table class="table table-hover align-middle mb-0">
-<thead><tr><th>Hình ảnh</th><th>Sản phẩm</th><th>Danh mục</th><th>Giá cơ bản</th><th>Trạng thái</th><th class="text-center">Thuộc tính</th><th class="text-center">Tồn hàng</th><th>Thao tác</th></tr></thead>
+<thead><tr><th>Hình ảnh</th><th>Sản phẩm</th><th>Phân loại</th><th>Giá cơ bản</th><th>Trạng thái</th><th class="text-center">Thuộc tính</th><th class="text-center">Tồn hàng</th><th>Thao tác</th></tr></thead>
 <tbody>
 <tr th:each="r:${page.content}">
 <td><img th:if="${r.imgUrl != null and !#strings.isEmpty(r.imgUrl)}" th:src="${r.imgUrl}" class="product-thumbnail" alt="Sản phẩm" loading="lazy"></td>

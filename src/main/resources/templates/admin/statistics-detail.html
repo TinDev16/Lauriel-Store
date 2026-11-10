@@ -4,7 +4,7 @@
 <nav class="stats-breadcrumb" aria-label="Đường dẫn"><a th:href="@{/admin/statistics}">Thống kê</a><i class="bi bi-chevron-right"></i><span th:switch="${section}"><span th:case="'sales'">Doanh thu</span><span th:case="'products'">Sản phẩm</span><span th:case="'customers'">Khách hàng</span><span th:case="'promotions'">Khuyến mãi</span><span th:case="'inventory'">Hàng hóa</span></span></nav>
 <header class="stats-detail-header" th:switch="${section}">
 <div th:case="'sales'"><span class="stats-eyebrow">BÁO CÁO BÁN HÀNG</span><h1>Doanh thu và đơn hàng</h1><p>Theo dõi doanh thu thực nhận, giá trị đơn và tình trạng xử lý đơn hàng.</p></div>
-<div th:case="'products'"><span class="stats-eyebrow">HIỆU QUẢ DANH MỤC</span><h1>Hiệu quả sản phẩm</h1><p>So sánh sản phẩm, thuộc tính bán chạy và các mặt hàng cần bổ sung.</p></div>
+<div th:case="'products'"><span class="stats-eyebrow">HIỆU QUẢ PHÂN LOẠI</span><h1>Hiệu quả sản phẩm</h1><p>So sánh sản phẩm, thuộc tính bán chạy và các mặt hàng cần bổ sung.</p></div>
 <div th:case="'customers'"><span class="stats-eyebrow">TỆP KHÁCH HÀNG</span><h1>Khách hàng</h1><p>Phân tích tăng trưởng, giá trị khách hàng và hiệu quả mua sắm giữa Web với Mobile.</p></div>
 <div th:case="'promotions'"><span class="stats-eyebrow">CHI PHÍ ƯU ĐÃI</span><h1>Voucher và khuyến mãi</h1><p>Đo lường chi phí voucher, giảm giá sản phẩm và ưu đãi theo tổng đơn.</p></div>
 <div th:case="'inventory'"><span class="stats-eyebrow">VẬN HÀNH HÀNG HÓA</span><h1>Hàng hóa và nhập hàng</h1><p>Kiểm soát số lượng còn lại, cảnh báo thiếu hàng và hiệu quả nhập hàng.</p></div>

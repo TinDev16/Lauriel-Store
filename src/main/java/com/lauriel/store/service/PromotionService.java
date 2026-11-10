@@ -54,6 +54,18 @@ public class PromotionService {
         String keyword,
         ActiveStatus status
     ) {
+        return list(page, size, activeOnly, keyword, status, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PromotionResponse> list(
+        int page,
+        int size,
+        boolean activeOnly,
+        String keyword,
+        ActiveStatus status,
+        String timeFilter
+    ) {
         var pageable = InventoryPagination.page(
             page,
             size,
@@ -87,6 +99,18 @@ public class PromotionService {
             if (status != null) predicates.add(
                 builder.equal(root.get("status"), status)
             );
+            if ("RUNNING".equalsIgnoreCase(timeFilter)) {
+                predicates.add(builder.equal(root.get("status"), ActiveStatus.ACTIVE));
+                predicates.add(builder.lessThanOrEqualTo(root.get("startDate"), now));
+                predicates.add(builder.greaterThanOrEqualTo(root.get("endDate"), now));
+            } else if ("UPCOMING".equalsIgnoreCase(timeFilter)) {
+                predicates.add(builder.equal(root.get("status"), ActiveStatus.ACTIVE));
+                predicates.add(builder.greaterThan(root.get("startDate"), now));
+            } else if ("EXPIRED".equalsIgnoreCase(timeFilter)) {
+                predicates.add(builder.lessThan(root.get("endDate"), now));
+            } else if ("INACTIVE".equalsIgnoreCase(timeFilter)) {
+                predicates.add(builder.equal(root.get("status"), ActiveStatus.INACTIVE));
+            }
             if (term != null) predicates.add(
                 builder.or(
                     builder.like(

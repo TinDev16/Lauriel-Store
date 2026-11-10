@@ -2,8 +2,11 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Khuyến mãi','promotions')}">
 <body>
 <section>
-<div class="mb-3">
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/promotions/new}">Thêm khuyến mãi</a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/promotions/overview}"><i class="bi bi-grid-1x2"></i> Tổng quan tiếp thị</a>
+        <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/promotions/new}"><i class="bi bi-plus-lg"></i> Thêm khuyến mãi</a>
+    </div>
 </div>
 <form class="card card-body mb-3" method="get" th:action="@{/admin/promotions}" data-live-filter>
 <div class="row g-3 align-items-end"><div class="col-lg-7"><label class="form-label">Tìm khuyến mãi</label>

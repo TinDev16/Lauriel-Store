@@ -44,4 +44,18 @@ public final class MarketingMapper {
             promotion.getEndDate()
         );
     }
+
+    public static OrderPromotionResponse orderPromotion(OrderPromotion p) {
+        return new OrderPromotionResponse(
+            p.getOrderPromotionId(),
+            p.getPromotionName(),
+            p.getDescription(),
+            p.getMinOrderAmount(),
+            p.getDiscountPercent(),
+            p.getMaxDiscountAmount(),
+            p.getStartDate(),
+            p.getEndDate(),
+            p.getStatus()
+        );
+    }
 }

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thông tin danh mục','categories')}">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thông tin phân loại','categories')}">
 <body><section>
 <div class="card"><div class="card-body">
 <form method="post" th:action="@{${action}}" th:object="${form}">
 <div th:replace="~{fragments/fields :: errors}"></div>
-<div th:replace="~{fragments/fields :: input('categoryName','Tên danh mục','text')}"></div>
+<div th:replace="~{fragments/fields :: input('categoryName','Tên phân loại','text')}"></div>
 <div th:replace="~{fragments/fields :: status}"></div>
 <button class="btn btn-primary">Lưu</button>
 <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/categories}">Quay lại</a>

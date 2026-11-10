@@ -26,17 +26,17 @@ public class WebVoucherController {
         @RequestParam(defaultValue = "12") int size,
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) ActiveStatus status,
-        @RequestParam(required = false) DiscountType discountType,
-        Model m
+        @RequestParam(required = false) DiscountType discountType
     ) {
-        m.addAttribute(
-            "page",
-            vouchers.list(page, size, keyword, status, discountType)
-        );
-        m.addAttribute("keyword", keyword);
-        m.addAttribute("status", status);
-        m.addAttribute("discountType", discountType);
-        return "admin/vouchers/list";
+        String query = "?tab=vouchers";
+        if (page > 0) query += "&page=" + page;
+        if (size != 12) query += "&size=" + size;
+        if (keyword != null && !keyword.isBlank()) {
+            query += "&keyword=" + java.net.URLEncoder.encode(keyword, java.nio.charset.StandardCharsets.UTF_8);
+        }
+        if (status != null) query += "&status=" + status.name();
+        if (discountType != null) query += "&discountType=" + discountType.name();
+        return "redirect:/admin/promotions/overview" + query;
     }
 
     @GetMapping("/new")
@@ -88,7 +88,7 @@ public class WebVoucherController {
         RedirectAttributes flash
     ) {
         if (!WebActions.save(() -> vouchers.create(f), e)) return form(m, null);
-        return WebActions.saved("/admin/vouchers", flash);
+        return WebActions.saved("/admin/promotions/overview?tab=vouchers", flash);
     }
 
     @PostMapping("/{id}")
@@ -103,7 +103,7 @@ public class WebVoucherController {
             m,
             id
         );
-        return WebActions.saved("/admin/vouchers", flash);
+        return WebActions.saved("/admin/promotions/overview?tab=vouchers", flash);
     }
 
     @PostMapping("/{id}/status")
@@ -115,11 +115,11 @@ public class WebVoucherController {
     ) {
         if (e.hasErrors()) {
             flash.addFlashAttribute("errorMessage", "Trạng thái không hợp lệ.");
-            return "redirect:/admin/vouchers";
+            return "redirect:/admin/promotions/overview?tab=vouchers";
         }
         return WebActions.action(
             () -> vouchers.updateStatus(id, f.status()),
-            "/admin/vouchers",
+            "/admin/promotions/overview?tab=vouchers",
             flash
         );
     }

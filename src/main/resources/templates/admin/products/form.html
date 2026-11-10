@@ -7,9 +7,9 @@
 <div th:replace="~{fragments/fields :: errors}"></div>
 <div th:replace="~{fragments/fields :: input('productName','Tên sản phẩm','text')}"></div>
 <div class="mb-3">
-<label class="form-label" for="categoryId">Danh mục</label>
+<label class="form-label" for="categoryId">Phân loại</label>
 <select id="categoryId" class="form-select" th:field="*{categoryId}" required>
-<option value="">Chọn danh mục</option>
+<option value="">Chọn phân loại</option>
 <option th:each="category:${categories}" th:value="${category.categoryId}" th:text="${category.categoryName}"></option>
 </select>
 <div class="text-danger small" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}"></div>

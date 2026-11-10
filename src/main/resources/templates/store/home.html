@@ -8,19 +8,19 @@
 <section class="store-section store-section-soft store-category-section">
   <div class="container-xl">
     <div class="store-section-heading store-category-heading">
-      <div><span>KHÁM PHÁ</span><h2>Danh mục sản phẩm</h2></div>
+      <div><span>KHÁM PHÁ</span><h2>Phân loại sản phẩm</h2></div>
       <p>Chọn phong cách phù hợp và khám phá những thiết kế dành riêng cho bạn.</p>
     </div>
     <div class="store-category-grid">
       <a class="store-category-card" th:each="c,stat:${categories}"
          th:href="@{/shop/products(categoryId=${c.categoryId})}"
-         th:attr="aria-label=|Xem danh mục ${c.categoryName}|">
+         th:attr="aria-label=|Xem phân loại ${c.categoryName}|">
         <div class="store-category-card-top">
           <span th:text="${#numbers.formatInteger(stat.count,2)}">01</span>
           <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
         </div>
         <div class="store-category-card-copy">
-          <small>Danh mục</small>
+          <small>Phân loại</small>
           <strong th:text="${c.categoryName}">Áo thời trang</strong>
           <em>Khám phá ngay <i class="bi bi-arrow-right" aria-hidden="true"></i></em>
         </div>

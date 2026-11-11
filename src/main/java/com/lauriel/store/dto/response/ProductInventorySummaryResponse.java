@@ -10,5 +10,6 @@ public record ProductInventorySummaryResponse(
     long variantCount,
     long totalQuantity,
     long outOfStockCount,
+    long lowStockCount,
     ActiveStatus status
 ) {}

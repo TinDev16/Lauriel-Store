@@ -19,7 +19,8 @@ public class DashboardService {
         long draftReceipts,
         long lowStock,
         long deliveredOrders,
-        BigDecimal deliveredRevenue
+        BigDecimal deliveredRevenue,
+        long lowStockVariants
     ) {}
 
     private final ProductRepository products;
@@ -57,9 +58,10 @@ public class DashboardService {
             ),
             customers.count(),
             receipts.countByStatus(PurchaseReceiptStatus.DRAFT),
-            variants.countByQuantityLessThanEqual(5),
+            variants.countDistinctProductByQuantityLessThanEqual(5),
             orders.countByStatus(OrderStatus.DELIVERED),
-            orders.sumFinalAmountByStatus(OrderStatus.DELIVERED)
+            orders.sumFinalAmountByStatus(OrderStatus.DELIVERED),
+            variants.countByQuantityLessThanEqual(5)
         );
     }
 }

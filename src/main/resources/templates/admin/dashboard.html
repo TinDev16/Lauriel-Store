@@ -1,77 +1,182 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Tổng quan','dashboard')}">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{fragments/layout :: layout(~{::section},'Tổng quan','dashboard')}">
+
 <body>
-<section>
-<div class="row g-3">
-<div class="col-sm-6 col-xl-3">
-<a class="card h-100 text-decoration-none text-body" th:href="@{/admin/orders(status='DELIVERED')}">
-<div class="card-body">
-<p class="text-muted">Tổng doanh thu đã giao</p>
-<h2 th:text="${@view.money(summary.deliveredRevenue)}"></h2>
-<small class="text-muted" th:text="|${summary.deliveredOrders} đơn đã giao|"></small>
-</div>
-</a>
-</div>
-<div class="col-sm-6 col-xl-3">
-<div class="card h-100">
-<div class="card-body">
-<p class="text-muted">Sản phẩm đang bán</p>
-<h2 th:text="${summary.activeProducts}">
-</h2>
-</div>
-</div>
-</div>
-<div class="col-sm-6 col-xl-3">
-<div class="card h-100">
-<div class="card-body">
-<p class="text-muted">Đơn chờ xác nhận</p>
-<h2 th:text="${summary.pendingOrders}">
-</h2>
-</div>
-</div>
-</div>
-<div class="col-sm-6 col-xl-3">
-<div class="card h-100">
-<div class="card-body">
-<p class="text-muted">Đơn hôm nay</p>
-<h2 th:text="${summary.todayOrders}">
-</h2>
-</div>
-</div>
-</div>
-<div class="col-sm-6 col-xl-3">
-<div class="card h-100">
-<div class="card-body">
-<p class="text-muted">Khách hàng</p>
-<h2 th:text="${summary.customers}">
-</h2>
-</div>
-</div>
-</div>
-<div class="col-sm-6 col-xl-3">
-<div class="card h-100">
-<div class="card-body">
-<p class="text-muted">Phiếu nháp</p>
-<h2 th:text="${summary.draftReceipts}">
-</h2>
-</div>
-</div>
-</div>
-<div class="col-sm-6 col-xl-3">
-<div class="card h-100">
-<div class="card-body">
-<p class="text-muted">Tồn hàng thấp (≤ 5)</p>
-<h2 th:text="${summary.lowStock}">
-</h2>
-</div>
-</div>
-</div>
-</div>
-<div class="mt-4 d-flex gap-2">
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/orders}">Xem đơn hàng</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Mở danh sách sản phẩm</a>
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/purchase-receipts/new}">Tạo phiếu nhập</a>
-</div>
-</section>
+    <section>
+        <style>
+            .hover-shadow {
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
+                cursor: pointer;
+            }
+
+            .hover-shadow:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.12) !important;
+            }
+
+            .kpi-icon-badge {
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+                display: grid;
+                place-items: center;
+                font-size: 1.2rem;
+                flex-shrink: 0;
+            }
+        </style>
+
+        <div class="row g-3">
+            <!-- 1. Tổng doanh thu đã giao -->
+            <div class="col-sm-6 col-xl-3">
+                <a class="card h-100 text-decoration-none text-body shadow-sm hover-shadow border-0"
+                    style="border-left: 4px solid #10b981 !important;" th:href="@{/admin/orders(status='DELIVERED')}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Doanh thu đã giao</span>
+                            <div class="kpi-icon-badge bg-success-subtle text-success"><i class="bi bi-cash-stack"></i>
+                            </div>
+                        </div>
+                        <h2 class="mb-1 fw-bold text-success" th:text="${@view.money(summary.deliveredRevenue)}"></h2>
+                        <small class="text-muted d-block"
+                            th:text="|${summary.deliveredOrders} đơn đã giao thành công|"></small>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 2. Sản phẩm đang bán -->
+            <div class="col-sm-6 col-xl-3">
+                <a class="card h-100 text-decoration-none text-body shadow-sm hover-shadow border-0"
+                    style="border-left: 4px solid #3b82f6 !important;" th:href="@{/admin/products(status='ACTIVE')}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Sản phẩm đang bán</span>
+                            <div class="kpi-icon-badge bg-primary-subtle text-primary"><i class="bi bi-box-seam"></i>
+                            </div>
+                        </div>
+                        <h2 class="mb-1 fw-bold" th:text="${summary.activeProducts}">0</h2>
+                        <small class="text-muted d-block">Sản phẩm đang kinh doanh</small>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 3. Đơn chờ xác nhận -->
+            <div class="col-sm-6 col-xl-3">
+                <a class="card h-100 text-decoration-none text-body shadow-sm hover-shadow border-0"
+                    style="border-left: 4px solid #f59e0b !important;" th:href="@{/admin/orders(status='PENDING')}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Đơn chờ xác nhận</span>
+                            <div class="kpi-icon-badge bg-warning-subtle text-warning"><i
+                                    class="bi bi-clock-history"></i></div>
+                        </div>
+                        <h2 class="mb-1 fw-bold text-warning" th:text="${summary.pendingOrders}">0</h2>
+                        <small class="text-muted d-block">Đơn hàng mới cần xử lý</small>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 4. Đơn hôm nay -->
+            <div class="col-sm-6 col-xl-3">
+                <a class="card h-100 text-decoration-none text-body shadow-sm hover-shadow border-0"
+                    style="border-left: 4px solid #06b6d4 !important;"
+                    th:href="@{/admin/orders(from=${todayFrom},to=${todayTo})}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Đơn hôm nay</span>
+                            <div class="kpi-icon-badge bg-info-subtle text-info"><i class="bi bi-calendar-check"></i>
+                            </div>
+                        </div>
+                        <h2 class="mb-1 fw-bold text-info" th:text="${summary.todayOrders}">0</h2>
+                        <small class="text-muted d-block">Đơn đặt trong ngày hôm nay</small>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 5. Khách hàng -->
+            <div class="col-sm-6 col-xl-3">
+                <a class="card h-100 text-decoration-none text-body shadow-sm hover-shadow border-0"
+                    style="border-left: 4px solid #8b5cf6 !important;" th:href="@{/admin/customers}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Khách hàng</span>
+                            <div class="kpi-icon-badge bg-secondary-subtle text-primary"><i class="bi bi-people"></i>
+                            </div>
+                        </div>
+                        <h2 class="mb-1 fw-bold" th:text="${summary.customers}">0</h2>
+                        <small class="text-muted d-block">Tổng tài khoản khách hàng</small>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 6. Phiếu nháp -->
+            <div class="col-sm-6 col-xl-3">
+                <a class="card h-100 text-decoration-none text-body shadow-sm hover-shadow border-0"
+                    style="border-left: 4px solid #64748b !important;"
+                    th:href="@{/admin/purchase-receipts(status='DRAFT')}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Phiếu nháp</span>
+                            <div class="kpi-icon-badge bg-light border text-secondary"><i
+                                    class="bi bi-file-earmark-text"></i></div>
+                        </div>
+                        <h2 class="mb-1 fw-bold text-secondary" th:text="${summary.draftReceipts}">0</h2>
+                        <small class="text-muted d-block">Phiếu nhập chưa hoàn tất</small>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 7. Tồn hàng thấp (≤ 5) -->
+            <div class="col-sm-6 col-xl-3">
+                <a class="card h-100 text-decoration-none text-body shadow-sm hover-shadow border-0"
+                    style="border-left: 4px solid #ef4444 !important;" th:href="@{/admin/inventory(threshold=5)}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-muted small fw-semibold text-uppercase">Sản phẩm tồn thấp (≤ 5)</span>
+                            <div class="kpi-icon-badge bg-danger-subtle text-danger"><i
+                                    class="bi bi-exclamation-triangle"></i></div>
+                        </div>
+                        <div class="d-flex align-items-baseline gap-2 mb-1">
+                            <h2 class="mb-0 fw-bold text-danger" th:text="${summary.lowStock}">0</h2>
+                            <span class="badge text-bg-warning-subtle text-warning-emphasis border"
+                                th:if="${summary.lowStockVariants > 0}"
+                                th:text="|${summary.lowStockVariants} thuộc tính|"></span>
+                        </div>
+                        <small class="text-muted d-block">Sản phẩm có biến thể cần nhập kho</small>
+                        <div class="mt-2 text-primary small fw-semibold d-flex align-items-center gap-1">
+                            <span>Xem chi tiết</span> <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/orders}">Xem đơn hàng</a>
+            <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Mở danh sách sản phẩm</a>
+            <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/inventory}">Quản lý tồn hàng</a>
+            <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/purchase-receipts/new}">Tạo phiếu nhập</a>
+            <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/statistics}">Thống kê kinh doanh</a>
+        </div>
+    </section>
 </body>
+
 </html>

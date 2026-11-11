@@ -39,17 +39,39 @@ public class InventoryService {
         int size,
         Integer threshold
     ) {
+        return list(page, size, null, threshold);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<InventoryResponse> list(
+        int page,
+        int size,
+        String keyword,
+        Integer threshold
+    ) {
         if (threshold != null && threshold < 0) {
-            throw new BadRequestException("threshold pháº£i khÃ´ng Ã¢m");
+            throw new BadRequestException("Ngưỡng tồn hàng phải không âm");
         }
-        Specification<ProductVariant> filter = (root, query, builder) ->
-            threshold == null
-                ? builder.conjunction()
-                : builder.lessThanOrEqualTo(root.get("quantity"), threshold);
+        Specification<ProductVariant> filter = (root, query, builder) -> {
+            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (threshold != null) {
+                predicates.add(builder.lessThanOrEqualTo(root.get("quantity"), threshold));
+            }
+            if (keyword != null && !keyword.isBlank()) {
+                String pattern = "%" + keyword.strip().toLowerCase() + "%";
+                predicates.add(
+                    builder.or(
+                        builder.like(builder.lower(root.get("product").get("productName")), pattern),
+                        builder.like(builder.lower(root.get("sku")), pattern)
+                    )
+                );
+            }
+            return builder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
         return InventoryPagination.response(
             variants.findAll(
                 filter,
-                InventoryPagination.page(page, size, Sort.by("variantId"))
+                InventoryPagination.page(page, size, Sort.by(Sort.Order.asc("quantity"), Sort.Order.asc("variantId")))
             ),
             InventoryMapper::inventory
         );
@@ -98,6 +120,10 @@ public class InventoryService {
             .stream()
             .filter(item -> item.getQuantity() == 0)
             .count();
+        long lowStock = items
+            .stream()
+            .filter(item -> item.getQuantity() > 0 && item.getQuantity() <= 5)
+            .count();
         var product = items.get(0).getProduct();
         var summary = new ProductInventorySummaryResponse(
             product.getProductId(),
@@ -107,6 +133,7 @@ public class InventoryService {
             items.size(),
             total,
             outOfStock,
+            lowStock,
             product.getStatus()
         );
         return new ProductInventoryDetailResponse(
@@ -126,6 +153,7 @@ public class InventoryService {
             item.getVariantCount(),
             item.getTotalQuantity(),
             item.getOutOfStockCount(),
+            item.getLowStockCount(),
             item.getStatus()
         );
     }

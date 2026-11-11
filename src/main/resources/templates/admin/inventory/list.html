@@ -1,51 +1,227 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{fragments/layout :: layout(~{::section},'Tồn hàng','inventory')}">
-<body><section>
-<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-<div><h2 class="h4 mb-1">Tổng quan tồn hàng</h2>
-<p class="text-muted mb-0">Theo dõi tổng tồn của từng sản phẩm và mở chi tiết để xem màu, kích cỡ.</p></div>
-<a class="btn btn-outline-primary" th:href="@{/admin/inventory/transactions}">Lịch sử điều chỉnh</a>
-</div>
-<form class="card card-body mb-4" method="get" data-live-filter th:action="@{/admin/inventory}">
-<div class="row g-3 align-items-end">
-<div class="col-lg-7"><label class="form-label fw-semibold" for="inventory-keyword">Tìm theo tên sản phẩm</label>
-<div class="input-group"><span class="input-group-text">⌕</span>
-<input id="inventory-keyword" class="form-control" type="search" name="keyword"
-       placeholder="Nhập tên sản phẩm..." th:value="${keyword}"></div></div>
-<div class="col-md-5 col-lg-3"><label class="form-label fw-semibold" for="inventory-threshold">Tổng tồn tối đa</label>
-<input id="inventory-threshold" class="form-control number-input" type="text" inputmode="numeric"
-       data-number-scale="0" name="threshold" placeholder="Ví dụ: 10" th:value="${threshold}"></div>
-<div class="col-md-7 col-lg-2 d-flex gap-2"><button class="btn btn-primary flex-grow-1">Tìm kiếm</button>
-<a class="btn btn-outline-secondary" th:href="@{/admin/inventory}" title="Xóa bộ lọc">Đặt lại</a></div>
-</div></form>
-<div class="row g-3 mb-3">
-<div class="col-sm-6"><div class="card card-body h-100"><span class="text-muted small">Sản phẩm phù hợp</span>
-<strong class="fs-4" th:text="${page.totalElements}"></strong></div></div>
-<div class="col-sm-6"><div class="card card-body h-100"><span class="text-muted small">Quản lý tồn hàng</span>
-<strong class="fs-6 mt-1">Cập nhật tự động theo nhập hàng và đơn hàng</strong></div></div>
-</div>
-<div class="card overflow-hidden"><div class="table-responsive">
-<table class="table table-hover align-middle mb-0"><thead class="table-light"><tr>
-<th>Sản phẩm</th><th class="text-center">Thuộc tính</th><th class="text-center">Tổng hàng còn</th>
-<th>Trạng thái</th><th class="text-end">Chi tiết</th>
-</tr></thead><tbody>
-<tr th:each="item:${page.content}">
-<td><div class="d-flex align-items-center gap-3">
-<img th:if="${item.imageUrl != null and !#strings.isEmpty(item.imageUrl)}" th:src="${item.imageUrl}"
-     alt="" width="56" height="56" class="rounded border object-fit-cover">
-<div><div class="fw-semibold" th:text="${item.productName}"></div>
-<div class="small text-muted" th:text="|Mã sản phẩm: ${item.productId}|"></div><div class="small text-muted" th:text="|SKU đại diện: ${item.representativeSku}|"></div></div></div></td>
-<td class="text-center" th:text="${item.variantCount}"></td>
-<td class="text-center"><span class="badge fs-6 px-3 py-2"
-    th:classappend="${item.totalQuantity == 0} ? ' text-bg-danger' : (${item.totalQuantity <= 10} ? ' text-bg-warning' : ' text-bg-success')"
-    th:text="${item.totalQuantity}"></span></td>
-<td th:text="${@view.label(item.status)}"></td>
-<td class="text-end"><a class="btn btn-outline-primary btn-sm"
-    th:href="@{/admin/inventory/{id}(id=${item.productId})}">Xem size và màu</a></td>
-</tr>
-<tr th:if="${#lists.isEmpty(page.content)}"><td colspan="5" class="text-center text-muted p-5">
-Không tìm thấy sản phẩm phù hợp.</td></tr>
-</tbody></table></div></div>
-<div th:replace="~{fragments/pagination :: pagination}"></div>
-</section></body></html>
+    th:replace="~{fragments/layout :: layout(~{::section},'Tồn hàng','inventory')}">
+
+<body>
+    <section>
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+            <div>
+                <h2 class="h4 mb-1">Tổng quan tồn hàng</h2>
+                <p class="text-muted mb-0">Theo dõi tồn kho theo sản phẩm hoặc từng thuộc tính để phát hiện các mặt hàng
+                    sắp hết.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-primary" th:href="@{/admin/inventory/transactions}">
+                    <i class="bi bi-clock-history me-1"></i> Lịch sử điều chỉnh
+                </a>
+                <a class="btn btn-primary" th:href="@{/admin/purchase-receipts/new}">
+                    <i class="bi bi-plus-lg me-1"></i> Tạo phiếu nhập
+                </a>
+            </div>
+        </div>
+
+        <!-- Tabs chuyển đổi chế độ xem -->
+        <ul class="nav nav-pills mb-4 gap-2">
+            <li class="nav-item">
+                <a class="nav-link"
+                    th:classappend="${viewMode != 'variant'} ? 'active fw-semibold' : 'bg-light text-dark'"
+                    th:href="@{/admin/inventory(keyword=${keyword},threshold=${threshold})}">
+                    <i class="bi bi-box-seam me-1"></i> Theo sản phẩm
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link"
+                    th:classappend="${viewMode == 'variant'} ? 'active fw-semibold' : 'bg-light text-dark'"
+                    th:href="@{/admin/inventory(keyword=${keyword},threshold=${threshold != null ? threshold : 5},view='variant')}">
+                    <i class="bi bi-exclamation-triangle me-1"></i> Theo thuộc tính tồn thấp
+                </a>
+            </li>
+        </ul>
+
+        <!-- Form lọc -->
+        <form class="card card-body mb-4 shadow-sm border-0" method="get" data-live-filter
+            th:action="@{/admin/inventory}">
+            <input type="hidden" name="view" th:value="${viewMode}">
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-7">
+                    <label class="form-label fw-semibold" for="inventory-keyword">
+                        <span
+                            th:text="${viewMode == 'variant'} ? 'Tìm theo tên sản phẩm hoặc SKU' : 'Tìm theo tên sản phẩm'"></span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input id="inventory-keyword" class="form-control" type="search" name="keyword"
+                            placeholder="Nhập tên sản phẩm hoặc mã SKU..." th:value="${keyword}">
+                    </div>
+                </div>
+                <div class="col-md-5 col-lg-3">
+                    <label class="form-label fw-semibold" for="inventory-threshold">
+                        <span
+                            th:text="${viewMode == 'variant'} ? 'Tồn tối đa (thuộc tính)' : 'Ngưỡng tồn thấp (tối đa)'"></span>
+                    </label>
+                    <input id="inventory-threshold" class="form-control number-input" type="text" inputmode="numeric"
+                        data-number-scale="0" name="threshold" placeholder="Mặc định: 5" th:value="${threshold}">
+                </div>
+                <div class="col-md-7 col-lg-2 d-flex gap-2">
+                    <button class="btn btn-primary flex-grow-1">Tìm kiếm</button>
+                    <a class="btn btn-outline-secondary" th:href="@{/admin/inventory(view=${viewMode})}"
+                        title="Xóa bộ lọc">Đặt lại</a>
+                </div>
+            </div>
+        </form>
+
+        <!-- Thẻ tóm tắt -->
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+                <div class="card card-body h-100 shadow-sm border-0">
+                    <span class="text-muted small"
+                        th:text="${viewMode == 'variant'} ? 'Thuộc tính phù hợp' : 'Sản phẩm phù hợp'"></span>
+                    <strong class="fs-4 mt-1" th:text="${page.totalElements}">0</strong>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="card card-body h-100 shadow-sm border-0">
+                    <span class="text-muted small">Quy tắc cảnh báo tồn</span>
+                    <strong class="fs-6 mt-1 text-secondary">
+                        <i class="bi bi-info-circle me-1"></i> Cảnh báo khi có biến thể hết hàng hoặc số lượng tồn &le;
+                        5
+                    </strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bảng 1: Theo sản phẩm -->
+        <div class="card overflow-hidden shadow-sm border-0 mb-3" th:if="${viewMode != 'variant'}">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th class="text-center">Thuộc tính</th>
+                            <th class="text-center">Tổng hàng còn</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Chi tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item:${page.content}">
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <img th:if="${item.imageUrl != null and !#strings.isEmpty(item.imageUrl)}"
+                                        th:src="${item.imageUrl}" alt="" width="56" height="56"
+                                        class="rounded border object-fit-cover">
+                                    <div>
+                                        <div class="fw-semibold" th:text="${item.productName}"></div>
+                                        <div class="small text-muted" th:text="|Mã sản phẩm: #${item.productId}|"></div>
+                                        <div class="small text-muted"
+                                            th:text="|SKU đại diện: ${item.representativeSku}|"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="fw-semibold" th:text="${item.variantCount}"></span>
+                                <div class="mt-1 d-flex flex-column gap-1 align-items-center"
+                                    th:if="${item.outOfStockCount > 0 or item.lowStockCount > 0}">
+                                    <span th:if="${item.outOfStockCount > 0}" class="badge text-bg-danger"
+                                        th:text="|${item.outOfStockCount} hết hàng|"></span>
+                                    <span th:if="${item.lowStockCount > 0}" class="badge text-bg-warning"
+                                        th:text="|${item.lowStockCount} tồn thấp|"></span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge fs-6 px-3 py-2"
+                                    th:classappend="${item.totalQuantity == 0} ? 'text-bg-danger' : (${item.outOfStockCount > 0 or item.lowStockCount > 0} ? 'text-bg-warning' : 'text-bg-success')"
+                                    th:text="${item.totalQuantity}"></span>
+                            </td>
+                            <td>
+                                <span class="badge"
+                                    th:classappend="${item.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
+                                    th:text="${@view.label(item.status)}"></span>
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-primary btn-sm"
+                                    th:href="@{/admin/inventory/{id}(id=${item.productId})}">
+                                    <i class="bi bi-eye"></i> Xem size và màu
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(page.content)}">
+                            <td colspan="5" class="text-center text-muted p-5">
+                                <i class="bi bi-check-circle fs-2 text-success d-block mb-2"></i>
+                                Không tìm thấy sản phẩm phù hợp.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Bảng 2: Theo thuộc tính tồn thấp -->
+        <div class="card overflow-hidden shadow-sm border-0 mb-3" th:if="${viewMode == 'variant'}">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sản phẩm / SKU</th>
+                            <th>Phân loại</th>
+                            <th class="text-center">Số lượng tồn</th>
+                            <th class="text-end">Giá bán</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="v : ${page.content}">
+                            <td>
+                                <div class="fw-semibold" th:text="${v.productName}"></div>
+                                <div class="small text-muted font-monospace" th:text="|SKU: ${v.sku}|"></div>
+                            </td>
+                            <td>
+                                <span class="badge text-bg-light border"
+                                    th:text="${v.size != null ? 'Size ' + v.size.sizeName : '-'}"></span>
+                                <span class="badge text-bg-light border ms-1"
+                                    th:text="${v.color != null ? 'Màu ' + v.color.colorName : '-'}"></span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge fs-6 px-3 py-2"
+                                    th:classappend="${v.quantity == 0} ? 'text-bg-danger' : (${v.quantity <= 5} ? 'text-bg-warning' : 'text-bg-success')"
+                                    th:text="${v.quantity}"></span>
+                                <div class="small text-danger mt-1 fw-semibold" th:if="${v.quantity == 0}">Hết hàng
+                                </div>
+                                <div class="small text-warning mt-1 fw-semibold"
+                                    th:if="${v.quantity > 0 and v.quantity <= 5}">Sắp hết</div>
+                            </td>
+                            <td class="text-end" th:text="${@view.money(v.price)}"></td>
+                            <td>
+                                <span class="badge"
+                                    th:classappend="${v.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
+                                    th:text="${@view.label(v.status)}"></span>
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-primary btn-sm me-1"
+                                    th:href="@{/admin/inventory/{id}(id=${v.productId})}"
+                                    title="Xem toàn bộ màu & size">
+                                    <i class="bi bi-eye"></i> Chi tiết
+                                </a>
+                                <a class="btn btn-primary btn-sm" th:href="@{/admin/purchase-receipts/new}"
+                                    title="Tạo phiếu nhập">
+                                    <i class="bi bi-plus-lg"></i> Nhập hàng
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(page.content)}">
+                            <td colspan="6" class="text-center text-muted p-5">
+                                <i class="bi bi-check-circle fs-2 text-success d-block mb-2"></i>
+                                Không có thuộc tính nào tồn thấp.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div th:replace="~{fragments/pagination :: pagination}"></div>
+    </section>
+</body>
+
+</html>

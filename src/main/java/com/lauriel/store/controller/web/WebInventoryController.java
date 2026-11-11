@@ -26,14 +26,21 @@ public class WebInventoryController {
         @RequestParam(defaultValue = "12") int size,
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) Integer threshold,
+        @RequestParam(defaultValue = "product") String view,
         Model model
     ) {
-        model.addAttribute(
-            "page",
-            inventory.listProducts(page, size, keyword, threshold)
-        );
+        if ("variant".equalsIgnoreCase(view)) {
+            int th = threshold != null ? threshold : 5;
+            model.addAttribute("page", inventory.list(page, size, keyword, th));
+        } else {
+            model.addAttribute(
+                "page",
+                inventory.listProducts(page, size, keyword, threshold)
+            );
+        }
         model.addAttribute("keyword", keyword);
         model.addAttribute("threshold", threshold);
+        model.addAttribute("viewMode", view);
         return "admin/inventory/list";
     }
 

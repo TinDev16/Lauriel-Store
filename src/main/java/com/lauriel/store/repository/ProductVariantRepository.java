@@ -27,6 +27,7 @@ public interface ProductVariantRepository
         long getVariantCount();
         long getTotalQuantity();
         long getOutOfStockCount();
+        long getLowStockCount();
         ActiveStatus getStatus();
     }
 
@@ -39,11 +40,12 @@ public interface ProductVariantRepository
                count(v.variantId) as variantCount,
                sum(v.quantity) as totalQuantity,
                sum(case when v.quantity = 0 then 1 else 0 end) as outOfStockCount,
+               sum(case when v.quantity > 0 and v.quantity <= 5 then 1 else 0 end) as lowStockCount,
                v.product.status as status
         from ProductVariant v
         where (:keyword is null or lower(v.product.productName) like lower(concat('%', :keyword, '%')))
         group by v.product.productId, v.product.productName, v.product.imgUrl, v.product.status
-        having (:threshold is null or sum(v.quantity) <= :threshold)
+        having (:threshold is null or min(v.quantity) <= :threshold)
         """,
         countQuery = """
         select count(distinct v.product.productId)
@@ -51,7 +53,7 @@ public interface ProductVariantRepository
         where (:keyword is null or lower(v.product.productName) like lower(concat('%', :keyword, '%')))
           and (:threshold is null or v.product.productId in (
                 select v2.product.productId from ProductVariant v2
-                group by v2.product.productId having sum(v2.quantity) <= :threshold))
+                where v2.quantity <= :threshold))
         """
     )
     Page<ProductInventorySummary> findInventoryProducts(
@@ -59,6 +61,9 @@ public interface ProductVariantRepository
         Integer threshold,
         Pageable pageable
     );
+
+    @Query("select count(distinct v.product.productId) from ProductVariant v where v.quantity <= :quantity")
+    long countDistinctProductByQuantityLessThanEqual(int quantity);
 
     @EntityGraph(attributePaths = { "product", "size", "color" })
     List<ProductVariant> findByProduct_ProductIdOrderByColor_ColorNameAscSize_SizeNameAscVariantIdAsc(

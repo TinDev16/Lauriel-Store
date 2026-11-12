@@ -22,7 +22,6 @@
 <div id="cancel-rate"><small>Tỷ lệ hủy</small><strong th:text="|${report.sales.cancelRate}%|">0%</strong><a th:href="@{/admin/orders(status='CANCELLED')}">Xem đơn hủy</a></div>
 </div>
 <div class="row g-3 mb-3"><div class="col-xl-8"><article class="stats-card h-100"><header><div><span class="stats-section-label">THEO THỜI GIAN</span><h2>Doanh thu đã giao</h2></div></header><div id="revenueChart" class="statistics-chart"></div></article></div><div class="col-xl-4"><article class="stats-card h-100"><header><div><span class="stats-section-label">TRẠNG THÁI</span><h2>Cơ cấu đơn hàng</h2></div></header><div id="statusChart" class="statistics-donut"></div></article></div></div>
-<article class="stats-card"><header><div><span class="stats-section-label">DỮ LIỆU CHI TIẾT</span><h2>Doanh thu theo kỳ</h2></div></header><div class="table-responsive"><table class="table stats-table mb-0"><thead><tr><th>Kỳ</th><th class="text-end">Đơn đã giao</th><th class="text-end">Doanh thu</th></tr></thead><tbody><tr th:each="p:${report.revenue}"><td th:text="${p.label}"></td><td class="text-end" th:text="${p.orderCount}"></td><td class="text-end fw-semibold" th:text="${@view.money(p.revenue)}"></td></tr></tbody></table></div></article>
 </section>
 
 <section th:case="'products'">

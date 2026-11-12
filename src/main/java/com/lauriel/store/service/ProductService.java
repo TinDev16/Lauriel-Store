@@ -263,11 +263,44 @@ public class ProductService {
         Long categoryId,
         ActiveStatus status
     ) {
-        org.springframework.data.jpa.domain.Specification<Product> filter = (
-            root,
-            query,
-            cb
-        ) -> {
+        var filter = adminFilter(keyword, categoryId, status);
+        var pageable = InventoryPagination.page(
+            page,
+            size,
+            Sort.by(Sort.Order.asc("status"), Sort.Order.desc("productId"))
+        );
+        var result = productRepository.findBy(filter, query ->
+            query.as(ProductSummaryView.class).page(pageable)
+        );
+        var content = result.getContent().stream().map(this::summary).toList();
+        return new PageResponse<>(
+            content,
+            result.getNumber(),
+            result.getSize(),
+            result.getTotalElements(),
+            result.getTotalPages()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<Product> listForExport(
+        String keyword,
+        Long categoryId,
+        ActiveStatus status
+    ) {
+        var filter = adminFilter(keyword, categoryId, status);
+        return productRepository.findAll(
+            filter,
+            Sort.by(Sort.Order.asc("status"), Sort.Order.desc("productId"))
+        );
+    }
+
+    public org.springframework.data.jpa.domain.Specification<Product> adminFilter(
+        String keyword,
+        Long categoryId,
+        ActiveStatus status
+    ) {
+        return (root, query, cb) -> {
             var predicates =
                 new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
             if (status != null) predicates.add(
@@ -297,22 +330,6 @@ public class ProductService {
                 )
             );
         };
-        var pageable = InventoryPagination.page(
-            page,
-            size,
-            Sort.by(Sort.Order.asc("status"), Sort.Order.desc("productId"))
-        );
-        var result = productRepository.findBy(filter, query ->
-            query.as(ProductSummaryView.class).page(pageable)
-        );
-        var content = result.getContent().stream().map(this::summary).toList();
-        return new PageResponse<>(
-            content,
-            result.getNumber(),
-            result.getSize(),
-            result.getTotalElements(),
-            result.getTotalPages()
-        );
     }
 
     private ProductSummaryResponse summary(

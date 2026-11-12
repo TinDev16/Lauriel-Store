@@ -1,7 +1,25 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Thống kê','statistics')}">
 <body><section class="stats-page">
-<div class="stats-hero"><div><span class="stats-eyebrow">BẢNG ĐIỀU HÀNH</span><h1>Tổng quan kinh doanh</h1><p>Nắm nhanh doanh thu, đơn hàng, khách hàng và lượng hàng còn lại của Lauriel Store.</p></div><a class="btn btn-light" th:href="@{/admin/statistics}"><i class="bi bi-arrow-clockwise me-1"></i>Làm mới dữ liệu</a></div>
+<div class="stats-hero">
+    <div>
+        <span class="stats-eyebrow">BẢNG ĐIỀU HÀNH</span>
+        <h1>Tổng quan kinh doanh</h1>
+        <p>Nắm nhanh doanh thu, đơn hàng, khách hàng và lượng hàng còn lại của Lauriel Store.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-primary" target="_blank" th:href="@{/admin/statistics/print(preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}">
+            <i class="bi bi-printer me-1"></i>In báo cáo
+        </a>
+        <a class="btn btn-outline-danger" th:href="@{/admin/statistics/export.pdf(preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}">
+            <i class="bi bi-file-earmark-pdf me-1"></i>Xuất PDF
+        </a>
+        <a class="btn btn-success text-white" th:href="@{/admin/statistics/export.xlsx(preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+        </a>
+        <a class="btn btn-light" th:href="@{/admin/statistics}"><i class="bi bi-arrow-clockwise me-1"></i>Làm mới dữ liệu</a>
+    </div>
+</div>
 <div th:replace="~{admin/statistics-fragments :: nav('overview')}"></div>
 <div th:replace="~{admin/statistics-fragments :: filters(${report},'/admin/statistics')}"></div>
 <div class="stats-kpi-grid" aria-label="Chỉ số kinh doanh chính">

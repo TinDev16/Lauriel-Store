@@ -104,12 +104,18 @@
     </div>
 
     <!-- Action buttons -->
-    <div class="d-flex flex-column gap-2 mb-2">
-        <a class="btn btn-primary d-flex align-items-center justify-content-center gap-1"
-           th:href="@{/admin/purchase-receipts/{id}(id=${receipt.receiptId})}">
-            <i class="bi bi-pencil-square"></i>
-            <span>Xem &amp; Chỉnh sửa chi tiết</span>
-        </a>
+    <div class="d-flex flex-column gap-2 mb-2 receipt-preview-actions">
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-dark flex-grow-1 d-flex align-items-center justify-content-center gap-1" onclick="window.print()">
+                <i class="bi bi-printer"></i>
+                <span>In phiếu nhập</span>
+            </button>
+            <a class="btn btn-primary flex-grow-1 d-flex align-items-center justify-content-center gap-1"
+               th:href="@{/admin/purchase-receipts/{id}(id=${receipt.receiptId})}">
+                <i class="bi bi-pencil-square"></i>
+                <span>Chi tiết</span>
+            </a>
+        </div>
 
         <div class="d-flex gap-2" th:if="${receipt.status.name() == 'DRAFT'}">
             <form class="flex-grow-1" method="post"
@@ -135,5 +141,28 @@
         </button>
     </div>
 </div>
+
+<style>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .receipt-preview-content, .receipt-preview-content * {
+        visibility: visible;
+    }
+    .receipt-preview-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background: #ffffff !important;
+    }
+    .receipt-preview-actions, .btn-receipt-quickview-close {
+        display: none !important;
+    }
+}
+</style>
 </body>
 </html>

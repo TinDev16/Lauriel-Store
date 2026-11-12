@@ -9,7 +9,12 @@
                 <h2 class="h4 mb-1">Danh sách phiếu nhập</h2>
                 <p class="text-muted mb-0">Theo dõi nhà cung cấp, người tạo và toàn bộ hàng hóa trong từng phiếu.</p>
             </div>
-            <a class="btn btn-primary" th:href="@{/admin/purchase-receipts/new}">Tạo phiếu nhập</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-success" th:href="@{/admin/purchase-receipts/export.xlsx(keyword=${keyword},status=${status},from=${from},to=${to})}" title="Xuất Excel">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+                </a>
+                <a class="btn btn-primary" th:href="@{/admin/purchase-receipts/new}"><i class="bi bi-plus-lg me-1"></i>Tạo phiếu nhập</a>
+            </div>
         </div>
         <form class="card card-body mb-4" method="get" th:action="@{/admin/purchase-receipts}" data-live-filter>
             <div class="row g-3 align-items-end">
@@ -30,9 +35,10 @@
                 <div class="col-md-4 col-lg-2"><label class="form-label" for="receipt-to">Đến thời gian</label>
                     <input id="receipt-to" class="form-control" type="datetime-local" name="to" th:value="${to}">
                 </div>
-                <div class="col-lg-2 d-flex gap-2"><button class="btn btn-primary flex-grow-1">Lọc</button>
-                    <a class="btn btn-outline-secondary" th:href="@{/admin/purchase-receipts}" title="Xóa bộ lọc">Đặt
-                        lại</a>
+                <div class="col-lg-2 d-flex flex-wrap gap-2">
+                    <button class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Lọc</button>
+                    <a class="btn btn-outline-secondary" th:href="@{/admin/purchase-receipts}" title="Xóa bộ lọc"><i class="bi bi-arrow-counterclockwise"></i> Đặt lại</a>
+                    <a class="btn btn-outline-success" th:href="@{/admin/purchase-receipts/export.xlsx(keyword=${keyword},status=${status},from=${from},to=${to})}" title="Xuất Excel"><i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel</a>
                 </div>
             </div>
         </form>

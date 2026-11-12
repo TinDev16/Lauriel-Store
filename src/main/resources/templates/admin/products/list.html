@@ -1,7 +1,75 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Sản phẩm','products')}">
 <body><section>
-<div class="mb-3"><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/new}">Thêm sản phẩm</a></div>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/new}">
+            <i class="bi bi-plus-lg me-1"></i>Thêm sản phẩm
+        </a>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/products/import-template.xlsx}">
+            <i class="bi bi-download me-1"></i>Tải file mẫu
+        </a>
+        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+            <i class="bi bi-upload me-1"></i>Nhập Excel
+        </button>
+        <a class="btn btn-outline-success btn-sm" th:href="@{/admin/products/export.xlsx(keyword=${keyword},categoryId=${categoryId},status=${status})}">
+            <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+        </a>
+    </div>
+</div>
+
+<!-- Alert Thông báo kết quả Import -->
+<div th:if="${importMessage != null}" class="alert alert-dismissible fade show mb-3"
+     th:classappend="${importSuccess} ? 'alert-success border-success' : 'alert-danger border-danger'">
+    <div class="d-flex align-items-start justify-content-between">
+        <div class="w-100">
+            <h6 class="alert-heading fw-bold mb-1">
+                <i th:class="${importSuccess} ? 'bi bi-check-circle-fill text-success me-2' : 'bi bi-exclamation-triangle-fill text-danger me-2'"></i>
+                <span th:text="${importMessage}"></span>
+            </h6>
+            <!-- Thống kê chi tiết nếu có importResult -->
+            <div th:if="${importResult != null and !importSuccess}" class="small mt-2">
+                <div class="d-flex flex-wrap gap-3 mb-2">
+                    <span><strong>Tổng sản phẩm:</strong> <span th:text="${importResult.totalProducts}"></span></span>
+                    <span><strong>Tổng biến thể:</strong> <span th:text="${importResult.totalVariants}"></span></span>
+                    <span class="text-success"><strong>Hợp lệ:</strong> <span th:text="${importResult.validRows}"></span> dòng</span>
+                    <span class="text-danger"><strong>Lỗi:</strong> <span th:text="${importResult.invalidRows}"></span> dòng</span>
+                </div>
+                <div class="mb-2">
+                    <a class="btn btn-sm btn-danger text-white text-decoration-none" th:href="@{/admin/products/import-errors.xlsx}">
+                        <i class="bi bi-file-earmark-arrow-down me-1"></i>Tải báo cáo lỗi Excel (.xlsx)
+                    </a>
+                </div>
+                <!-- Bảng danh sách lỗi -->
+                <div class="table-responsive bg-white rounded border mt-2" style="max-height: 250px; overflow-y: auto;">
+                    <table class="table table-sm table-striped table-hover mb-0" style="font-size: 0.85rem;">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Sheet</th>
+                                <th>Vị trí dòng</th>
+                                <th>Cột</th>
+                                <th>Giá trị</th>
+                                <th>Nguyên nhân lỗi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="err : ${importResult.errors}">
+                                <td th:text="${err.sheet}"></td>
+                                <td class="fw-bold" th:text="${err.rowNumber > 0 ? 'Dòng ' + err.rowNumber : '—'}"></td>
+                                <td th:text="${err.column}"></td>
+                                <td class="text-truncate" style="max-width: 150px;" th:text="${err.value}"></td>
+                                <td class="text-danger" th:text="${err.message}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
 <form class="row g-2 mb-3" method="get" data-live-filter data-preserve-scroll th:action="@{/admin/products}">
 <div class="col-lg-4"><input class="form-control" type="search" name="keyword" placeholder="Tìm tên sản phẩm" th:value="${keyword}"></div>
 <div class="col-lg-3"><select name="categoryId" class="form-select"><option value="">Tất cả phân loại</option><option th:each="c:${categories}" th:value="${c.categoryId}" th:text="${c.categoryName}" th:selected="${c.categoryId == categoryId}"></option></select></div>
@@ -22,5 +90,45 @@
 </tbody></table>
 </div></div>
 <div th:replace="~{fragments/pagination :: pagination}"></div>
+
+<!-- Modal Nhập Excel -->
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" enctype="multipart/form-data" th:action="@{/admin/products/import}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importExcelModalLabel"><i class="bi bi-file-earmark-excel text-success me-2"></i>Nhập Excel sản phẩm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="excelFile" class="form-label fw-semibold">Chọn file Excel (.xlsx)</label>
+                        <input class="form-control" type="file" id="excelFile" name="file" accept=".xlsx" required>
+                        <div class="form-text">Chỉ chấp nhận file định dạng .xlsx, dung lượng tối đa 10MB.</div>
+                    </div>
+                    <div class="alert alert-light border small text-muted">
+                        <div class="fw-semibold text-dark mb-1"><i class="bi bi-info-circle me-1"></i>Quy tắc nhập dữ liệu:</div>
+                        <ul class="mb-1 ps-3">
+                            <li>File gồm 2 sheet bắt buộc: <code>Products</code> và <code>Variants</code>.</li>
+                            <li>Dùng <code>product_key</code> để liên kết biến thể với sản phẩm tương ứng.</li>
+                            <li>Điền trực tiếp tên danh mục (cột <code>category</code>), tên kích cỡ (cột <code>size</code>) và tên màu sắc (cột <code>color</code>) theo sheet tham chiếu.</li>
+                            <li>Toàn bộ dữ liệu được kiểm tra toàn diện trước khi ghi. Nếu có bất kỳ dòng nào bị lỗi, toàn bộ thao tác sẽ bị hủy bỏ.</li>
+                            <li>Số lượng tồn kho không nhập tại đây (quản lý qua phiếu nhập hàng).</li>
+                        </ul>
+                        <div class="mt-2">
+                            <a class="text-primary text-decoration-none" th:href="@{/admin/products/import-template.xlsx}">
+                                <i class="bi bi-download me-1"></i>Tải file mẫu chuẩn (.xlsx)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-upload me-1"></i>Bắt đầu nhập dữ liệu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 </section></body>
 </html>

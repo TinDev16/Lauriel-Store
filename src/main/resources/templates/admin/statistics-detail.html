@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Chi tiết thống kê','statistics')}">
 <body><section class="stats-page">
-<nav class="stats-breadcrumb" aria-label="Đường dẫn"><a th:href="@{/admin/statistics}">Thống kê</a><i class="bi bi-chevron-right"></i><span th:switch="${section}"><span th:case="'sales'">Doanh thu</span><span th:case="'products'">Sản phẩm</span><span th:case="'customers'">Khách hàng</span><span th:case="'promotions'">Khuyến mãi</span><span th:case="'inventory'">Hàng hóa</span></span></nav>
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <nav class="stats-breadcrumb mb-0" aria-label="Đường dẫn"><a th:href="@{/admin/statistics}">Thống kê</a><i class="bi bi-chevron-right"></i><span th:switch="${section}"><span th:case="'sales'">Doanh thu</span><span th:case="'products'">Sản phẩm</span><span th:case="'customers'">Khách hàng</span><span th:case="'promotions'">Khuyến mãi</span><span th:case="'inventory'">Hàng hóa</span></span></nav>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-primary btn-sm text-nowrap" target="_blank" th:href="@{/admin/statistics/print(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="In báo cáo"><i class="bi bi-printer me-1"></i>In báo cáo</a>
+        <a class="btn btn-outline-danger btn-sm text-nowrap" th:href="@{/admin/statistics/export.pdf(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="Xuất báo cáo PDF"><i class="bi bi-file-earmark-pdf me-1"></i>Xuất PDF</a>
+        <a class="btn btn-outline-success btn-sm text-nowrap" th:href="@{/admin/statistics/export.xlsx(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="Xuất báo cáo Excel"><i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel</a>
+    </div>
+</div>
 <header class="stats-detail-header" th:switch="${section}">
 <div th:case="'sales'"><span class="stats-eyebrow">BÁO CÁO BÁN HÀNG</span><h1>Doanh thu và đơn hàng</h1><p>Theo dõi doanh thu thực nhận, giá trị đơn và tình trạng xử lý đơn hàng.</p></div>
 <div th:case="'products'"><span class="stats-eyebrow">HIỆU QUẢ PHÂN LOẠI</span><h1>Hiệu quả sản phẩm</h1><p>So sánh sản phẩm, thuộc tính bán chạy và các mặt hàng cần bổ sung.</p></div>

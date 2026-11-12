@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title th:text="|Báo cáo thống kê - Lauriel Store - ${#temporals.format(#temporals.createNow(),'dd/MM/yyyy')}|">Báo cáo thống kê - Lauriel Store</title>
+    <style>
+        /* Base page styling */
+        @page {
+            size: A4 portrait;
+            margin: 12mm 15mm 15mm 15mm;
+            @bottom-right {
+                content: "Trang " counter(page) " / " counter(pages);
+                font-size: 8.5pt;
+                color: #64748b;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Arial', 'Segoe UI', Tahoma, sans-serif;
+            font-size: 9.5pt;
+            line-height: 1.45;
+            color: #1e293b;
+            background-color: #f8fafc;
+            padding: 0;
+        }
+
+        .report-wrapper {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 18mm 16mm;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Screen toolbar (hidden on print) */
+        .no-print {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .no-print .toolbar-title {
+            font-size: 13pt;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .no-print .toolbar-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 9pt;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger { background: #dc2626; color: #fff; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-success:hover { background: #15803d; }
+        .btn-secondary { background: #475569; color: #fff; }
+        .btn-secondary:hover { background: #334155; }
+
+        /* Report Header */
+        .report-header {
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 14px;
+            margin-bottom: 16px;
+            display: table;
+            width: 100%;
+        }
+
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            width: 40%;
+            text-align: right;
+            font-size: 8.5pt;
+            color: #475569;
+        }
+
+        .store-brand {
+            font-size: 16pt;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .store-sub {
+            font-size: 8.5pt;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .store-contact {
+            font-size: 8pt;
+            color: #475569;
+            line-height: 1.35;
+        }
+
+        .report-title-box {
+            text-align: center;
+            margin: 16px 0 18px 0;
+        }
+
+        .report-title {
+            font-size: 15pt;
+            font-weight: 800;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .report-subtitle {
+            font-size: 9.5pt;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .report-meta {
+            font-size: 8.5pt;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        /* KPI Box Grid */
+        .kpi-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 16px;
+            border-collapse: separate;
+            border-spacing: 6px;
+        }
+
+        .kpi-row {
+            display: table-row;
+        }
+
+        .kpi-cell {
+            display: table-cell;
+            width: 25%;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid #2563eb;
+            border-radius: 4px;
+            padding: 8px 10px;
+            vertical-align: middle;
+        }
+
+        .kpi-cell.kpi-success { border-left-color: #16a34a; }
+        .kpi-cell.kpi-warning { border-left-color: #f59e0b; }
+        .kpi-cell.kpi-danger { border-left-color: #dc2626; }
+        .kpi-cell.kpi-purple { border-left-color: #7c3aed; }
+
+        .kpi-label {
+            font-size: 7.5pt;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .kpi-val {
+            font-size: 11pt;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        /* Section Headings */
+        .section-header {
+            font-size: 10.5pt;
+            font-weight: 700;
+            color: #0f172a;
+            text-transform: uppercase;
+            margin: 16px 0 8px 0;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .section-header small {
+            font-size: 8pt;
+            color: #64748b;
+            text-transform: none;
+            font-weight: 400;
+        }
+
+        /* Tables */
+        table.report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+            font-size: 8.5pt;
+        }
+
+        table.report-table th,
+        table.report-table td {
+            border: 1px solid #cbd5e1;
+            padding: 5px 8px;
+            vertical-align: middle;
+        }
+
+        table.report-table th {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            font-weight: 700;
+            text-align: left;
+            font-size: 8pt;
+            text-transform: uppercase;
+        }
+
+        table.report-table thead {
+            display: table-header-group;
+        }
+
+        table.report-table tr {
+            page-break-inside: avoid;
+        }
+
+        table.report-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .text-end { text-align: right; }
+        .text-center { text-align: center; }
+        .text-start { text-align: left; }
+        .fw-bold { font-weight: 700; }
+        .fw-semibold { font-weight: 600; }
+        .text-muted { color: #64748b; }
+        .text-success { color: #16a34a; }
+        .text-danger { color: #dc2626; }
+        .text-primary { color: #2563eb; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 7.5pt;
+            font-weight: 600;
+            border-radius: 4px;
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-success { background: #dcfce7; color: #166534; }
+
+        /* Summary / Comments section */
+        .summary-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 10px 14px;
+            margin-top: 14px;
+            margin-bottom: 20px;
+            font-size: 8.5pt;
+            page-break-inside: avoid;
+        }
+
+        .summary-box-title {
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 6px;
+            font-size: 9pt;
+            text-transform: uppercase;
+        }
+
+        .summary-box ul {
+            padding-left: 18px;
+            color: #334155;
+        }
+
+        .summary-box li {
+            margin-bottom: 3px;
+        }
+
+        /* Signatures block */
+        .signature-section {
+            margin-top: 24px;
+            page-break-inside: avoid;
+            display: table;
+            width: 100%;
+        }
+
+        .signature-col {
+            display: table-cell;
+            width: 33.33%;
+            text-align: center;
+            vertical-align: top;
+            padding: 0 10px;
+        }
+
+        .signature-title {
+            font-size: 8.5pt;
+            font-weight: 700;
+            color: #0f172a;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .signature-note {
+            font-size: 7.5pt;
+            color: #64748b;
+            font-style: italic;
+            margin-bottom: 60px;
+        }
+
+        .signature-name {
+            font-size: 8.5pt;
+            font-weight: 700;
+            color: #0f172a;
+            border-top: 1px dotted #cbd5e1;
+            padding-top: 4px;
+            display: inline-block;
+            min-width: 130px;
+        }
+
+        .report-footer-note {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 7.5pt;
+            color: #94a3b8;
+            font-style: italic;
+            page-break-inside: avoid;
+        }
+
+        /* Print media styles */
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-size: 9pt;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .report-wrapper {
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                max-width: 100% !important;
+            }
+
+            table.report-table th {
+                background-color: #f1f5f9 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .kpi-cell {
+                background-color: #f8fafc !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .summary-box {
+                background-color: #f8fafc !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Action toolbar for browser viewing (hidden on print) -->
+<div class="no-print">
+    <div class="toolbar-title">
+        <span>Lauriel Store &#8226; Bản xem trước khi in</span>
+    </div>
+    <div class="toolbar-actions">
+        <button type="button" class="btn btn-primary" onclick="window.print()">
+            In báo cáo
+        </button>
+        <a class="btn btn-danger" th:href="|/admin/statistics/export.pdf?section=${section}&amp;preset=${preset}&amp;fromDate=${fromDate}&amp;toDate=${toDate}&amp;groupBy=${groupBy}&amp;threshold=${threshold}&amp;top=${top}|">
+            Tải PDF
+        </a>
+        <a class="btn btn-success" th:href="|/admin/statistics/export.xlsx?section=${section}&amp;preset=${preset}&amp;fromDate=${fromDate}&amp;toDate=${toDate}&amp;groupBy=${groupBy}&amp;threshold=${threshold}&amp;top=${top}|">
+            Tải Excel
+        </a>
+        <a class="btn btn-secondary" href="/admin/statistics">
+            Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="report-wrapper">
+    <!-- Header -->
+    <div class="report-header">
+        <div class="header-left">
+            <div class="store-brand">LAURIEL STORE</div>
+            <div class="store-sub">Hệ thống thời trang &amp; Phong cách hiện đại</div>
+            <div class="store-contact">
+                Địa chỉ: 123 Đường Thời Trang, Quận 1, TP. Hồ Chí Minh<br />
+                Hotline: 0912 345 678 &#8226; Email: contact@laurielstore.vn<br />
+                Website: www.laurielstore.vn
+            </div>
+        </div>
+        <div class="header-right">
+            <div><strong>Mẫu biểu:</strong> 01-BCTK/LAURIEL</div>
+            <div><strong>Thời gian xuất:</strong> <span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy HH:mm:ss')}">01/01/2026 10:00:00</span></div>
+            <div><strong>Người lập:</strong> Ban Quản trị Hệ thống</div>
+            <div><strong>Đơn vị tính:</strong> VNĐ (Việt Nam Đồng)</div>
+        </div>
+    </div>
+
+    <!-- Title Box -->
+    <div class="report-title-box">
+        <h1 class="report-title" th:switch="${section}">
+            <span th:case="'sales'">BÁO CÁO THỐNG KÊ DOANH THU &amp; ĐƠN HÀNG</span>
+            <span th:case="'products'">BÁO CÁO HIỆU QUẢ SẢN PHẨM &amp; TỒN KHO</span>
+            <span th:case="'customers'">BÁO CÁO PHÂN TÍCH KHÁCH HÀNG &amp; KÊNH BÁN</span>
+            <span th:case="'promotions'">BÁO CÁO CHI PHÍ KHUYẾN MÃI &amp; VOUCHER</span>
+            <span th:case="'inventory'">BÁO CÁO QUẢN TRỊ TỒN KHO &amp; NHẬP HÀNG</span>
+            <span th:case="*">BÁO CÁO TỔNG QUAN TÌNH HÌNH KINH DOANH</span>
+        </h1>
+        <div class="report-subtitle">
+            Kỳ báo cáo: Từ ngày <strong th:text="${#temporals.format(report.range.fromDate, 'dd/MM/yyyy')}">01/01/2026</strong>
+            đến ngày <strong th:text="${#temporals.format(report.range.toDate, 'dd/MM/yyyy')}">31/01/2026</strong>
+            <span th:if="${report.range.preset != null}" th:text="| (Kỳ chọn: ${report.range.preset})|"></span>
+        </div>
+        <div class="report-meta">
+            Phân nhóm theo: <strong th:text="${report.range.groupBy}">DAY</strong> &#8226;
+            Ngưỡng cảnh báo tồn: <strong th:text="${report.range.threshold}">5</strong> &#8226;
+            Số lượng Top xếp hạng: <strong th:text="${report.range.top}">5</strong>
+        </div>
+    </div>
+
+    <!-- Section I: Key Performance Indicators (KPIs) -->
+    <div class="section-header">
+        <span>I. Chỉ số hiệu quả kinh doanh chính</span>
+        <small>Tóm tắt toàn hệ thống trong kỳ</small>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-row">
+            <div class="kpi-cell">
+                <div class="kpi-label">Tổng doanh thu đã giao</div>
+                <div class="kpi-val" th:text="${view.money(report.kpis.revenueAllTime)}">0 ₫</div>
+            </div>
+            <div class="kpi-cell kpi-success">
+                <div class="kpi-label">Doanh thu trong kỳ</div>
+                <div class="kpi-val" th:text="${view.money(report.sales.revenue)}">0 ₫</div>
+            </div>
+            <div class="kpi-cell">
+                <div class="kpi-label">Tổng số đơn hàng</div>
+                <div class="kpi-val" th:text="${report.sales.totalOrders}">0</div>
+            </div>
+            <div class="kpi-cell kpi-success">
+                <div class="kpi-label">Đơn đã giao thành công</div>
+                <div class="kpi-val" th:text="${report.sales.delivered}">0</div>
+            </div>
+        </div>
+        <div class="kpi-row">
+            <div class="kpi-cell kpi-danger">
+                <div class="kpi-label">Tỷ lệ hủy đơn</div>
+                <div class="kpi-val" th:text="|${report.sales.cancelRate}%|">0%</div>
+            </div>
+            <div class="kpi-cell">
+                <div class="kpi-label">Giá trị trung bình / đơn</div>
+                <div class="kpi-val" th:text="${view.money(report.sales.averageOrderValue)}">0 ₫</div>
+            </div>
+            <div class="kpi-cell kpi-purple">
+                <div class="kpi-label">Tổng số khách hàng</div>
+                <div class="kpi-val" th:text="${report.kpis.customers}">0</div>
+            </div>
+            <div class="kpi-cell kpi-warning">
+                <div class="kpi-label">Thuộc tính tồn thấp</div>
+                <div class="kpi-val" th:text="${report.kpis.lowStock}">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section II: Detailed Data Tables -->
+    <div class="section-header">
+        <span>II. Số liệu thống kê chi tiết</span>
+        <small th:switch="${section}">
+            <span th:case="'sales'">Chi tiết diễn biến doanh thu và trạng thái đơn hàng</span>
+            <span th:case="'products'">Chi tiết phân loại bán chạy và tồn kho</span>
+            <span th:case="'customers'">Chi tiết phân tích khách hàng và kênh bán hàng</span>
+            <span th:case="'promotions'">Chi tiết chi phí ưu đãi và hiệu quả chương trình</span>
+            <span th:case="'inventory'">Chi tiết hàng hóa và nhà cung cấp</span>
+            <span th:case="*">Chi tiết các nhóm dữ liệu tổng hợp</span>
+        </small>
+    </div>
+
+    <!-- Block 1: Revenue Table (shown in overview, sales, or all) -->
+    <div th:if="${section == null or section == 'overview' or section == 'sales'}">
+        <h3 style="font-size: 9pt; font-weight: 700; color: #1e293b; margin-bottom: 6px;">1. Diễn biến doanh thu và đơn hàng theo thời gian</h3>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;" class="text-center">STT</th>
+                    <th style="width: 40%;">Thời gian / Mốc kỳ</th>
+                    <th style="width: 25%;" class="text-end">Doanh thu thực nhận</th>
+                    <th style="width: 25%;" class="text-end">Số đơn hàng phát sinh</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="r, iterStat : ${report.revenue}">
+                    <td class="text-center" th:text="${iterStat.count}">1</td>
+                    <td class="fw-semibold" th:text="${r.label}">01/01/2026</td>
+                    <td class="text-end fw-bold text-primary" th:text="${view.money(r.revenue)}">0 ₫</td>
+                    <td class="text-end" th:text="${r.orderCount}">0</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(report.revenue)}">
+                    <td colspan="4" class="text-center text-muted">Không có dữ liệu doanh thu trong khoảng thời gian này.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Block 2: Order Status Breakdown -->
+    <div th:if="${section == null or section == 'overview' or section == 'sales'}">
+        <h3 style="font-size: 9pt; font-weight: 700; color: #1e293b; margin-bottom: 6px; margin-top: 12px;">2. Cơ cấu trạng thái đơn hàng</h3>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;" class="text-center">STT</th>
+                    <th style="width: 45%;">Trạng thái đơn hàng</th>
+                    <th style="width: 25%;" class="text-end">Số lượng đơn</th>
+                    <th style="width: 20%;" class="text-end">Tỷ lệ ước tính</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="s, iterStat : ${report.statuses}">
+                    <td class="text-center" th:text="${iterStat.count}">1</td>
+                    <td>
+                        <span class="fw-semibold" th:text="${view.label(s.status)}">Đã giao</span>
+                        <small class="text-muted" th:text="|(${s.status})|">(DELIVERED)</small>
+                    </td>
+                    <td class="text-end fw-bold" th:text="${s.count}">0</td>
+                    <td class="text-end" th:text="${report.sales.totalOrders > 0 ? #numbers.formatDecimal((s.count * 100.0 / report.sales.totalOrders), 1, 1) + '%' : '0%'}">0%</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(report.statuses)}">
+                    <td colspan="4" class="text-center text-muted">Không có đơn hàng phát sinh trong kỳ.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Block 3: Top Selling Products -->
+    <div th:if="${section == null or section == 'overview' or section == 'products'}">
+        <h3 style="font-size: 9pt; font-weight: 700; color: #1e293b; margin-bottom: 6px; margin-top: 12px;">3. Top sản phẩm bán chạy nhất trong kỳ</h3>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;" class="text-center">STT</th>
+                    <th style="width: 15%;">Mã SP</th>
+                    <th style="width: 45%;">Tên sản phẩm</th>
+                    <th style="width: 16%;" class="text-end">Số lượng đã bán</th>
+                    <th style="width: 16%;" class="text-end">Doanh thu thu về</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="p, iterStat : ${report.topProducts}">
+                    <td class="text-center" th:text="${iterStat.count}">1</td>
+                    <td class="text-muted" th:text="|#${p.productId}|">#1</td>
+                    <td class="fw-semibold" th:text="${p.productName}">Tên sản phẩm</td>
+                    <td class="text-end fw-bold text-success" th:text="${p.quantity}">0</td>
+                    <td class="text-end fw-bold text-primary" th:text="${view.money(p.revenue)}">0 ₫</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(report.topProducts)}">
+                    <td colspan="5" class="text-center text-muted">Chưa có sản phẩm nào được giao trong kỳ báo cáo.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Block 4: Low Stock Alert -->
+    <div th:if="${section == null or section == 'overview' or section == 'products' or section == 'inventory'}">
+        <h3 style="font-size: 9pt; font-weight: 700; color: #1e293b; margin-bottom: 6px; margin-top: 12px;">4. Cảnh báo mặt hàng tồn kho thấp (Cần nhập bổ sung)</h3>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;" class="text-center">STT</th>
+                    <th style="width: 40%;">Tên sản phẩm</th>
+                    <th style="width: 22%;">Mã SKU</th>
+                    <th style="width: 15%;">Phân loại (Size - Màu)</th>
+                    <th style="width: 15%;" class="text-end">Số lượng tồn</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="v, iterStat : ${report.lowStock}">
+                    <td class="text-center" th:text="${iterStat.count}">1</td>
+                    <td class="fw-semibold" th:text="${v.productName}">Áo sơ mi</td>
+                    <td class="text-muted" th:text="${v.sku}">SKU-001</td>
+                    <td th:text="|${v.size} - ${v.color}|">M - Trắng</td>
+                    <td class="text-end">
+                        <span class="badge badge-danger fw-bold" th:text="${v.quantity}">0</span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(report.lowStock)}">
+                    <td colspan="5" class="text-center text-success">Lượng hàng tồn kho hiện đang ở mức ổn định an toàn.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Block 5: Channel Performance -->
+    <div th:if="${section == null or section == 'overview' or section == 'customers'}">
+        <h3 style="font-size: 9pt; font-weight: 700; color: #1e293b; margin-bottom: 6px; margin-top: 12px;">5. Hiệu quả kinh doanh theo kênh bán hàng (Web vs Mobile)</h3>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Kênh bán hàng</th>
+                    <th style="width: 15%;" class="text-end">Số khách mua</th>
+                    <th style="width: 15%;" class="text-end">Tỷ trọng khách</th>
+                    <th style="width: 15%;" class="text-end">Tổng số đơn</th>
+                    <th style="width: 15%;" class="text-end">Đã giao</th>
+                    <th style="width: 15%;" class="text-end">Doanh thu</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="c : ${report.channelPerformance}">
+                    <td class="fw-bold" th:text="${c.channel.name() == 'WEB' ? 'Website Lauriel' : (c.channel.name() == 'MOBILE' ? 'Ứng dụng Mobile' : 'Kênh khác')}">Website</td>
+                    <td class="text-end" th:text="|${c.buyers} khách|">0 khách</td>
+                    <td class="text-end" th:text="|${c.buyerShare}%|">0%</td>
+                    <td class="text-end" th:text="${c.orders}">0</td>
+                    <td class="text-end text-success fw-bold" th:text="${c.delivered}">0</td>
+                    <td class="text-end fw-bold text-primary" th:text="${view.money(c.revenue)}">0 ₫</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(report.channelPerformance)}">
+                    <td colspan="6" class="text-center text-muted">Chưa có dữ liệu kênh bán hàng trong kỳ.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Block 6: Customer Spending Summary (if customers section) -->
+    <div th:if="${section == 'customers'}">
+        <h3 style="font-size: 9pt; font-weight: 700; color: #1e293b; margin-bottom: 6px; margin-top: 12px;">6. Bảng tổng hợp hóa đơn và chi tiêu theo khách hàng</h3>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;" class="text-center">Mã KH</th>
+                    <th style="width: 28%;">Họ và tên khách hàng</th>
+                    <th style="width: 16%;">Số điện thoại</th>
+                    <th style="width: 12%;" class="text-end">Tổng đơn</th>
+                    <th style="width: 12%;" class="text-end">Đã giao</th>
+                    <th style="width: 24%;" class="text-end">Tổng tiền hóa đơn</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="c : ${report.customerSpending}">
+                    <td class="text-center text-muted" th:text="|#${c.customerId}|">#1</td>
+                    <td class="fw-semibold" th:text="${c.customerName}">Nguyễn Văn A</td>
+                    <td th:text="${c.phone != null ? c.phone : '—'}">0912345678</td>
+                    <td class="text-end" th:text="${c.totalOrders}">0</td>
+                    <td class="text-end text-success fw-bold" th:text="${c.deliveredOrders}">0</td>
+                    <td class="text-end fw-bold text-primary" th:text="${view.money(c.totalSpent)}">0 ₫</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(report.customerSpending)}">
+                    <td colspan="6" class="text-center text-muted">Chưa có khách hàng phát sinh đơn đã giao trong kỳ.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Block 7: Promotions Summary (if promotions section) -->
+    <div th:if="${section == 'promotions'}">
+        <h3 style="font-size: 9pt; font-weight: 700; color: #1e293b; margin-bottom: 6px; margin-top: 12px;">6. Tổng hợp chi phí ưu đãi và voucher</h3>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Hạng mục ưu đãi</th>
+                    <th style="width: 25%;" class="text-end">Số lượng áp dụng</th>
+                    <th style="width: 25%;" class="text-end">Tổng tiền giảm</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="fw-semibold">Giảm giá bằng Mã Voucher</td>
+                    <td class="text-end" th:text="|${report.discounts.voucherOrders} đơn|">0 đơn</td>
+                    <td class="text-end fw-bold text-danger" th:text="${view.money(report.discounts.voucher)}">0 ₫</td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold">Giảm giá trực tiếp trên Sản phẩm</td>
+                    <td class="text-end" th:text="|${report.discounts.promotedQuantity} sản phẩm|">0 SP</td>
+                    <td class="text-end fw-bold text-danger" th:text="${view.money(report.discounts.productPromotion)}">0 ₫</td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold">Ưu đãi theo giá trị Tổng đơn hàng</td>
+                    <td class="text-end" th:text="|${report.discounts.orderPromotionOrders} đơn|">0 đơn</td>
+                    <td class="text-end fw-bold text-danger" th:text="${view.money(report.discounts.orderPromotion)}">0 ₫</td>
+                </tr>
+                <tr style="background-color: #f1f5f9;">
+                    <td class="fw-bold">TỔNG CỘNG CHI PHÍ ƯU ĐÃI</td>
+                    <td class="text-end">—</td>
+                    <td class="text-end fw-bold text-danger" th:text="${view.money(report.discounts.total)}">0 ₫</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Block 8: Inventory & Supplier (if inventory section) -->
+    <div th:if="${section == 'inventory'}">
+        <h3 style="font-size: 9pt; font-weight: 700; color: #1e293b; margin-bottom: 6px; margin-top: 12px;">6. Thống kê nhập hàng từ Nhà cung cấp</h3>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;" class="text-center">STT</th>
+                    <th style="width: 47%;">Nhà cung cấp</th>
+                    <th style="width: 20%;" class="text-end">Số phiếu nhập hoàn tất</th>
+                    <th style="width: 25%;" class="text-end">Tổng giá trị nhập</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="s, iterStat : ${report.topSuppliers}">
+                    <td class="text-center" th:text="${iterStat.count}">1</td>
+                    <td class="fw-semibold" th:text="${s.supplierName}">Nhà cung cấp</td>
+                    <td class="text-end" th:text="${s.receiptCount}">0</td>
+                    <td class="text-end fw-bold text-primary" th:text="${view.money(s.purchaseAmount)}">0 ₫</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(report.topSuppliers)}">
+                    <td colspan="4" class="text-center text-muted">Chưa có phiếu nhập hàng nào hoàn tất trong kỳ.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Section III: Analytical Summary & Evaluation -->
+    <div class="summary-box">
+        <div class="summary-box-title">III. Nhận xét &amp; Đánh giá tổng hợp</div>
+        <ul>
+            <li>
+                Trong kỳ báo cáo, hệ thống ghi nhận tổng doanh thu đạt <strong><span th:text="${view.money(report.sales.revenue)}">0 ₫</span></strong>
+                từ <strong><span th:text="${report.sales.delivered}">0</span></strong> đơn hàng giao thành công
+                (trên tổng số <strong><span th:text="${report.sales.totalOrders}">0</span></strong> đơn được tạo).
+            </li>
+            <li>
+                Tỷ lệ hủy đơn hàng trong kỳ là <strong><span th:text="|${report.sales.cancelRate}%|">0%</span></strong>,
+                giá trị trung bình trên mỗi đơn hàng hoàn tất đạt <strong><span th:text="${view.money(report.sales.averageOrderValue)}">0 ₫</span></strong>.
+            </li>
+            <li th:if="${report.kpis.lowStock > 0}">
+                Hiện có <strong><span th:text="${report.kpis.lowStock}">0</span></strong> thuộc tính biến thể chạm hoặc dưới ngưỡng tồn kho an toàn (<span th:text="${report.range.threshold}">5</span> sản phẩm),
+                bộ phận kho vận cần sớm lập kế hoạch nhập hàng bổ sung.
+            </li>
+            <li th:if="${report.kpis.lowStock == 0}">
+                Lượng tồn kho hiện tại được duy trì cân đối, không có thuộc tính sản phẩm nào dưới ngưỡng tồn kho tối thiểu.
+            </li>
+            <li>
+                Tổng số lượng khách hàng đã đăng ký trên hệ thống là <strong><span th:text="${report.kpis.customers}">0</span></strong> khách hàng,
+                với <strong><span th:text="${report.newCustomersThisMonth}">0</span></strong> khách hàng đăng ký mới trong tháng này.
+            </li>
+        </ul>
+    </div>
+
+    <!-- Section IV: Signatures -->
+    <div class="signature-section">
+        <div class="signature-col">
+            <div class="signature-title">Người lập báo cáo</div>
+            <div class="signature-note">(Ký, ghi rõ họ tên)</div>
+            <div class="signature-name">Ban Quản trị Lauriel</div>
+        </div>
+        <div class="signature-col">
+            <div class="signature-title">Kế toán trưởng</div>
+            <div class="signature-note">(Ký, ghi rõ họ tên)</div>
+            <div class="signature-name">Bộ phận Kế toán</div>
+        </div>
+        <div class="signature-col">
+            <div class="signature-title">Ban Giám Đốc</div>
+            <div class="signature-note">(Ký tên, đóng dấu)</div>
+            <div class="signature-name">Đại diện Lauriel Store</div>
+        </div>
+    </div>
+
+    <!-- Footer note -->
+    <div class="report-footer-note">
+        Báo cáo được khởi tạo tự động từ Hệ thống Quản trị Lauriel Store &#8226; Thời gian tạo: <span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy HH:mm:ss')}">01/01/2026</span> &#8226; Dữ liệu bảo mật nội bộ.
+    </div>
+</div>
+
+</body>
+</html>

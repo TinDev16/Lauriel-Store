@@ -49,6 +49,13 @@ public interface OrderRepository
     @EntityGraph(attributePaths = { "customer" })
     Page<Order> findAll(Specification<Order> filter, Pageable pageable);
 
+    @Override
+    @EntityGraph(attributePaths = { "customer" })
+    java.util.List<Order> findAll(
+        Specification<Order> filter,
+        Sort sort
+    );
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select o from Order o where o.orderId = :orderId")
     Optional<Order> findByIdForUpdate(Long orderId);

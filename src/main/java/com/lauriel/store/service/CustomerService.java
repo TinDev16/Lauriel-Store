@@ -34,17 +34,31 @@ public class CustomerService {
         String keyword,
         com.lauriel.store.entity.enums.UserStatus status
     ) {
+        org.springframework.data.jpa.domain.Specification<Customer> filter = customerFilter(keyword, status);
+        return InventoryPagination.response(
+            customers.findAll(
+                filter,
+                InventoryPagination.page(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.DESC, "customerId")
+                )
+            ),
+            CustomerService::response
+        );
+    }
+
+    public org.springframework.data.jpa.domain.Specification<Customer> customerFilter(
+        String keyword,
+        com.lauriel.store.entity.enums.UserStatus status
+    ) {
         String term =
             keyword == null || keyword.isBlank()
                 ? null
                 : "%" +
                   keyword.strip().toLowerCase(java.util.Locale.ROOT) +
                   "%";
-        org.springframework.data.jpa.domain.Specification<Customer> filter = (
-            root,
-            query,
-            builder
-        ) -> {
+        return (root, query, builder) -> {
             var predicates =
                 new ArrayList<jakarta.persistence.criteria.Predicate>();
             var user = root.join(
@@ -68,16 +82,15 @@ public class CustomerService {
                 )
             );
         };
-        return InventoryPagination.response(
-            customers.findAll(
-                filter,
-                InventoryPagination.page(
-                    page,
-                    size,
-                    Sort.by(Sort.Direction.DESC, "customerId")
-                )
-            ),
-            CustomerService::response
+    }
+
+    public List<Customer> listForExport(
+        String keyword,
+        com.lauriel.store.entity.enums.UserStatus status
+    ) {
+        return customers.findAll(
+            customerFilter(keyword, status),
+            Sort.by(Sort.Direction.DESC, "customerId")
         );
     }
 

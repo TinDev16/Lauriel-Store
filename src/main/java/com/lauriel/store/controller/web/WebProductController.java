@@ -1,17 +1,26 @@
 package com.lauriel.store.controller.web;
 
+import com.lauriel.store.dto.excel.ProductImportResult;
 import com.lauriel.store.dto.request.ProductRequest;
 import com.lauriel.store.dto.request.ProductStatusRequest;
 import com.lauriel.store.entity.enums.ActiveStatus;
 import com.lauriel.store.exception.BadRequestException;
 import com.lauriel.store.service.CategoryService;
 import com.lauriel.store.service.ColorService;
+import com.lauriel.store.service.ProductExcelExportService;
+import com.lauriel.store.service.ProductExcelImportService;
 import com.lauriel.store.service.ProductImageService;
 import com.lauriel.store.service.ProductImageStorage;
 import com.lauriel.store.service.ProductService;
 import com.lauriel.store.service.ProductVariantService;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -23,12 +32,16 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping("/admin/products")
 public class WebProductController {
 
+    private static final String SESSION_IMPORT_ERROR_BYTES = "LAST_IMPORT_ERROR_BYTES";
+
     private final ProductService products;
     private final ProductVariantService variants;
     private final ProductImageService galleries;
     private final ProductImageStorage storage;
     private final CategoryService categories;
     private final ColorService colors;
+    private final ProductExcelExportService exportService;
+    private final ProductExcelImportService importService;
 
     public WebProductController(
         ProductService products,
@@ -36,7 +49,9 @@ public class WebProductController {
         ProductImageService galleries,
         ProductImageStorage storage,
         CategoryService categories,
-        ColorService colors
+        ColorService colors,
+        ProductExcelExportService exportService,
+        ProductExcelImportService importService
     ) {
         this.products = products;
         this.variants = variants;
@@ -44,6 +59,90 @@ public class WebProductController {
         this.storage = storage;
         this.categories = categories;
         this.colors = colors;
+        this.exportService = exportService;
+        this.importService = importService;
+    }
+
+    @GetMapping("/import-template.xlsx")
+    public void downloadImportTemplate(HttpServletResponse response) throws IOException {
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader(
+            HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"products_import_template.xlsx\""
+        );
+        importService.generateTemplate(response.getOutputStream());
+        response.flushBuffer();
+    }
+
+    @PostMapping("/import")
+    public String importExcel(
+        @RequestParam("file") MultipartFile file,
+        RedirectAttributes redirectAttributes,
+        HttpSession session
+    ) {
+        ProductImportResult result = importService.importProducts(file);
+
+        if (result.success()) {
+            redirectAttributes.addFlashAttribute("importSuccess", true);
+            redirectAttributes.addFlashAttribute(
+                "importMessage",
+                "Nhập Excel thành công: Đã tạo " + result.createdProducts() +
+                " sản phẩm và " + result.createdVariants() + " biến thể!"
+            );
+            redirectAttributes.addFlashAttribute("importResult", result);
+            session.removeAttribute(SESSION_IMPORT_ERROR_BYTES);
+        } else {
+            redirectAttributes.addFlashAttribute("importSuccess", false);
+            redirectAttributes.addFlashAttribute(
+                "importMessage",
+                "Nhập dữ liệu không thành công: Phát hiện " + result.errorCount() +
+                " lỗi. Toàn bộ giao dịch đã bị hủy bỏ và không có dữ liệu nào bị thay đổi."
+            );
+            redirectAttributes.addFlashAttribute("importResult", result);
+            if (result.errorExcelBytes() != null && result.errorExcelBytes().length > 0) {
+                session.setAttribute(SESSION_IMPORT_ERROR_BYTES, result.errorExcelBytes());
+            }
+        }
+
+        return "redirect:/admin/products";
+    }
+
+    @GetMapping("/import-errors.xlsx")
+    public void downloadErrorReport(HttpSession session, HttpServletResponse response) throws IOException {
+        byte[] errorBytes = (byte[]) session.getAttribute(SESSION_IMPORT_ERROR_BYTES);
+        if (errorBytes == null || errorBytes.length == 0) {
+            response.sendRedirect("/admin/products");
+            return;
+        }
+
+        String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").format(LocalDateTime.now());
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader(
+            HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"products_import_errors_" + timestamp + ".xlsx\""
+        );
+        response.getOutputStream().write(errorBytes);
+        response.flushBuffer();
+    }
+
+    @GetMapping("/export.xlsx")
+    public void exportExcel(
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) Long categoryId,
+        @RequestParam(required = false) ActiveStatus status,
+        HttpServletResponse response
+    ) throws IOException {
+        String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+            .format(LocalDateTime.now());
+        String filename = "products_" + timestamp + ".xlsx";
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader(
+            HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"" + filename + "\""
+        );
+        exportService.exportProducts(keyword, categoryId, status, response.getOutputStream());
+        response.flushBuffer();
     }
 
     @GetMapping

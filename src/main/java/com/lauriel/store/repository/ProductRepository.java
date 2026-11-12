@@ -15,6 +15,13 @@ import org.springframework.data.jpa.repository.Query;
 public interface ProductRepository
     extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product>
 {
+    @Override
+    @EntityGraph(attributePaths = "category")
+    List<Product> findAll(
+        org.springframework.data.jpa.domain.Specification<Product> spec,
+        org.springframework.data.domain.Sort sort
+    );
+
     @Query(
         value = """
         SELECT p.*

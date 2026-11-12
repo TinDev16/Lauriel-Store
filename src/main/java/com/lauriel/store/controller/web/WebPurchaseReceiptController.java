@@ -27,15 +27,39 @@ public class WebPurchaseReceiptController {
     private final PurchaseReceiptService receipts;
     private final SupplierService suppliers;
     private final InventoryService inventory;
+    private final com.lauriel.store.service.PurchaseReceiptExcelExportService exportService;
 
     public WebPurchaseReceiptController(
         PurchaseReceiptService receipts,
         SupplierService suppliers,
-        InventoryService inventory
+        InventoryService inventory,
+        com.lauriel.store.service.PurchaseReceiptExcelExportService exportService
     ) {
         this.receipts = receipts;
         this.suppliers = suppliers;
         this.inventory = inventory;
+        this.exportService = exportService;
+    }
+
+    @GetMapping("/export.xlsx")
+    public void exportExcel(
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) com.lauriel.store.entity.enums.PurchaseReceiptStatus status,
+        @RequestParam(required = false) java.time.LocalDateTime from,
+        @RequestParam(required = false) java.time.LocalDateTime to,
+        jakarta.servlet.http.HttpServletResponse response
+    ) throws java.io.IOException {
+        String timestamp = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+            .format(java.time.LocalDateTime.now());
+        String filename = "purchase_receipts_" + timestamp + ".xlsx";
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader(
+            org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"" + filename + "\""
+        );
+        exportService.exportReceipts(keyword, status, from, to, response.getOutputStream());
+        response.flushBuffer();
     }
 
     @GetMapping

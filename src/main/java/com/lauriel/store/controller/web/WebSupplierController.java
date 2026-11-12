@@ -15,9 +15,33 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class WebSupplierController {
 
     private final SupplierService suppliers;
+    private final com.lauriel.store.service.SupplierExcelExportService exportService;
 
-    public WebSupplierController(SupplierService suppliers) {
+    public WebSupplierController(
+        SupplierService suppliers,
+        com.lauriel.store.service.SupplierExcelExportService exportService
+    ) {
         this.suppliers = suppliers;
+        this.exportService = exportService;
+    }
+
+    @GetMapping("/export.xlsx")
+    public void exportExcel(
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) ActiveStatus status,
+        jakarta.servlet.http.HttpServletResponse response
+    ) throws java.io.IOException {
+        String timestamp = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+            .format(java.time.LocalDateTime.now());
+        String filename = "suppliers_" + timestamp + ".xlsx";
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader(
+            org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"" + filename + "\""
+        );
+        exportService.exportSuppliers(keyword, status, response.getOutputStream());
+        response.flushBuffer();
     }
 
     @GetMapping

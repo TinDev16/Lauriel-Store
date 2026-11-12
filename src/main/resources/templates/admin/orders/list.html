@@ -35,6 +35,7 @@
                 <div class="col-filter-actions d-flex gap-2">
                     <button class="btn btn-primary text-nowrap"><i class="bi bi-funnel"></i> Lọc</button>
                     <a class="btn btn-outline-secondary text-nowrap" th:href="@{/admin/orders}" title="Xóa bộ lọc"><i class="bi bi-arrow-counterclockwise"></i> Đặt lại</a>
+                    <a class="btn btn-outline-success text-nowrap" th:href="@{/admin/orders/export.xlsx(keyword=${keyword},status=${status},from=${from},to=${to},customerId=${customerId})}" title="Xuất Excel"><i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel</a>
                 </div>
             </div>
         </form>

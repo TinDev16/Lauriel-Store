@@ -30,6 +30,15 @@ public interface CustomerRepository
     @org.springframework.data.jpa.repository.EntityGraph(
         attributePaths = "user"
     )
+    java.util.List<Customer> findAll(
+        org.springframework.data.jpa.domain.Specification<Customer> filter,
+        org.springframework.data.domain.Sort sort
+    );
+
+    @Override
+    @org.springframework.data.jpa.repository.EntityGraph(
+        attributePaths = "user"
+    )
     Optional<Customer> findById(Long id);
 
     Optional<Customer> findByUser_UserId(Long userId);

@@ -2,15 +2,21 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Nhà cung cấp','suppliers')}">
 <body>
 <section>
-<div class="mb-3">
-<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/suppliers/new}">Thêm nhà cung cấp</a>
+<div class="mb-3 d-flex justify-content-between align-items-center">
+<a class="btn btn-outline-primary btn-sm" th:href="@{/admin/suppliers/new}"><i class="bi bi-plus-lg me-1"></i>Thêm nhà cung cấp</a>
+<a class="btn btn-outline-success btn-sm" th:href="@{/admin/suppliers/export.xlsx(keyword=${keyword},status=${status})}" title="Xuất Excel"><i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel</a>
 </div>
 <form class="card card-body mb-3" method="get" th:action="@{/admin/suppliers}" data-live-filter>
-<div class="row g-3 align-items-end"><div class="col-lg-7"><label class="form-label">Tìm nhà cung cấp</label>
+<div class="row g-3 align-items-end"><div class="col-lg-6"><label class="form-label">Tìm nhà cung cấp</label>
 <input class="form-control" type="search" name="keyword" placeholder="Tên, điện thoại, email, địa chỉ..." th:value="${keyword}"></div>
 <div class="col-lg-3"><label class="form-label">Trạng thái</label><select class="form-select" name="status">
 <option value="">Tất cả trạng thái</option><option th:each="item:${statuses}" th:value="${item}" th:text="${@view.label(item)}" th:selected="${item == status}"></option>
-</select></div><div class="col-lg-2"><a class="btn btn-outline-secondary w-100" th:href="@{/admin/suppliers}">Đặt lại</a></div></div></form>
+</select></div>
+<div class="col-lg-3 d-flex gap-2">
+<button class="btn btn-primary"><i class="bi bi-funnel"></i> Lọc</button>
+<a class="btn btn-outline-secondary" th:href="@{/admin/suppliers}" title="Xóa bộ lọc"><i class="bi bi-arrow-counterclockwise"></i> Đặt lại</a>
+<a class="btn btn-outline-success text-nowrap" th:href="@{/admin/suppliers/export.xlsx(keyword=${keyword},status=${status})}" title="Xuất Excel"><i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel</a>
+</div></div></form>
 <div class="card">
 <div class="table-responsive">
 <table class="table table-hover align-middle mb-0">

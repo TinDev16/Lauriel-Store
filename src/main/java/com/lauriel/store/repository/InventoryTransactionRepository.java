@@ -19,9 +19,16 @@ public interface InventoryTransactionRepository
     );
 
     @Override
-    @EntityGraph(attributePaths = { "productVariant.product", "user" })
+    @EntityGraph(attributePaths = { "productVariant.product", "productVariant.size", "productVariant.color", "user" })
     Page<InventoryTransaction> findAll(
         Specification<InventoryTransaction> specification,
         Pageable pageable
+    );
+
+    @Override
+    @EntityGraph(attributePaths = { "productVariant.product", "productVariant.size", "productVariant.color", "user" })
+    List<InventoryTransaction> findAll(
+        Specification<InventoryTransaction> specification,
+        Sort sort
     );
 }

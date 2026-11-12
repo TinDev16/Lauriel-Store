@@ -44,8 +44,11 @@
 <input id="transaction-from" class="form-control" type="datetime-local" name="from" th:value="${from}"></div>
 <div class="col-md-4"><label class="form-label" for="transaction-to">Đến thời gian</label>
 <input id="transaction-to" class="form-control" type="datetime-local" name="to" th:value="${to}"></div>
-<div class="col-md-4 d-flex gap-2"><button class="btn btn-primary flex-grow-1">Lọc lịch sử</button>
-<a class="btn btn-outline-secondary" th:href="@{/admin/inventory/transactions}">Đặt lại</a></div>
+<div class="col-md-4 d-flex flex-wrap gap-2">
+<button class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Lọc lịch sử</button>
+<a class="btn btn-outline-secondary" th:href="@{/admin/inventory/transactions}" title="Xóa bộ lọc"><i class="bi bi-arrow-counterclockwise"></i> Đặt lại</a>
+<a class="btn btn-outline-success" th:href="@{/admin/inventory/export.xlsx(keyword=${keyword},variantId=${variantId},type=${type},from=${from},to=${to})}" title="Xuất Excel"><i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel</a>
+</div>
 </div>
 </form>
 <div class="card">

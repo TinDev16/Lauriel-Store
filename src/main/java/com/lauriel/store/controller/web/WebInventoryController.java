@@ -15,9 +15,37 @@ import org.springframework.web.bind.annotation.*;
 public class WebInventoryController {
 
     private final InventoryService inventory;
+    private final com.lauriel.store.service.InventoryExcelExportService exportService;
 
-    public WebInventoryController(InventoryService inventory) {
+    public WebInventoryController(
+        InventoryService inventory,
+        com.lauriel.store.service.InventoryExcelExportService exportService
+    ) {
         this.inventory = inventory;
+        this.exportService = exportService;
+    }
+
+    @GetMapping("/export.xlsx")
+    public void exportExcel(
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) Integer threshold,
+        @RequestParam(required = false) Long variantId,
+        @RequestParam(required = false) InventoryTransactionType type,
+        @RequestParam(required = false) LocalDateTime from,
+        @RequestParam(required = false) LocalDateTime to,
+        jakarta.servlet.http.HttpServletResponse response
+    ) throws java.io.IOException {
+        String timestamp = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+            .format(LocalDateTime.now());
+        String filename = "inventory_" + timestamp + ".xlsx";
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader(
+            org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"" + filename + "\""
+        );
+        exportService.exportInventory(keyword, threshold, variantId, type, from, to, response.getOutputStream());
+        response.flushBuffer();
     }
 
     @GetMapping

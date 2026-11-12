@@ -20,10 +20,38 @@ public class WebOrderController {
 
     private final OrderService orders;
     private final CustomerService customers;
+    private final OrderExcelExportService exportService;
 
-    public WebOrderController(OrderService orders, CustomerService customers) {
+    public WebOrderController(
+        OrderService orders,
+        CustomerService customers,
+        OrderExcelExportService exportService
+    ) {
         this.orders = orders;
         this.customers = customers;
+        this.exportService = exportService;
+    }
+
+    @GetMapping("/export.xlsx")
+    public void exportExcel(
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) OrderStatus status,
+        @RequestParam(required = false) LocalDateTime from,
+        @RequestParam(required = false) LocalDateTime to,
+        @RequestParam(required = false) Long customerId,
+        jakarta.servlet.http.HttpServletResponse response
+    ) throws java.io.IOException {
+        String timestamp = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+            .format(LocalDateTime.now());
+        String filename = "orders_" + timestamp + ".xlsx";
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader(
+            org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"" + filename + "\""
+        );
+        exportService.exportOrders(keyword, status, from, to, customerId, response.getOutputStream());
+        response.flushBuffer();
     }
 
     @GetMapping

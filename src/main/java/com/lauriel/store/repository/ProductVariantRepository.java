@@ -108,6 +108,13 @@ public interface ProductVariantRepository
         Pageable pageable
     );
 
+    @Override
+    @EntityGraph(attributePaths = { "product", "size", "color" })
+    List<ProductVariant> findAll(
+        Specification<ProductVariant> specification,
+        org.springframework.data.domain.Sort sort
+    );
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select v from ProductVariant v where v.variantId = :variantId")
     Optional<ProductVariant> findByIdForUpdate(Long variantId);
@@ -115,6 +122,11 @@ public interface ProductVariantRepository
     @EntityGraph(attributePaths = { "product", "size", "color" })
     List<ProductVariant> findByVariantIdIn(
         java.util.Collection<Long> variantIds
+    );
+
+    @EntityGraph(attributePaths = { "product", "size", "color" })
+    List<ProductVariant> findByProduct_ProductIdInOrderByProduct_ProductIdAscVariantIdAsc(
+        java.util.Collection<Long> productIds
     );
 
     @Query(

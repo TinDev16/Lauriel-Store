@@ -28,6 +28,13 @@ public interface PurchaseReceiptRepository
 
     @Override
     @EntityGraph(attributePaths = { "supplier", "user" })
+    java.util.List<PurchaseReceipt> findAll(
+        org.springframework.data.jpa.domain.Specification<PurchaseReceipt> filter,
+        org.springframework.data.domain.Sort sort
+    );
+
+    @Override
+    @EntityGraph(attributePaths = { "supplier", "user" })
     Optional<PurchaseReceipt> findById(Long receiptId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

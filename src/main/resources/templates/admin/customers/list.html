@@ -3,11 +3,15 @@
 <body>
 <section>
 <form class="card card-body mb-3" method="get" th:action="@{/admin/customers}" data-live-filter>
-<div class="row g-3 align-items-end"><div class="col-lg-7"><label class="form-label">Tìm khách hàng</label>
+<div class="row g-3 align-items-end"><div class="col-lg-6"><label class="form-label">Tìm khách hàng</label>
 <input class="form-control" type="search" name="keyword" placeholder="Họ tên, tài khoản, email, điện thoại..." th:value="${keyword}"></div>
 <div class="col-lg-3"><label class="form-label">Trạng thái tài khoản</label><select class="form-select" name="status"><option value="">Tất cả trạng thái</option>
 <option th:each="item:${userStatuses}" th:value="${item}" th:text="${@view.label(item)}" th:selected="${item == status}"></option></select></div>
-<div class="col-lg-2"><a class="btn btn-outline-secondary w-100" th:href="@{/admin/customers}">Đặt lại</a></div></div></form>
+<div class="col-lg-3 d-flex gap-2">
+<button class="btn btn-primary"><i class="bi bi-funnel"></i> Lọc</button>
+<a class="btn btn-outline-secondary" th:href="@{/admin/customers}" title="Xóa bộ lọc"><i class="bi bi-arrow-counterclockwise"></i> Đặt lại</a>
+<a class="btn btn-outline-success text-nowrap" th:href="@{/admin/customers/export.xlsx(keyword=${keyword},status=${status})}" title="Xuất Excel"><i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel</a>
+</div></div></form>
 <div class="card">
 <div class="table-responsive">
 <table class="table table-hover align-middle mb-0">

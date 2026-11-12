@@ -23,6 +23,9 @@
 <label>Top<select class="form-select" name="top"><option value="5" th:selected="${report.range.top == 5}">Top 5</option><option value="10" th:selected="${report.range.top == 10}">Top 10</option></select></label>
 <label>Ngưỡng tồn<input class="form-control" name="threshold" type="number" min="0" max="100000" th:value="${report.range.threshold}"></label>
 <button class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Áp dụng</button>
+<a class="btn btn-outline-primary text-nowrap" target="_blank" th:href="@{/admin/statistics/print(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="In báo cáo"><i class="bi bi-printer me-1"></i>In</a>
+<a class="btn btn-outline-danger text-nowrap" th:href="@{/admin/statistics/export.pdf(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="Xuất báo cáo PDF"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+<a class="btn btn-outline-success text-nowrap" th:href="@{/admin/statistics/export.xlsx(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="Xuất báo cáo Excel"><i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel</a>
 </form>
 <p><i class="bi bi-info-circle"></i> Dữ liệu từ <strong th:text="${#temporals.format(report.range.fromDate,'dd/MM/yyyy')}"></strong> đến <strong th:text="${#temporals.format(report.range.toDate,'dd/MM/yyyy')}"></strong>. Doanh thu chỉ tính đơn đã giao.</p>
 </div>

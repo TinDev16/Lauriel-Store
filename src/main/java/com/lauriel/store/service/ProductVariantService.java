@@ -175,6 +175,23 @@ public class ProductVariantService {
     }
 
     @Transactional(readOnly = true)
+    public List<ProductVariant> listForExport(java.util.Collection<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return java.util.List.of();
+        }
+        var ids = new java.util.ArrayList<>(productIds);
+        var result = new java.util.ArrayList<ProductVariant>();
+        int batchSize = 500;
+        for (int i = 0; i < ids.size(); i += batchSize) {
+            var batch = ids.subList(i, Math.min(i + batchSize, ids.size()));
+            result.addAll(
+                variants.findByProduct_ProductIdInOrderByProduct_ProductIdAscVariantIdAsc(batch)
+            );
+        }
+        return result;
+    }
+
+    @Transactional(readOnly = true)
     public com.lauriel.store.dto.response.PageResponse<ProductVariantResponse> listAdmin(
         Long productId,
         int page,
@@ -338,13 +355,23 @@ public class ProductVariantService {
         }
         variant.setSize(size);
         variant.setColor(color);
-        if (creating) variant.setSku(
-            nextSku(
-                variant.getProduct().getProductId(),
-                request.sizeId(),
-                request.colorId()
-            )
-        );
+        if (creating) {
+            if (request.sku() != null && !request.sku().isBlank()) {
+                String cleanSku = request.sku().strip();
+                if (variants.existsBySkuIgnoreCase(cleanSku)) {
+                    throw new DuplicateResourceException("SKU đã tồn tại: " + cleanSku);
+                }
+                variant.setSku(cleanSku);
+            } else {
+                variant.setSku(
+                    nextSku(
+                        variant.getProduct().getProductId(),
+                        request.sizeId(),
+                        request.colorId()
+                    )
+                );
+            }
+        }
         variant.setPrice(request.price());
         variant.setStatus(request.status());
     }

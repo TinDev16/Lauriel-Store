@@ -31,17 +31,34 @@ public class SupplierService {
         String keyword,
         com.lauriel.store.entity.enums.ActiveStatus status
     ) {
+        org.springframework.data.jpa.domain.Specification<Supplier> filter = supplierFilter(keyword, status);
+        return InventoryPagination.response(
+            suppliers.findAll(
+                filter,
+                InventoryPagination.page(
+                    page,
+                    size,
+                    Sort.by(
+                        Sort.Order.asc("status"),
+                        Sort.Order.asc("supplierId")
+                    )
+                )
+            ),
+            InventoryMapper::supplier
+        );
+    }
+
+    public org.springframework.data.jpa.domain.Specification<Supplier> supplierFilter(
+        String keyword,
+        com.lauriel.store.entity.enums.ActiveStatus status
+    ) {
         String term =
             keyword == null || keyword.isBlank()
                 ? null
                 : "%" +
                   keyword.strip().toLowerCase(java.util.Locale.ROOT) +
                   "%";
-        org.springframework.data.jpa.domain.Specification<Supplier> filter = (
-            root,
-            query,
-            builder
-        ) -> {
+        return (root, query, builder) -> {
             var predicates =
                 new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
             if (status != null) predicates.add(
@@ -61,19 +78,19 @@ public class SupplierService {
                 )
             );
         };
-        return InventoryPagination.response(
-            suppliers.findAll(
-                filter,
-                InventoryPagination.page(
-                    page,
-                    size,
-                    Sort.by(
-                        Sort.Order.asc("status"),
-                        Sort.Order.asc("supplierId")
-                    )
-                )
-            ),
-            InventoryMapper::supplier
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<Supplier> listForExport(
+        String keyword,
+        com.lauriel.store.entity.enums.ActiveStatus status
+    ) {
+        return suppliers.findAll(
+            supplierFilter(keyword, status),
+            Sort.by(
+                Sort.Order.asc("status"),
+                Sort.Order.asc("supplierId")
+            )
         );
     }
 

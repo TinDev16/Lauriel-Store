@@ -11,6 +11,9 @@
                     sắp hết.</p>
             </div>
             <div class="d-flex gap-2">
+                <a class="btn btn-outline-success" th:href="@{/admin/inventory/export.xlsx(keyword=${keyword},threshold=${threshold})}" title="Xuất Excel">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
+                </a>
                 <a class="btn btn-outline-primary" th:href="@{/admin/inventory/transactions}">
                     <i class="bi bi-clock-history me-1"></i> Lịch sử điều chỉnh
                 </a>
@@ -62,10 +65,12 @@
                     <input id="inventory-threshold" class="form-control number-input" type="text" inputmode="numeric"
                         data-number-scale="0" name="threshold" placeholder="Mặc định: 5" th:value="${threshold}">
                 </div>
-                <div class="col-md-7 col-lg-2 d-flex gap-2">
-                    <button class="btn btn-primary flex-grow-1">Tìm kiếm</button>
+                <div class="col-md-7 col-lg-2 d-flex flex-wrap gap-2">
+                    <button class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Tìm kiếm</button>
                     <a class="btn btn-outline-secondary" th:href="@{/admin/inventory(view=${viewMode})}"
-                        title="Xóa bộ lọc">Đặt lại</a>
+                        title="Xóa bộ lọc"><i class="bi bi-arrow-counterclockwise"></i> Đặt lại</a>
+                    <a class="btn btn-outline-success" th:href="@{/admin/inventory/export.xlsx(keyword=${keyword},threshold=${threshold})}"
+                        title="Xuất Excel"><i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel</a>
                 </div>
             </div>
         </form>

@@ -234,7 +234,59 @@ public class OrderService {
         if (from != null && to != null && from.isAfter(to)) {
             throw new BadRequestException("from phải trước hoặc bằng to");
         }
-        Specification<Order> filter = (root, query, builder) -> {
+        Specification<Order> filter = orderFilter(keyword, status, from, to, customerId);
+        return InventoryPagination.response(
+            orders.findAll(
+                filter,
+                InventoryPagination.page(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.DESC, "createdAt", "orderId")
+                )
+            ),
+            OrderMapper::summary
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<Order> listForExport(
+        String keyword,
+        OrderStatus status,
+        LocalDateTime from,
+        LocalDateTime to,
+        Long customerId
+    ) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new BadRequestException("from phải trước hoặc bằng to");
+        }
+        Specification<Order> filter = orderFilter(keyword, status, from, to, customerId);
+        return orders.findAll(
+            filter,
+            Sort.by(Sort.Direction.DESC, "createdAt", "orderId")
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderDetail> listDetailsForExport(java.util.Collection<Long> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) return List.of();
+        var ids = new ArrayList<>(orderIds);
+        var result = new ArrayList<OrderDetail>();
+        int batchSize = 500;
+        for (int i = 0; i < ids.size(); i += batchSize) {
+            var batch = ids.subList(i, Math.min(i + batchSize, ids.size()));
+            result.addAll(details.findById_OrderIdInOrderById_OrderIdAscId_VariantIdAsc(batch));
+        }
+        return result;
+    }
+
+    public Specification<Order> orderFilter(
+        String keyword,
+        OrderStatus status,
+        LocalDateTime from,
+        LocalDateTime to,
+        Long customerId
+    ) {
+        return (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (customerId != null) {
                 predicates.add(
@@ -281,17 +333,6 @@ public class OrderService {
             }
             return builder.and(predicates.toArray(Predicate[]::new));
         };
-        return InventoryPagination.response(
-            orders.findAll(
-                filter,
-                InventoryPagination.page(
-                    page,
-                    size,
-                    Sort.by(Sort.Direction.DESC, "createdAt", "orderId")
-                )
-            ),
-            OrderMapper::summary
-        );
     }
 
     @Transactional(readOnly = true)

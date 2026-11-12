@@ -49,13 +49,31 @@ public class InventoryService {
         String keyword,
         Integer threshold
     ) {
+        Specification<ProductVariant> filter = variantFilter(keyword, threshold, null);
+        return InventoryPagination.response(
+            variants.findAll(
+                filter,
+                InventoryPagination.page(page, size, Sort.by(Sort.Order.asc("quantity"), Sort.Order.asc("variantId")))
+            ),
+            InventoryMapper::inventory
+        );
+    }
+
+    public Specification<ProductVariant> variantFilter(
+        String keyword,
+        Integer threshold,
+        Long variantId
+    ) {
         if (threshold != null && threshold < 0) {
             throw new BadRequestException("Ngưỡng tồn hàng phải không âm");
         }
-        Specification<ProductVariant> filter = (root, query, builder) -> {
-            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+        return (root, query, builder) -> {
+            var predicates = new ArrayList<Predicate>();
             if (threshold != null) {
                 predicates.add(builder.lessThanOrEqualTo(root.get("quantity"), threshold));
+            }
+            if (variantId != null) {
+                predicates.add(builder.equal(root.get("variantId"), variantId));
             }
             if (keyword != null && !keyword.isBlank()) {
                 String pattern = "%" + keyword.strip().toLowerCase() + "%";
@@ -66,14 +84,19 @@ public class InventoryService {
                     )
                 );
             }
-            return builder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+            return builder.and(predicates.toArray(new Predicate[0]));
         };
-        return InventoryPagination.response(
-            variants.findAll(
-                filter,
-                InventoryPagination.page(page, size, Sort.by(Sort.Order.asc("quantity"), Sort.Order.asc("variantId")))
-            ),
-            InventoryMapper::inventory
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductVariant> listVariantsForExport(
+        String keyword,
+        Integer threshold,
+        Long variantId
+    ) {
+        return variants.findAll(
+            variantFilter(keyword, threshold, variantId),
+            Sort.by(Sort.Order.asc("quantity"), Sort.Order.asc("variantId"))
         );
     }
 
@@ -202,15 +225,34 @@ public class InventoryService {
         LocalDateTime from,
         LocalDateTime to
     ) {
+        Specification<InventoryTransaction> filter = transactionFilter(keyword, variantId, type, from, to);
+        return InventoryPagination.response(
+            transactions.findAll(
+                filter,
+                InventoryPagination.page(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.DESC, "createdAt", "transactionId")
+                )
+            ),
+            InventoryMapper::history
+        );
+    }
+
+    public Specification<InventoryTransaction> transactionFilter(
+        String keyword,
+        Long variantId,
+        InventoryTransactionType type,
+        LocalDateTime from,
+        LocalDateTime to
+    ) {
         if (variantId != null && variantId <= 0) {
-            throw new BadRequestException("variantId pháº£i lÃ  sá»‘ dÆ°Æ¡ng");
+            throw new BadRequestException("variantId phải là số dương");
         }
         if (from != null && to != null && from.isAfter(to)) {
-            throw new BadRequestException(
-                "from pháº£i trÆ°á»›c hoáº·c báº±ng to"
-            );
+            throw new BadRequestException("from phải trước hoặc bằng to");
         }
-        Specification<InventoryTransaction> filter = (root, query, builder) -> {
+        return (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (variantId != null) predicates.add(
                 builder.equal(
@@ -252,16 +294,19 @@ public class InventoryService {
             }
             return builder.and(predicates.toArray(Predicate[]::new));
         };
-        return InventoryPagination.response(
-            transactions.findAll(
-                filter,
-                InventoryPagination.page(
-                    page,
-                    size,
-                    Sort.by(Sort.Direction.DESC, "createdAt", "transactionId")
-                )
-            ),
-            InventoryMapper::history
+    }
+
+    @Transactional(readOnly = true)
+    public List<InventoryTransaction> listTransactionsForExport(
+        String keyword,
+        Long variantId,
+        InventoryTransactionType type,
+        LocalDateTime from,
+        LocalDateTime to
+    ) {
+        return transactions.findAll(
+            transactionFilter(keyword, variantId, type, from, to),
+            Sort.by(Sort.Direction.DESC, "createdAt", "transactionId")
         );
     }
 

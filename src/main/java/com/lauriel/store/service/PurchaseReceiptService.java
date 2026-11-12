@@ -116,61 +116,7 @@ public class PurchaseReceiptService {
                 "Thời gian bắt đầu phải trước hoặc bằng thời gian kết thúc"
             );
         }
-        String term =
-            keyword == null || keyword.isBlank()
-                ? null
-                : keyword.strip().toLowerCase(java.util.Locale.ROOT);
-        org.springframework.data.jpa.domain.Specification<PurchaseReceipt> filter =
-            (root, query, builder) -> {
-                var predicates =
-                    new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
-                if (status != null) predicates.add(
-                    builder.equal(root.get("status"), status)
-                );
-                if (from != null) predicates.add(
-                    builder.greaterThanOrEqualTo(root.get("createdAt"), from)
-                );
-                if (to != null) predicates.add(
-                    builder.lessThanOrEqualTo(root.get("createdAt"), to)
-                );
-                if (term != null) {
-                    String pattern = "%" + term + "%";
-                    var supplierName = builder.like(
-                        builder.lower(root.get("supplier").get("supplierName")),
-                        pattern
-                    );
-                    var username = builder.like(
-                        builder.lower(root.get("user").get("username")),
-                        pattern
-                    );
-                    var fullName = builder.like(
-                        builder.lower(root.get("user").get("fullName")),
-                        pattern
-                    );
-                    jakarta.persistence.criteria.Predicate match = builder.or(
-                        supplierName,
-                        username,
-                        fullName
-                    );
-                    try {
-                        match = builder.or(
-                            match,
-                            builder.equal(
-                                root.get("receiptId"),
-                                Long.valueOf(term.replace("pn-", ""))
-                            )
-                        );
-                    } catch (NumberFormatException ignored) {
-                        // The keyword is textual.
-                    }
-                    predicates.add(match);
-                }
-                return builder.and(
-                    predicates.toArray(
-                        jakarta.persistence.criteria.Predicate[]::new
-                    )
-                );
-            };
+        var filter = receiptFilter(keyword, status, from, to);
         return receipts.findAll(
             filter,
             InventoryPagination.page(
@@ -179,6 +125,98 @@ public class PurchaseReceiptService {
                 Sort.by(Sort.Direction.DESC, "createdAt", "receiptId")
             )
         );
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<PurchaseReceipt> listForExport(
+        String keyword,
+        PurchaseReceiptStatus status,
+        java.time.LocalDateTime from,
+        java.time.LocalDateTime to
+    ) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new BadRequestException("Thời gian bắt đầu phải trước hoặc bằng thời gian kết thúc");
+        }
+        var filter = receiptFilter(keyword, status, from, to);
+        return receipts.findAll(
+            filter,
+            Sort.by(Sort.Direction.DESC, "createdAt", "receiptId")
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<PurchaseReceiptDetail> listDetailsForExport(java.util.Collection<Long> receiptIds) {
+        if (receiptIds == null || receiptIds.isEmpty()) return java.util.List.of();
+        var ids = new java.util.ArrayList<>(receiptIds);
+        var result = new java.util.ArrayList<PurchaseReceiptDetail>();
+        int batchSize = 500;
+        for (int i = 0; i < ids.size(); i += batchSize) {
+            var batch = ids.subList(i, Math.min(i + batchSize, ids.size()));
+            result.addAll(items.findListItems(batch));
+        }
+        return result;
+    }
+
+    public org.springframework.data.jpa.domain.Specification<PurchaseReceipt> receiptFilter(
+        String keyword,
+        PurchaseReceiptStatus status,
+        java.time.LocalDateTime from,
+        java.time.LocalDateTime to
+    ) {
+        String term =
+            keyword == null || keyword.isBlank()
+                ? null
+                : keyword.strip().toLowerCase(java.util.Locale.ROOT);
+        return (root, query, builder) -> {
+            var predicates =
+                new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (status != null) predicates.add(
+                builder.equal(root.get("status"), status)
+            );
+            if (from != null) predicates.add(
+                builder.greaterThanOrEqualTo(root.get("createdAt"), from)
+            );
+            if (to != null) predicates.add(
+                builder.lessThanOrEqualTo(root.get("createdAt"), to)
+            );
+            if (term != null) {
+                String pattern = "%" + term + "%";
+                var supplierName = builder.like(
+                    builder.lower(root.get("supplier").get("supplierName")),
+                    pattern
+                );
+                var username = builder.like(
+                    builder.lower(root.get("user").get("username")),
+                    pattern
+                );
+                var fullName = builder.like(
+                    builder.lower(root.get("user").get("fullName")),
+                    pattern
+                );
+                jakarta.persistence.criteria.Predicate match = builder.or(
+                    supplierName,
+                    username,
+                    fullName
+                );
+                try {
+                    match = builder.or(
+                        match,
+                        builder.equal(
+                            root.get("receiptId"),
+                            Long.valueOf(term.replace("pn-", ""))
+                        )
+                    );
+                } catch (NumberFormatException ignored) {
+                    // The keyword is textual.
+                }
+                predicates.add(match);
+            }
+            return builder.and(
+                predicates.toArray(
+                    jakarta.persistence.criteria.Predicate[]::new
+                )
+            );
+        };
     }
 
     @Transactional(readOnly = true)

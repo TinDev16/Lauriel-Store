@@ -60,7 +60,7 @@ public class OrderService {
 
     @Transactional
     public OrderResponse checkout(CheckoutRequest request, Long actorId) {
-        return checkout(request, actorId, SalesChannel.UNKNOWN);
+        return checkout(request, actorId, SalesChannel.MOBILE);
     }
 
     @Transactional
@@ -81,7 +81,9 @@ public class OrderService {
         order.setStatus(OrderStatus.PENDING);
         order.setShippingAddress(request.shippingAddress().strip());
         order.setSalesChannel(
-            salesChannel == null ? SalesChannel.UNKNOWN : salesChannel
+            salesChannel == null || salesChannel == SalesChannel.UNKNOWN
+                ? SalesChannel.MOBILE
+                : salesChannel
         );
         var lines = new ArrayList<OrderDetail>();
         BigDecimal total = BigDecimal.ZERO;
@@ -216,11 +218,32 @@ public class OrderService {
         LocalDateTime from,
         LocalDateTime to
     ) {
+        return staffList(page, size, keyword, status, from, to, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<OrderSummaryResponse> staffList(
+        int page,
+        int size,
+        String keyword,
+        OrderStatus status,
+        LocalDateTime from,
+        LocalDateTime to,
+        Long customerId
+    ) {
         if (from != null && to != null && from.isAfter(to)) {
             throw new BadRequestException("from phải trước hoặc bằng to");
         }
         Specification<Order> filter = (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
+            if (customerId != null) {
+                predicates.add(
+                    builder.equal(
+                        root.get("customer").get("customerId"),
+                        customerId
+                    )
+                );
+            }
             if (status != null) predicates.add(
                 builder.equal(root.get("status"), status)
             );

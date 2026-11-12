@@ -947,9 +947,6 @@ class OrderCheckoutApiTest {
     @ValueSource(
         strings = {
             "PENDING",
-            "PROCESSING",
-            "SHIPPING",
-            "DELIVERED",
             "RETURNED",
         }
     )
@@ -959,6 +956,25 @@ class OrderCheckoutApiTest {
         assertThat(service.staffDetail(id).status()).isEqualTo(
             OrderStatus.PENDING
         );
+    }
+
+    @Test
+    void forwardTransitionsCanSkipSteps() throws Exception {
+        Long id = buy("A", item(first, 1));
+        // Direct transition from PENDING to SHIPPING
+        changeStatus(id, "SHIPPING", "STAFF")
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("SHIPPING"));
+        assertThat(service.staffDetail(id).status()).isEqualTo(OrderStatus.SHIPPING);
+
+        // Cannot go backwards to CONFIRMED or PENDING
+        changeStatus(id, "CONFIRMED", "STAFF").andExpect(status().isConflict());
+        changeStatus(id, "PENDING", "STAFF").andExpect(status().isConflict());
+
+        // Can move forward to DELIVERED
+        changeStatus(id, "DELIVERED", "STAFF")
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("DELIVERED"));
     }
 
     @Test

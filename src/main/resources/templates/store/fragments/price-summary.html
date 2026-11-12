@@ -1,5 +1,28 @@
 <aside xmlns:th="http://www.thymeleaf.org" th:fragment="summary(pricing)" class="store-summary-card">
-  <h2>Chi tiết thanh toán</h2><div><span>Tạm tính</span><strong th:text="${@view.money(pricing.subtotal.add(pricing.productPromotionDiscount))}"></strong></div>
+  <h2>Chi tiết thanh toán</h2>
+  <div class="store-promo-suggestion" th:if="${orderPromotionSuggestion != null}">
+    <div class="store-promo-suggestion-header">
+      <i class="bi bi-gift"></i><span>Gợi ý ưu đãi</span>
+    </div>
+    <p class="store-promo-suggestion-text">
+      Mua thêm <strong class="store-highlight" th:text="${@view.money(orderPromotionSuggestion.remainingAmount)}"></strong> 
+      để nhận ưu đãi <strong th:text="${orderPromotionSuggestion.promotionName}"></strong>
+      (giảm <span th:text="${@view.number(orderPromotionSuggestion.discountPercent)}"></span>%<span th:if="${orderPromotionSuggestion.maxDiscountAmount != null}" th:text="| tối đa ${@view.money(orderPromotionSuggestion.maxDiscountAmount)}|"></span>).
+    </p>
+    <div class="store-promo-progress-wrap">
+      <div class="store-promo-progress-bar-bg">
+        <div class="store-promo-progress-bar-fill" th:style="|width: ${orderPromotionSuggestion.progressPercent}%|"></div>
+      </div>
+      <div class="store-promo-progress-labels">
+        <span th:text="${@view.money(orderPromotionSuggestion.currentSubtotal)}"></span>
+        <span th:text="${@view.money(orderPromotionSuggestion.minOrderAmount)}"></span>
+      </div>
+    </div>
+    <a class="store-promo-action" th:href="@{/shop/products}">
+      <span>Mua thêm để nhận ưu đãi</span><i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+  <div><span>Tạm tính</span><strong th:text="${@view.money(pricing.subtotal.add(pricing.productPromotionDiscount))}"></strong></div>
   <div th:if="${pricing.productPromotionDiscount.signum() > 0}"><span>Khuyến mãi sản phẩm</span><strong class="store-discount" th:text="|-${@view.money(pricing.productPromotionDiscount)}|"></strong></div>
   <div th:if="${pricing.orderPromotionDiscount.signum() > 0}"><span th:text="${pricing.orderPromotionName ?: 'Khuyến mãi đơn hàng'}"></span><strong class="store-discount" th:text="|-${@view.money(pricing.orderPromotionDiscount)}|"></strong></div>
   <div th:if="${pricing.discountAmount.signum() > 0}" class="store-summary-voucher-row"><span><b>Tổng cộng voucher giảm giá</b><small th:text="${pricing.voucherName != null ? pricing.voucherName + (pricing.code != null ? ' · ' + pricing.code : '') : (pricing.code != null ? pricing.code : 'Mã giảm giá')}"></small></span><strong class="store-discount" th:text="|-${@view.money(pricing.discountAmount)}|"></strong></div>

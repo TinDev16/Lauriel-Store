@@ -36,8 +36,75 @@ public record StatisticsReport(
     List<ChannelPerformance> channelPerformance,
     Engagement engagement,
     List<OnlineCustomer> onlineCustomers,
-    List<CartInterest> cartInterest
+    List<CartInterest> cartInterest,
+    List<CustomerSpendingSummary> customerSpending
 ) {
+    public StatisticsReport(
+        Range range,
+        Kpis kpis,
+        Sales sales,
+        List<RevenuePoint> revenue,
+        List<StatusPoint> statuses,
+        List<TopProduct> topProducts,
+        List<TopProduct> topProductsByRevenue,
+        List<TopVariant> topVariants,
+        List<TopCustomer> topCustomers,
+        List<TopCustomer> topCustomersByOrders,
+        Inventory inventory,
+        List<StockVariant> lowStock,
+        List<StockVariant> topStock,
+        Purchase purchases,
+        List<PurchasePoint> purchaseTrend,
+        List<Supplier> topSuppliers,
+        Discounts discounts,
+        List<Voucher> topVouchersByUses,
+        List<Voucher> topVouchersByDiscount,
+        List<PromotionProduct> topPromotionProducts,
+        List<OrderPromotion> topOrderPromotionsByUses,
+        List<OrderPromotion> topOrderPromotionsByDiscount,
+        long soldQuantity,
+        long customersWithOrders,
+        long newCustomersThisMonth,
+        List<CustomerPoint> newCustomers,
+        List<ChannelPerformance> channelPerformance,
+        Engagement engagement,
+        List<OnlineCustomer> onlineCustomers,
+        List<CartInterest> cartInterest
+    ) {
+        this(
+            range,
+            kpis,
+            sales,
+            revenue,
+            statuses,
+            topProducts,
+            topProductsByRevenue,
+            topVariants,
+            topCustomers,
+            topCustomersByOrders,
+            inventory,
+            lowStock,
+            topStock,
+            purchases,
+            purchaseTrend,
+            topSuppliers,
+            discounts,
+            topVouchersByUses,
+            topVouchersByDiscount,
+            topPromotionProducts,
+            topOrderPromotionsByUses,
+            topOrderPromotionsByDiscount,
+            soldQuantity,
+            customersWithOrders,
+            newCustomersThisMonth,
+            newCustomers,
+            channelPerformance,
+            engagement,
+            onlineCustomers,
+            cartInterest,
+            List.of()
+        );
+    }
     public record Range(
         String preset,
         LocalDate fromDate,
@@ -108,6 +175,18 @@ public record StatisticsReport(
         String customerName,
         long orderCount,
         BigDecimal totalSpent
+    ) {}
+
+    public record CustomerSpendingSummary(
+        long customerId,
+        String customerName,
+        String phone,
+        String email,
+        long totalOrders,
+        long deliveredOrders,
+        long cancelledOrders,
+        BigDecimal totalSpent,
+        BigDecimal averageOrderValue
     ) {}
 
     public record Inventory(

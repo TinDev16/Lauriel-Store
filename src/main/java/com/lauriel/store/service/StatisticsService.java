@@ -180,7 +180,8 @@ public class StatisticsService {
             channelPerformance(repository.channelPerformance(from, until)),
             repository.engagement(onlineSince),
             repository.onlineCustomers(onlineSince, top),
-            repository.cartInterest(top)
+            repository.cartInterest(top),
+            repository.customerSpendings(from, until, top)
         );
     }
 
@@ -189,20 +190,46 @@ public class StatisticsService {
     ) {
         Map<SalesChannel, StatisticsRepository.ChannelAggregate> byChannel =
             new LinkedHashMap<>();
-        aggregates.forEach(row -> byChannel.put(row.channel(), row));
-        long buyers = aggregates
+        aggregates.forEach(row -> {
+            SalesChannel channel =
+                row.channel() == SalesChannel.UNKNOWN
+                    ? SalesChannel.MOBILE
+                    : row.channel();
+            byChannel.merge(
+                channel,
+                new StatisticsRepository.ChannelAggregate(
+                    channel,
+                    row.buyers(),
+                    row.orders(),
+                    row.delivered(),
+                    row.cancelled(),
+                    row.revenue()
+                ),
+                (a, b) ->
+                    new StatisticsRepository.ChannelAggregate(
+                        channel,
+                        a.buyers() + b.buyers(),
+                        a.orders() + b.orders(),
+                        a.delivered() + b.delivered(),
+                        a.cancelled() + b.cancelled(),
+                        a.revenue().add(b.revenue())
+                    )
+            );
+        });
+        long buyers = byChannel
+            .values()
             .stream()
             .mapToLong(StatisticsRepository.ChannelAggregate::buyers)
             .sum();
-        long orders = aggregates
+        long orders = byChannel
+            .values()
             .stream()
             .mapToLong(StatisticsRepository.ChannelAggregate::orders)
             .sum();
         List<StatisticsReport.ChannelPerformance> result = new ArrayList<>();
         for (SalesChannel channel : List.of(
             SalesChannel.WEB,
-            SalesChannel.MOBILE,
-            SalesChannel.UNKNOWN
+            SalesChannel.MOBILE
         )) {
             var row = byChannel.getOrDefault(
                 channel,

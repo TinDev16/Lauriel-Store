@@ -34,9 +34,18 @@ public class WebOrderController {
         @RequestParam(required = false) OrderStatus status,
         @RequestParam(required = false) LocalDateTime from,
         @RequestParam(required = false) LocalDateTime to,
+        @RequestParam(required = false) Long customerId,
         Model m
     ) {
-        var result = orders.staffList(page, size, keyword, status, from, to);
+        var result = orders.staffList(
+            page,
+            size,
+            keyword,
+            status,
+            from,
+            to,
+            customerId
+        );
         var pageTotalAmount = result
             .content()
             .stream()
@@ -58,6 +67,14 @@ public class WebOrderController {
         m.addAttribute("status", status);
         m.addAttribute("from", from);
         m.addAttribute("to", to);
+        m.addAttribute("customerId", customerId);
+        if (customerId != null) {
+            try {
+                m.addAttribute("filterCustomer", customers.detail(customerId));
+            } catch (Exception ignored) {
+                // Customer details optional for filter badge
+            }
+        }
         return "admin/orders/list";
     }
 

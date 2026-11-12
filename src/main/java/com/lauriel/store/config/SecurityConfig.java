@@ -67,7 +67,13 @@ public class SecurityConfig {
                         HttpMethod.GET,
                         "/api/promotions/active",
                         "/api/order-promotions/active",
+                        "/api/order-promotions/suggestion",
                         "/api/vouchers/active"
+                    )
+                    .permitAll()
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/order-promotions/suggestion"
                     )
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/vouchers/validate")

@@ -292,7 +292,7 @@ class StatisticsServiceTest {
             );
         assertThat(result.topOrderPromotionsByDiscount()).singleElement();
         assertThat(result.newCustomersThisMonth()).isGreaterThanOrEqualTo(1);
-        assertThat(result.channelPerformance()).hasSize(3);
+        assertThat(result.channelPerformance()).hasSize(2);
         assertThat(result.channelPerformance())
             .filteredOn(channel -> channel.channel().name().equals("WEB"))
             .singleElement()

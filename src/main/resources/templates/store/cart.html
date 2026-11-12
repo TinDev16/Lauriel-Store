@@ -24,7 +24,30 @@
     <form method="post" th:action="@{/shop/cart/clear}"><button class="store-link-button text-danger">Xóa toàn bộ giỏ hàng</button></form>
   </section>
   <aside class="store-cart-summary">
-    <h2>Tóm tắt đơn hàng</h2><div><span>Tạm tính</span><strong th:text="${@view.money(cart.subtotal)}"></strong></div>
+    <h2>Tóm tắt đơn hàng</h2>
+    <div class="store-promo-suggestion" th:if="${orderPromotionSuggestion != null}">
+      <div class="store-promo-suggestion-header">
+        <i class="bi bi-gift"></i><span>Gợi ý ưu đãi</span>
+      </div>
+      <p class="store-promo-suggestion-text">
+        Mua thêm <strong class="store-highlight" th:text="${@view.money(orderPromotionSuggestion.remainingAmount)}"></strong> 
+        để nhận ưu đãi <strong th:text="${orderPromotionSuggestion.promotionName}"></strong>
+        (giảm <span th:text="${@view.number(orderPromotionSuggestion.discountPercent)}"></span>%<span th:if="${orderPromotionSuggestion.maxDiscountAmount != null}" th:text="| tối đa ${@view.money(orderPromotionSuggestion.maxDiscountAmount)}|"></span>).
+      </p>
+      <div class="store-promo-progress-wrap">
+        <div class="store-promo-progress-bar-bg">
+          <div class="store-promo-progress-bar-fill" th:style="|width: ${orderPromotionSuggestion.progressPercent}%|"></div>
+        </div>
+        <div class="store-promo-progress-labels">
+          <span th:text="${@view.money(orderPromotionSuggestion.currentSubtotal)}"></span>
+          <span th:text="${@view.money(orderPromotionSuggestion.minOrderAmount)}"></span>
+        </div>
+      </div>
+      <a class="store-promo-action" th:href="@{/shop/products}">
+        <span>Xem thêm sản phẩm</span><i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+    <div><span>Tạm tính</span><strong th:text="${@view.money(cart.subtotal)}"></strong></div>
     <p>Khuyến mãi, voucher và phí giao hàng sẽ được tính ở bước thanh toán.</p>
     <a class="store-btn store-btn-dark w-100" th:href="@{/shop/checkout}">Tiến hành thanh toán</a>
     <a class="store-continue" th:href="@{/shop/products}"><i class="bi bi-arrow-left"></i> Tiếp tục mua sắm</a>

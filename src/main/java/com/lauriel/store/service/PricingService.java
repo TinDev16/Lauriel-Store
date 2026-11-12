@@ -100,6 +100,56 @@ public class PricingService {
         return new OrderPromotionCalculation(best, bestDiscount);
     }
 
+    @Transactional(readOnly = true)
+    public OrderPromotionSuggestion nextOrderPromotionSuggestion(
+        BigDecimal subtotal,
+        LocalDateTime now
+    ) {
+        if (subtotal == null || subtotal.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
+        var nextTiers = orderPromotions.findNextTiers(
+            ActiveStatus.ACTIVE,
+            now,
+            subtotal
+        );
+        for (var promo : nextTiers) {
+            if (
+                !active(
+                    promo.getStatus(),
+                    promo.getStartDate(),
+                    promo.getEndDate(),
+                    now
+                ) ||
+                promo.getMinOrderAmount().compareTo(subtotal) <= 0
+            ) {
+                continue;
+            }
+            BigDecimal remaining = promo.getMinOrderAmount().subtract(subtotal);
+            int progress = subtotal
+                .multiply(HUNDRED)
+                .divide(promo.getMinOrderAmount(), 0, RoundingMode.DOWN)
+                .intValue();
+            progress = Math.max(0, Math.min(99, progress));
+            return new OrderPromotionSuggestion(
+                promo.getOrderPromotionId(),
+                promo.getPromotionName(),
+                promo.getDescription(),
+                promo.getMinOrderAmount(),
+                promo.getDiscountPercent(),
+                promo.getMaxDiscountAmount(),
+                subtotal,
+                remaining,
+                progress
+            );
+        }
+        return null;
+    }
+
+    public OrderPromotionSuggestion nextOrderPromotionSuggestion(BigDecimal subtotal) {
+        return nextOrderPromotionSuggestion(subtotal, now());
+    }
+
     public LocalDateTime now() {
         return LocalDateTime.now(clock);
     }

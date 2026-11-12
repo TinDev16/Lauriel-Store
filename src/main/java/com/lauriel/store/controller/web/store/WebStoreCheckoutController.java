@@ -29,19 +29,22 @@ public class WebStoreCheckoutController {
     private final OrderService orders;
     private final CustomerService customers;
     private final CustomerAddressService addresses;
+    private final PricingService pricingService;
 
     public WebStoreCheckoutController(
         StoreCartService carts,
         VoucherService vouchers,
         OrderService orders,
         CustomerService customers,
-        CustomerAddressService addresses
+        CustomerAddressService addresses,
+        PricingService pricingService
     ) {
         this.carts = carts;
         this.vouchers = vouchers;
         this.orders = orders;
         this.customers = customers;
         this.addresses = addresses;
+        this.pricingService = pricingService;
     }
 
     @GetMapping
@@ -96,6 +99,10 @@ public class WebStoreCheckoutController {
                 );
         model.addAttribute("cart", carts.view(session, buyNow));
         model.addAttribute("pricing", pricing);
+        model.addAttribute(
+            "orderPromotionSuggestion",
+            pricing.orderPromotionSuggestion()
+        );
         model.addAttribute("vouchers", vouchers.listAvailable(0, 20).content());
         model.addAttribute("selectedVoucher", carts.selectedVoucher(session));
         model.addAttribute("mode", buyNow ? "buy-now" : "cart");

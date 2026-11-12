@@ -294,4 +294,68 @@ class PricingServiceTest {
             pricing.voucherDiscount(voucher, new BigDecimal("300"), NOW)
         ).isInstanceOf(BadRequestException.class);
     }
+
+    @Test
+    void returnsNullWhenSubtotalNullOrZero() {
+        assertThat(pricing.nextOrderPromotionSuggestion(null, NOW)).isNull();
+        assertThat(pricing.nextOrderPromotionSuggestion(BigDecimal.ZERO, NOW)).isNull();
+        assertThat(pricing.nextOrderPromotionSuggestion(new BigDecimal("-100"), NOW)).isNull();
+    }
+
+    @Test
+    void returnsNearestTierSuggestionWhenAvailable() {
+        var tier1 = orderPromotion(1, "300000", "5", null);
+        tier1.setPromotionName("Ưu đãi cấp 1");
+        var tier2 = orderPromotion(2, "500000", "10", "50000");
+        tier2.setPromotionName("Ưu đãi cấp 2");
+        var tier3 = orderPromotion(3, "1000000", "15", null);
+        tier3.setPromotionName("Ưu đãi cấp 3");
+
+        var subtotal = new BigDecimal("200000.00");
+        when(
+            orderPromotions.findNextTiers(ActiveStatus.ACTIVE, NOW, subtotal)
+        ).thenReturn(List.of(tier1, tier2, tier3));
+
+        var suggestion = pricing.nextOrderPromotionSuggestion(subtotal, NOW);
+
+        assertThat(suggestion).isNotNull();
+        assertThat(suggestion.orderPromotionId()).isEqualTo(1L);
+        assertThat(suggestion.promotionName()).isEqualTo("Ưu đãi cấp 1");
+        assertThat(suggestion.minOrderAmount()).isEqualByComparingTo("300000.00");
+        assertThat(suggestion.remainingAmount()).isEqualByComparingTo("100000.00");
+        assertThat(suggestion.discountPercent()).isEqualByComparingTo("5");
+        assertThat(suggestion.progressPercent()).isEqualTo(66);
+    }
+
+    @Test
+    void returnsNullWhenNoHigherTiersExist() {
+        var subtotal = new BigDecimal("1200000.00");
+        when(
+            orderPromotions.findNextTiers(ActiveStatus.ACTIVE, NOW, subtotal)
+        ).thenReturn(List.of());
+
+        var suggestion = pricing.nextOrderPromotionSuggestion(subtotal, NOW);
+
+        assertThat(suggestion).isNull();
+    }
+
+    @Test
+    void skipsInactiveOrExpiredTiers() {
+        var expired = orderPromotion(1, "300000", "5", null);
+        expired.setEndDate(NOW.minusHours(1));
+        var valid = orderPromotion(2, "500000", "10", null);
+        valid.setPromotionName("Ưu đãi hợp lệ");
+
+        var subtotal = new BigDecimal("200000.00");
+        when(
+            orderPromotions.findNextTiers(ActiveStatus.ACTIVE, NOW, subtotal)
+        ).thenReturn(List.of(expired, valid));
+
+        var suggestion = pricing.nextOrderPromotionSuggestion(subtotal, NOW);
+
+        assertThat(suggestion).isNotNull();
+        assertThat(suggestion.orderPromotionId()).isEqualTo(2L);
+        assertThat(suggestion.promotionName()).isEqualTo("Ưu đãi hợp lệ");
+        assertThat(suggestion.remainingAmount()).isEqualByComparingTo("300000.00");
+    }
 }

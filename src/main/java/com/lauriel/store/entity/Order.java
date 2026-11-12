@@ -79,7 +79,7 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "sales_channel", nullable = false)
-    private SalesChannel salesChannel = SalesChannel.UNKNOWN;
+    private SalesChannel salesChannel = SalesChannel.MOBILE;
 
     // MySQL owns this timestamp; Hibernate reads the generated value back.
     @Generated(event = EventType.INSERT)

@@ -260,6 +260,7 @@ public class VoucherService {
             );
         }
         var shipping = pricing.checkedAmount(commerce.getShippingFee());
+        var suggestion = pricing.nextOrderPromotionSuggestion(amount, now);
         return new VoucherValidationResponse(
             true,
             voucher == null ? null : voucher.getCode(),
@@ -281,7 +282,8 @@ public class VoucherService {
             shipping,
             pricing.checkedAmount(
                 amountAfterOrderPromotion.subtract(discount).add(shipping)
-            )
+            ),
+            suggestion
         );
     }
 

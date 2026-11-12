@@ -5,6 +5,7 @@
 <body>
     <section>
         <form class="card card-body mb-3 order-filter-card" method="get" th:action="@{/admin/orders}" data-live-filter>
+            <input type="hidden" name="customerId" th:value="${customerId}" th:if="${customerId != null}">
             <div class="order-filter-row">
                 <div class="col-filter-search">
                     <label class="form-label small fw-semibold mb-1">Tìm đơn hàng</label>
@@ -37,6 +38,17 @@
                 </div>
             </div>
         </form>
+        <div class="alert alert-info d-flex align-items-center justify-content-between mb-3 shadow-sm border-info" th:if="${customerId != null}">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-person-bounding-box fs-5 text-primary"></i>
+                <div>
+                    <span>Đang lọc danh sách đơn hàng của khách hàng: </span>
+                    <strong class="text-primary" th:text="${filterCustomer != null ? filterCustomer.fullName + ' (#' + customerId + ')' : '#' + customerId}"></strong>
+                    <span th:if="${filterCustomer != null && filterCustomer.phone != null}" th:text="| · SĐT: ${filterCustomer.phone}|" class="text-muted small"></span>
+                </div>
+            </div>
+            <a th:href="@{/admin/orders}" class="btn btn-sm btn-outline-secondary text-nowrap"><i class="bi bi-x-circle me-1"></i>Xem tất cả đơn hàng</a>
+        </div>
         <div class="card">
             <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0" id="ordersTable">
@@ -58,7 +70,7 @@
                                 th:data-order-id="${r.orderId}" class="order-row">
                                 <td class="fw-semibold" th:text="|#${r.orderId}|"></td>
                                 <td>
-                                    <span th:text="${customerNames.get(r.customerId)}"></span>
+                                    <a class="text-decoration-none fw-semibold text-dark hover-primary" th:href="@{/admin/orders(customerId=${r.customerId})}" th:text="${customerNames.get(r.customerId)}" title="Xem tất cả đơn của khách này"></a>
                                     <small class="text-muted" th:text="| (#${r.customerId})|"></small>
                                 </td>
                                 <td class="text-nowrap" th:text="${@view.date(r.createdAt)}"></td>

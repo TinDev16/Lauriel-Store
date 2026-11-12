@@ -20,15 +20,17 @@
 <th>Số điện thoại</th>
 <th>Trạng thái tài khoản</th>
 <th>Ngày tạo</th>
+<th class="text-center">Đơn hàng</th>
 </tr>
 </thead>
 <tbody>
 <tr th:each="r:${page.content}">
-<td th:text="${r.customerId}">
+<td th:text="|#${r.customerId}|">
 </td>
 <td th:text="${r.username == null ? '—' : r.username}">
 </td>
-<td th:text="${r.fullName}">
+<td>
+<a class="fw-semibold text-dark text-decoration-none" th:href="@{/admin/orders(customerId=${r.customerId})}" th:text="${r.fullName}" title="Xem các đơn hàng của khách hàng này"></a>
 </td>
 <td th:text="${r.email == null ? '—' : r.email}">
 </td>
@@ -38,9 +40,14 @@
 </td>
 <td th:text="${@view.date(r.createdAt)}">
 </td>
+<td class="text-center">
+<a class="btn btn-sm btn-outline-primary py-1 px-2 text-nowrap" th:href="@{/admin/orders(customerId=${r.customerId})}" title="Xem danh sách đơn hàng của khách hàng này">
+<i class="bi bi-receipt me-1"></i>Xem đơn hàng
+</a>
+</td>
 </tr>
 <tr th:if="${#lists.isEmpty(page.content)}">
-<td colspan="7" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+<td colspan="8" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
 </tr>
 </tbody>
 </table>

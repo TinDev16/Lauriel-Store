@@ -1,8 +1,10 @@
 package com.lauriel.store.controller.web.store;
 
+import com.lauriel.store.controller.web.WebViewSupport;
 import com.lauriel.store.dto.store.CartItemForm;
 import com.lauriel.store.exception.*;
 import com.lauriel.store.security.StoreUserDetails;
+import com.lauriel.store.service.PricingService;
 import com.lauriel.store.service.StoreCartService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -18,14 +20,29 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class WebStoreCartController {
 
     private final StoreCartService carts;
+    private final PricingService pricing;
+    private final WebViewSupport view;
 
-    public WebStoreCartController(StoreCartService carts) {
+    public WebStoreCartController(
+        StoreCartService carts,
+        PricingService pricing,
+        WebViewSupport view
+    ) {
         this.carts = carts;
+        this.pricing = pricing;
+        this.view = view;
     }
 
     @GetMapping
     public String cart(HttpSession session, Model model) {
-        model.addAttribute("cart", carts.view(session, false));
+        var cartView = carts.view(session, false);
+        model.addAttribute("cart", cartView);
+        if (cartView.totalQuantity() > 0) {
+            model.addAttribute(
+                "orderPromotionSuggestion",
+                pricing.nextOrderPromotionSuggestion(cartView.subtotal())
+            );
+        }
         return "store/cart";
     }
 
@@ -45,7 +62,18 @@ public class WebStoreCartController {
         );
         try {
             carts.add(session, form.variantId(), form.quantity(), userId(user));
-            flash.addFlashAttribute("successMessage", "Đã thêm vào giỏ hàng.");
+            var cartView = carts.view(session, false);
+            var suggestion = pricing.nextOrderPromotionSuggestion(cartView.subtotal());
+            if (suggestion != null) {
+                flash.addFlashAttribute(
+                    "successMessage",
+                    "Đã thêm vào giỏ hàng! Mua thêm " + view.money(suggestion.remainingAmount()) +
+                        " để nhận ưu đãi \"" + suggestion.promotionName() +
+                        "\" (giảm " + view.number(suggestion.discountPercent()) + "%)."
+                );
+            } else {
+                flash.addFlashAttribute("successMessage", "Đã thêm vào giỏ hàng.");
+            }
         } catch (BadRequestException | ResourceNotFoundException exception) {
             flash.addFlashAttribute("errorMessage", exception.getMessage());
         }

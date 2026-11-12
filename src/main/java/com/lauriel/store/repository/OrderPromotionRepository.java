@@ -25,6 +25,15 @@ public interface OrderPromotionRepository
     );
 
     @Query(
+        "select p from OrderPromotion p where p.status=:status and p.startDate<=:now and p.endDate>=:now and p.minOrderAmount>:amount order by p.minOrderAmount asc, p.discountPercent desc, p.orderPromotionId asc"
+    )
+    List<OrderPromotion> findNextTiers(
+        ActiveStatus status,
+        LocalDateTime now,
+        BigDecimal amount
+    );
+
+    @Query(
         "select p from OrderPromotion p where p.status=:status and p.startDate<=:now and p.endDate>=:now"
     )
     Page<OrderPromotion> findActive(

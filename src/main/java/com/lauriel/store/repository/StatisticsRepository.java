@@ -4,6 +4,7 @@ import com.lauriel.store.dto.statistics.StatisticsReport;
 import com.lauriel.store.entity.enums.OrderStatus;
 import com.lauriel.store.entity.enums.SalesChannel;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -232,6 +233,52 @@ public class StatisticsRepository {
                     rs.getLong("order_count"),
                     money(rs, "spent")
                 )
+        );
+    }
+
+    public List<StatisticsReport.CustomerSpendingSummary> customerSpendings(
+        LocalDateTime from,
+        LocalDateTime until,
+        int limit
+    ) {
+        String sql = """
+            SELECT c.customer_id,
+                   c.customer_name,
+                   COALESCE(c.phone, u.phone) AS phone,
+                   u.email,
+                   COUNT(o.order_id) total_orders,
+                   COALESCE(SUM(CASE WHEN o.status='DELIVERED' THEN 1 ELSE 0 END), 0) delivered_orders,
+                   COALESCE(SUM(CASE WHEN o.status='CANCELLED' THEN 1 ELSE 0 END), 0) cancelled_orders,
+                   COALESCE(SUM(CASE WHEN o.status='DELIVERED' THEN o.final_amount ELSE 0 END), 0) total_spent
+            FROM customers c
+            LEFT JOIN users u ON u.user_id = c.user_id
+            JOIN orders o ON c.customer_id = o.customer_id
+            WHERE o.created_at >= :from AND o.created_at < :until
+            GROUP BY c.customer_id, c.customer_name, COALESCE(c.phone, u.phone), u.email
+            ORDER BY total_spent DESC, total_orders DESC, c.customer_id
+            LIMIT :limit
+            """;
+        return jdbc.query(
+            sql,
+            range(from, until).addValue("limit", Math.max(limit, 50)),
+            (rs, n) -> {
+                long delivered = rs.getLong("delivered_orders");
+                BigDecimal spent = money(rs, "total_spent");
+                BigDecimal average = delivered == 0
+                    ? BigDecimal.ZERO
+                    : spent.divide(BigDecimal.valueOf(delivered), 2, RoundingMode.HALF_UP);
+                return new StatisticsReport.CustomerSpendingSummary(
+                    rs.getLong("customer_id"),
+                    rs.getString("customer_name"),
+                    rs.getString("phone"),
+                    rs.getString("email"),
+                    rs.getLong("total_orders"),
+                    delivered,
+                    rs.getLong("cancelled_orders"),
+                    spent,
+                    average
+                );
+            }
         );
     }
 
@@ -539,7 +586,7 @@ public class StatisticsRepository {
         LocalDateTime until
     ) {
         String sql = """
-        SELECT sales_channel,
+        SELECT CASE WHEN sales_channel = 'UNKNOWN' THEN 'MOBILE' ELSE sales_channel END as sales_channel,
                COUNT(DISTINCT customer_id) buyers,
                COUNT(*) total_orders,
                COALESCE(SUM(CASE WHEN status='DELIVERED' THEN 1 ELSE 0 END),0) delivered,
@@ -547,7 +594,7 @@ public class StatisticsRepository {
                COALESCE(SUM(CASE WHEN status='DELIVERED' THEN final_amount ELSE 0 END),0) revenue
         FROM orders
         WHERE created_at >= :from AND created_at < :until
-        GROUP BY sales_channel
+        GROUP BY CASE WHEN sales_channel = 'UNKNOWN' THEN 'MOBILE' ELSE sales_channel END
         """;
         return jdbc.query(sql, range(from, until), (rs, n) ->
             new ChannelAggregate(

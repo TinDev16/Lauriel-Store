@@ -67,13 +67,19 @@
 </h3>
 </div>
 </div>
-<form class="d-flex gap-2 mb-3" method="post" th:if="${!#lists.isEmpty(transitions)}" th:action="@{/admin/orders/{id}/status(id=${order.orderId})}" data-confirm="Cập nhật trạng thái đơn? Hủy đơn sẽ hoàn lại số lượng hàng và voucher.">
-<select name="status" class="form-select w-auto">
-<option th:each="s:${transitions}" th:value="${s}" th:text="${@view.label(s)}">
-</option>
-</select>
-<button class="btn btn-primary">Cập nhật trạng thái</button>
-</form>
+<div class="card card-body mb-4 shadow-sm border-0" th:if="${!#lists.isEmpty(transitions)}">
+    <label class="form-label fw-bold text-primary mb-2">
+        <i class="bi bi-arrow-repeat me-1"></i>Cập nhật trạng thái đơn hàng:
+    </label>
+    <form class="d-flex flex-wrap gap-2 align-items-center" method="post" th:action="@{/admin/orders/{id}/status(id=${order.orderId})}" data-confirm="Xác nhận cập nhật trạng thái đơn hàng đã chọn?">
+        <select name="status" class="form-select w-auto">
+            <option th:each="s:${transitions}" th:value="${s}" th:text="${@view.label(s)}"></option>
+        </select>
+        <button class="btn btn-primary">
+            <i class="bi bi-check2-circle me-1"></i>Cập nhật trạng thái
+        </button>
+    </form>
+</div>
 <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/orders}">Danh sách đơn</a>
 </section>
 </body>

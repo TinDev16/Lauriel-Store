@@ -48,6 +48,14 @@ public class CustomerService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public long countByStatus(com.lauriel.store.entity.enums.UserStatus status) {
+        if (status == null) {
+            return customers.count();
+        }
+        return customers.count(customerFilter(null, status));
+    }
+
     public org.springframework.data.jpa.domain.Specification<Customer> customerFilter(
         String keyword,
         com.lauriel.store.entity.enums.UserStatus status
@@ -65,9 +73,23 @@ public class CustomerService {
                 "user",
                 jakarta.persistence.criteria.JoinType.LEFT
             );
-            if (status != null) predicates.add(
-                builder.equal(user.get("status"), status)
-            );
+            if (status != null) {
+                if (status == com.lauriel.store.entity.enums.UserStatus.ACTIVE) {
+                    predicates.add(
+                        builder.or(
+                            builder.equal(user.get("status"), com.lauriel.store.entity.enums.UserStatus.ACTIVE),
+                            builder.isNull(user)
+                        )
+                    );
+                } else {
+                    predicates.add(
+                        builder.or(
+                            builder.equal(user.get("status"), com.lauriel.store.entity.enums.UserStatus.INACTIVE),
+                            builder.equal(user.get("status"), com.lauriel.store.entity.enums.UserStatus.LOCKED)
+                        )
+                    );
+                }
+            }
             if (term != null) predicates.add(
                 builder.or(
                     builder.like(builder.lower(root.get("customerName")), term),

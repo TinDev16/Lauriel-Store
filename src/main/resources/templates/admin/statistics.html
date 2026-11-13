@@ -8,16 +8,16 @@
         <p>Nắm nhanh doanh thu, đơn hàng, khách hàng và lượng hàng còn lại của Lauriel Store.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-outline-primary" target="_blank" th:href="@{/admin/statistics/print(preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}">
-            <i class="bi bi-printer me-1"></i>In báo cáo
+        <a class="btn btn-hero-glass" target="_blank" th:href="@{/admin/statistics/print(preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}">
+            <i class="bi bi-printer me-1 text-info-emphasis"></i>In báo cáo
         </a>
-        <a class="btn btn-outline-danger" th:href="@{/admin/statistics/export.pdf(preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}">
-            <i class="bi bi-file-earmark-pdf me-1"></i>Xuất PDF
+        <a class="btn btn-hero-glass" th:href="@{/admin/statistics/export.pdf(preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}">
+            <i class="bi bi-file-earmark-pdf me-1 text-danger-emphasis"></i>Xuất PDF
         </a>
-        <a class="btn btn-success text-white" th:href="@{/admin/statistics/export.xlsx(preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}">
-            <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+        <a class="btn btn-hero-glass" th:href="@{/admin/statistics/export.xlsx(preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}">
+            <i class="bi bi-file-earmark-excel me-1 text-success-emphasis"></i>Xuất Excel
         </a>
-        <a class="btn btn-light" th:href="@{/admin/statistics}"><i class="bi bi-arrow-clockwise me-1"></i>Làm mới dữ liệu</a>
+        <a class="btn btn-hero-solid" th:href="@{/admin/statistics}"><i class="bi bi-arrow-clockwise me-1"></i>Làm mới dữ liệu</a>
     </div>
 </div>
 <div th:replace="~{admin/statistics-fragments :: nav('overview')}"></div>
@@ -26,7 +26,6 @@
 <a class="stats-kpi stats-kpi-revenue" th:href="@{/admin/orders(status='DELIVERED')}"><span class="stats-kpi-icon"><i class="bi bi-cash-stack"></i></span><span><small>Tổng doanh thu đã giao</small><strong th:text="${@view.money(report.kpis.revenueAllTime)}">0 ₫</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
 <a class="stats-kpi stats-kpi-revenue" th:href="@{/admin/statistics/sales(preset='THIS_MONTH')}"><span class="stats-kpi-icon"><i class="bi bi-graph-up-arrow"></i></span><span><small>Doanh thu tháng này</small><strong th:text="${@view.money(report.kpis.revenueMonth)}">0 ₫</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
 <a class="stats-kpi stats-kpi-orders" th:href="@{/admin/orders}"><span class="stats-kpi-icon"><i class="bi bi-receipt"></i></span><span><small>Đơn hàng tháng này</small><strong th:text="${report.kpis.ordersMonth}">0</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
-<a class="stats-kpi stats-kpi-orders" th:href="@{/admin/statistics/sales(preset=${report.range.preset})}"><span class="stats-kpi-icon"><i class="bi bi-basket2"></i></span><span><small>Giá trị đơn trung bình</small><strong th:text="${@view.money(report.sales.averageOrderValue)}">0 ₫</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
 <a class="stats-kpi stats-kpi-customers" th:href="@{/admin/customers}"><span class="stats-kpi-icon"><i class="bi bi-people"></i></span><span><small>Tổng khách hàng</small><strong th:text="${report.kpis.customers}">0</strong></span><i class="bi bi-chevron-right stats-kpi-arrow"></i></a>
 <a class="stats-kpi stats-kpi-customers" href="#online-customers"><span class="stats-kpi-icon"><i class="bi bi-person-check"></i></span><span><small>Khách hàng đang online</small><strong th:text="${report.engagement.onlineCustomers}">0</strong></span><i class="bi bi-chevron-down stats-kpi-arrow"></i></a>
 <a class="stats-kpi stats-kpi-products" href="#cart-interest"><span class="stats-kpi-icon"><i class="bi bi-cart-check"></i></span><span><small>Khách đang có giỏ hàng</small><strong th:text="${report.engagement.customersWithCart}">0</strong></span><i class="bi bi-chevron-down stats-kpi-arrow"></i></a>

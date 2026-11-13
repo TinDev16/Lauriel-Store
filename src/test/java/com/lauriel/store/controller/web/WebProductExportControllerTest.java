@@ -28,19 +28,27 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class WebProductExportControllerTest {
 
     private MockMvc mockMvc;
+    private ProductService productService;
+    private ProductVariantService variantService;
     private ProductExcelExportService exportService;
     private ProductExcelImportService importService;
 
     @BeforeEach
     void setUp() {
-        ProductService productService = mock(ProductService.class);
-        ProductVariantService variantService = mock(ProductVariantService.class);
+        productService = mock(ProductService.class);
+        variantService = mock(ProductVariantService.class);
         ProductImageService imageService = mock(ProductImageService.class);
         ProductImageStorage storage = mock(ProductImageStorage.class);
         CategoryService categoryService = mock(CategoryService.class);
         ColorService colorService = mock(ColorService.class);
         exportService = mock(ProductExcelExportService.class);
         importService = mock(ProductExcelImportService.class);
+
+        when(productService.listAdmin(anyInt(), anyInt(), any(), any(), any()))
+            .thenReturn(new com.lauriel.store.dto.response.PageResponse<>(java.util.List.of(), 0, 12, 0L, 0));
+        when(variantService.metrics(any()))
+            .thenReturn(new ProductVariantService.ProductMetrics(java.util.Map.of(), java.util.Map.of()));
+        when(categoryService.listAdmin()).thenReturn(java.util.List.of());
 
         WebProductController controller = new WebProductController(
             productService,
@@ -129,6 +137,42 @@ class WebProductExportControllerTest {
             .andExpect(status().isOk())
             .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
             .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString("products_import_errors_")));
+    }
+
+    @Test
+    @DisplayName("GET /admin/products defaults to ACTIVE products (hiding INACTIVE from main page)")
+    void listProducts_DefaultsToActive() throws Exception {
+        when(productService.countByStatus(ActiveStatus.ACTIVE)).thenReturn(25L);
+        when(productService.countByStatus(ActiveStatus.INACTIVE)).thenReturn(5L);
+
+        mockMvc.perform(get("/admin/products"))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.view().name("admin/products/list"))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("effectiveStatus", ActiveStatus.ACTIVE))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("activeCount", 25L))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("inactiveCount", 5L));
+
+        verify(productService).listAdmin(0, 12, null, null, ActiveStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("GET /admin/products?status=INACTIVE lists inactive products")
+    void listProducts_ShowsInactiveWhenRequested() throws Exception {
+        mockMvc.perform(get("/admin/products").param("status", "INACTIVE"))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("effectiveStatus", ActiveStatus.INACTIVE));
+
+        verify(productService).listAdmin(0, 12, null, null, ActiveStatus.INACTIVE);
+    }
+
+    @Test
+    @DisplayName("GET /admin/products/inactive endpoint directly lists inactive products")
+    void listInactiveEndpoint() throws Exception {
+        mockMvc.perform(get("/admin/products/inactive"))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("effectiveStatus", ActiveStatus.INACTIVE));
+
+        verify(productService).listAdmin(0, 12, null, null, ActiveStatus.INACTIVE);
     }
 }
 

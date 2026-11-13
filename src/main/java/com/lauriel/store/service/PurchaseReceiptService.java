@@ -66,6 +66,19 @@ public class PurchaseReceiptService {
     }
 
     @Transactional(readOnly = true)
+    public long countByStatus(PurchaseReceiptStatus status) {
+        if (status == null) {
+            return receipts.count();
+        }
+        return receipts.countByStatus(status);
+    }
+
+    @Transactional(readOnly = true)
+    public long countActive() {
+        return Math.max(0, receipts.count() - receipts.countByStatus(PurchaseReceiptStatus.CANCELLED));
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<PurchaseReceiptListResponse> listDetailed(
         int page,
         int size,
@@ -74,7 +87,20 @@ public class PurchaseReceiptService {
         java.time.LocalDateTime from,
         java.time.LocalDateTime to
     ) {
-        var result = filteredPage(page, size, keyword, status, from, to);
+        return listDetailed(page, size, keyword, status, status == null, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PurchaseReceiptListResponse> listDetailed(
+        int page,
+        int size,
+        String keyword,
+        PurchaseReceiptStatus status,
+        boolean excludeCancelled,
+        java.time.LocalDateTime from,
+        java.time.LocalDateTime to
+    ) {
+        var result = filteredPage(page, size, keyword, status, excludeCancelled, from, to);
         var receiptIds = result
             .getContent()
             .stream()
@@ -111,12 +137,24 @@ public class PurchaseReceiptService {
         java.time.LocalDateTime from,
         java.time.LocalDateTime to
     ) {
+        return filteredPage(page, size, keyword, status, status == null, from, to);
+    }
+
+    private org.springframework.data.domain.Page<PurchaseReceipt> filteredPage(
+        int page,
+        int size,
+        String keyword,
+        PurchaseReceiptStatus status,
+        boolean excludeCancelled,
+        java.time.LocalDateTime from,
+        java.time.LocalDateTime to
+    ) {
         if (from != null && to != null && from.isAfter(to)) {
             throw new BadRequestException(
                 "Thời gian bắt đầu phải trước hoặc bằng thời gian kết thúc"
             );
         }
-        var filter = receiptFilter(keyword, status, from, to);
+        var filter = receiptFilter(keyword, status, excludeCancelled, from, to);
         return receipts.findAll(
             filter,
             InventoryPagination.page(
@@ -163,6 +201,16 @@ public class PurchaseReceiptService {
         java.time.LocalDateTime from,
         java.time.LocalDateTime to
     ) {
+        return receiptFilter(keyword, status, status == null, from, to);
+    }
+
+    public org.springframework.data.jpa.domain.Specification<PurchaseReceipt> receiptFilter(
+        String keyword,
+        PurchaseReceiptStatus status,
+        boolean excludeCancelled,
+        java.time.LocalDateTime from,
+        java.time.LocalDateTime to
+    ) {
         String term =
             keyword == null || keyword.isBlank()
                 ? null
@@ -170,9 +218,11 @@ public class PurchaseReceiptService {
         return (root, query, builder) -> {
             var predicates =
                 new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
-            if (status != null) predicates.add(
-                builder.equal(root.get("status"), status)
-            );
+            if (status != null) {
+                predicates.add(builder.equal(root.get("status"), status));
+            } else if (excludeCancelled) {
+                predicates.add(builder.notEqual(root.get("status"), PurchaseReceiptStatus.CANCELLED));
+            }
             if (from != null) predicates.add(
                 builder.greaterThanOrEqualTo(root.get("createdAt"), from)
             );

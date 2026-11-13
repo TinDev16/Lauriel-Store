@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SupplierRepository
     extends
         JpaRepository<Supplier, Long>,
-        org.springframework.data.jpa.repository.JpaSpecificationExecutor<Supplier> {}
+        org.springframework.data.jpa.repository.JpaSpecificationExecutor<Supplier> {
+    long countByStatus(com.lauriel.store.entity.enums.ActiveStatus status);
+}

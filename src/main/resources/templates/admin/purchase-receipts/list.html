@@ -4,41 +4,77 @@
 
 <body>
     <section>
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
             <div>
                 <h2 class="h4 mb-1">Danh sách phiếu nhập</h2>
                 <p class="text-muted mb-0">Theo dõi nhà cung cấp, người tạo và toàn bộ hàng hóa trong từng phiếu.</p>
             </div>
-            <div class="d-flex gap-2">
-                <a class="btn btn-outline-success" th:href="@{/admin/purchase-receipts/export.xlsx(keyword=${keyword},status=${status},from=${from},to=${to})}" title="Xuất Excel">
-                    <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-outline-secondary" th:href="@{/admin/purchase-receipts/export.xlsx(keyword=${keyword},status=${status},from=${from},to=${to})}" title="Xuất dữ liệu Excel">
+                    <i class="bi bi-file-earmark-excel text-success me-1"></i>Xuất Excel
                 </a>
-                <a class="btn btn-primary" th:href="@{/admin/purchase-receipts/new}"><i class="bi bi-plus-lg me-1"></i>Tạo phiếu nhập</a>
+                <a class="btn btn-primary fw-semibold shadow-sm" th:href="@{/admin/purchase-receipts/new}"><i class="bi bi-plus-lg me-1"></i>Tạo phiếu nhập</a>
             </div>
         </div>
+
+        <!-- Tabs chuyển đổi trạng thái -->
+        <ul class="nav admin-nav-tabs mb-3" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center gap-2"
+                   th:classappend="${!isCancelledTab} ? 'active' : ''"
+                   th:href="@{/admin/purchase-receipts(keyword=${keyword},from=${from},to=${to})}">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <span>Phiếu nhập hiệu lực</span>
+                    <span class="badge rounded-pill"
+                          th:classappend="${!isCancelledTab} ? 'bg-primary text-white' : 'bg-secondary-subtle text-secondary'"
+                          th:text="${activeCount}">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center gap-2 tab-inactive"
+                   th:classappend="${isCancelledTab} ? 'active' : ''"
+                   th:href="@{/admin/purchase-receipts(status='CANCELLED',keyword=${keyword},from=${from},to=${to})}">
+                    <i class="bi bi-x-circle-fill text-danger"></i>
+                    <span>Phiếu nhập đã hủy</span>
+                    <span class="badge rounded-pill"
+                          th:classappend="${isCancelledTab} ? 'bg-danger text-white' : 'bg-danger-subtle text-danger'"
+                          th:text="${inactiveCount}">0</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- Banner thông báo khi xem danh sách phiếu nhập đã hủy -->
+        <div th:if="${isCancelledTab}" class="alert alert-warning border-warning d-flex align-items-center py-2 px-3 mb-3">
+            <i class="bi bi-exclamation-triangle-fill text-warning fs-5 me-2"></i>
+            <div>
+                <strong>Danh sách phiếu nhập đã hủy:</strong>
+                <span class="text-muted ms-1">Các phiếu nhập này đã bị hủy bỏ, không có hiệu lực và không cộng tồn kho.</span>
+            </div>
+        </div>
+
         <form class="card card-body mb-4" method="get" th:action="@{/admin/purchase-receipts}" data-live-filter>
+            <input th:if="${isCancelledTab}" type="hidden" name="status" value="CANCELLED">
             <div class="row g-3 align-items-end">
                 <div class="col-lg-4"><label class="form-label" for="receipt-keyword">Tìm phiếu nhập</label>
                     <input id="receipt-keyword" class="form-control" type="search" name="keyword"
                         placeholder="Mã phiếu, nhà cung cấp, người tạo..." th:value="${keyword}">
                 </div>
-                <div class="col-md-4 col-lg-2"><label class="form-label" for="receipt-status">Trạng thái</label>
+                <div th:if="${!isCancelledTab}" class="col-md-4 col-lg-2"><label class="form-label" for="receipt-status">Trạng thái</label>
                     <select id="receipt-status" class="form-select" name="status">
-                        <option value="">Tất cả trạng thái</option>
-                        <option th:each="item:${receiptStatuses}" th:value="${item}" th:text="${@view.label(item)}"
-                            th:selected="${item == status}"></option>
+                        <option value="">Tất cả (chưa hủy)</option>
+                        <option value="DRAFT" th:selected="${status != null and status.name() == 'DRAFT'}">Bản nháp</option>
+                        <option value="COMPLETED" th:selected="${status != null and status.name() == 'COMPLETED'}">Hoàn tất</option>
                     </select>
                 </div>
-                <div class="col-md-4 col-lg-2"><label class="form-label" for="receipt-from">Từ thời gian</label>
+                <div class="col-md-4" th:classappend="${!isCancelledTab} ? 'col-lg-2' : 'col-lg-3'"><label class="form-label" for="receipt-from">Từ thời gian</label>
                     <input id="receipt-from" class="form-control" type="datetime-local" name="from" th:value="${from}">
                 </div>
-                <div class="col-md-4 col-lg-2"><label class="form-label" for="receipt-to">Đến thời gian</label>
+                <div class="col-md-4" th:classappend="${!isCancelledTab} ? 'col-lg-2' : 'col-lg-3'"><label class="form-label" for="receipt-to">Đến thời gian</label>
                     <input id="receipt-to" class="form-control" type="datetime-local" name="to" th:value="${to}">
                 </div>
                 <div class="col-lg-2 d-flex flex-wrap gap-2">
                     <button class="btn btn-primary flex-grow-1"><i class="bi bi-funnel"></i> Lọc</button>
-                    <a class="btn btn-outline-secondary" th:href="@{/admin/purchase-receipts}" title="Xóa bộ lọc"><i class="bi bi-arrow-counterclockwise"></i> Đặt lại</a>
-                    <a class="btn btn-outline-success" th:href="@{/admin/purchase-receipts/export.xlsx(keyword=${keyword},status=${status},from=${from},to=${to})}" title="Xuất Excel"><i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel</a>
+                    <a class="btn btn-outline-secondary" th:href="@{/admin/purchase-receipts(status=${isCancelledTab ? 'CANCELLED' : null})}" title="Xóa bộ lọc"><i class="bi bi-arrow-counterclockwise"></i> Đặt lại</a>
                 </div>
             </div>
         </form>
@@ -71,21 +107,28 @@
             <span class="badge bg-light text-dark border" th:text="|${#lists.size(r.items)} mặt hàng|">0 mặt hàng</span>
         </td>
         <td>
-            <span class="badge"
-                th:classappend="${r.status.name() == 'COMPLETED'} ? ' text-bg-success' : (${r.status.name() == 'CANCELLED'} ? ' text-bg-secondary' : ' text-bg-warning')"
-                th:text="${@view.label(r.status)}"></span>
+            <span class="badge-status"
+                th:classappend="${r.status.name() == 'COMPLETED'} ? 'badge-status-active' : (${r.status.name() == 'CANCELLED'} ? 'badge-status-inactive' : 'badge-status-warning')">
+                <i class="bi" th:classappend="${r.status.name() == 'COMPLETED'} ? 'bi-check-circle-fill' : (${r.status.name() == 'CANCELLED'} ? 'bi-x-circle-fill' : 'bi-clock-fill')"></i>
+                <span th:text="${@view.label(r.status)}"></span>
+            </span>
         </td>
         <td class="text-end fw-bold text-success text-nowrap" th:text="${@view.money(r.totalAmount)}"></td>
         <td class="text-center text-nowrap">
-            <a class="btn btn-outline-primary btn-sm btn-receipt-preview"
-                th:href="@{/admin/purchase-receipts/{id}(id=${r.receiptId})}" th:data-receipt-id="${r.receiptId}"
-                title="Xem nhanh bên phải">
-                <i class="bi bi-layout-sidebar-inset-reverse me-1"></i>Chi tiết
-            </a>
+            <div class="table-actions justify-content-center">
+                <a class="btn btn-soft-primary btn-receipt-preview"
+                    th:href="@{/admin/purchase-receipts/{id}(id=${r.receiptId})}" th:data-receipt-id="${r.receiptId}"
+                    title="Xem nhanh chi tiết bên phải">
+                    <i class="bi bi-layout-sidebar-inset-reverse"></i>Chi tiết
+                </a>
+            </div>
         </td>
         </tr>
         <tr th:if="${#lists.isEmpty(page.content)}">
-            <td colspan="8" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td>
+            <td colspan="8" class="text-muted text-center p-4">
+                <i class="bi bi-inbox fs-3 d-block mb-1"></i>
+                <span th:text="${isCancelledTab ? 'Hiện không có phiếu nhập nào đã hủy.' : 'Chưa có dữ liệu phù hợp.'}">Chưa có dữ liệu phù hợp.</span>
+            </td>
         </tr>
         </tbody>
         <tfoot th:if="${!#lists.isEmpty(page.content)}">

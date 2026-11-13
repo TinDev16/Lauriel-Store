@@ -154,12 +154,14 @@ public class WebProductController {
         @RequestParam(required = false) ActiveStatus status,
         Model model
     ) {
+        // Ẩn sản phẩm ngừng hoạt động khỏi trang chính: Mặc định trang chính chỉ hiển thị ACTIVE
+        ActiveStatus effectiveStatus = (status != null) ? status : ActiveStatus.ACTIVE;
         var result = products.listAdmin(
             page,
             size,
             keyword,
             categoryId,
-            status
+            effectiveStatus
         );
         var metrics = variants.metrics(
             result
@@ -168,6 +170,9 @@ public class WebProductController {
                 .map(p -> p.productId())
                 .toList()
         );
+        long activeCount = products.countByStatus(ActiveStatus.ACTIVE);
+        long inactiveCount = products.countByStatus(ActiveStatus.INACTIVE);
+
         model.addAttribute("page", result);
         model.addAttribute("counts", metrics.attributeCounts());
         model.addAttribute("stockTotals", metrics.stockTotals());
@@ -175,7 +180,21 @@ public class WebProductController {
         model.addAttribute("keyword", keyword);
         model.addAttribute("categoryId", categoryId);
         model.addAttribute("status", status);
+        model.addAttribute("effectiveStatus", effectiveStatus);
+        model.addAttribute("activeCount", activeCount);
+        model.addAttribute("inactiveCount", inactiveCount);
         return "admin/products/list";
+    }
+
+    @GetMapping("/inactive")
+    public String listInactive(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "12") int size,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) Long categoryId,
+        Model model
+    ) {
+        return list(page, size, keyword, categoryId, ActiveStatus.INACTIVE, model);
     }
 
     @GetMapping("/new")
@@ -328,15 +347,17 @@ public class WebProductController {
         @PathVariable Long id,
         @Valid @ModelAttribute ProductStatusRequest request,
         BindingResult errors,
+        @RequestParam(required = false) String returnUrl,
         RedirectAttributes flash
     ) {
         if (errors.hasErrors()) {
             flash.addFlashAttribute("errorMessage", "Trạng thái không hợp lệ.");
             return "redirect:/admin/products";
         }
+        String redirect = (returnUrl != null && !returnUrl.isBlank()) ? returnUrl : "/admin/products";
         return WebActions.action(
             () -> products.updateStatus(id, request.status()),
-            "/admin/products",
+            redirect,
             flash
         );
     }

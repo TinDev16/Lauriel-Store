@@ -1,6 +1,8 @@
 package com.lauriel.store.controller.web;
 
 import com.lauriel.store.dto.request.ColorRequest;
+import com.lauriel.store.dto.request.ProductStatusRequest;
+import com.lauriel.store.entity.enums.ActiveStatus;
 import com.lauriel.store.exception.ResourceNotFoundException;
 import com.lauriel.store.service.ColorService;
 import jakarta.validation.Valid;

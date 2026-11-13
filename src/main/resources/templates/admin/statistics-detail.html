@@ -3,10 +3,10 @@
 <body><section class="stats-page">
 <div class="d-flex justify-content-between align-items-center mb-2">
     <nav class="stats-breadcrumb mb-0" aria-label="Đường dẫn"><a th:href="@{/admin/statistics}">Thống kê</a><i class="bi bi-chevron-right"></i><span th:switch="${section}"><span th:case="'sales'">Doanh thu</span><span th:case="'products'">Sản phẩm</span><span th:case="'customers'">Khách hàng</span><span th:case="'promotions'">Khuyến mãi</span><span th:case="'inventory'">Hàng hóa</span></span></nav>
-    <div class="d-flex gap-2">
-        <a class="btn btn-outline-primary btn-sm text-nowrap" target="_blank" th:href="@{/admin/statistics/print(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="In báo cáo"><i class="bi bi-printer me-1"></i>In báo cáo</a>
-        <a class="btn btn-outline-danger btn-sm text-nowrap" th:href="@{/admin/statistics/export.pdf(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="Xuất báo cáo PDF"><i class="bi bi-file-earmark-pdf me-1"></i>Xuất PDF</a>
-        <a class="btn btn-outline-success btn-sm text-nowrap" th:href="@{/admin/statistics/export.xlsx(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="Xuất báo cáo Excel"><i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel</a>
+    <div class="btn-group btn-group-sm" role="group" aria-label="Thao tác xuất báo cáo">
+        <a class="btn btn-outline-secondary text-nowrap" target="_blank" th:href="@{/admin/statistics/print(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="In báo cáo"><i class="bi bi-printer text-primary me-1"></i>In báo cáo</a>
+        <a class="btn btn-outline-secondary text-nowrap" th:href="@{/admin/statistics/export.pdf(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="Xuất báo cáo PDF"><i class="bi bi-file-earmark-pdf text-danger me-1"></i>Xuất PDF</a>
+        <a class="btn btn-outline-secondary text-nowrap" th:href="@{/admin/statistics/export.xlsx(section=${section},preset=${report.range.preset},fromDate=${report.range.fromDate},toDate=${report.range.toDate},groupBy=${report.range.groupBy},threshold=${report.range.threshold},top=${report.range.top})}" title="Xuất báo cáo Excel"><i class="bi bi-file-earmark-excel text-success me-1"></i>Xuất Excel</a>
     </div>
 </div>
 <header class="stats-detail-header" th:switch="${section}">
@@ -25,7 +25,6 @@
 <div><small>Tổng đơn trong kỳ</small><strong th:text="${report.sales.totalOrders}">0</strong><a th:href="@{/admin/orders}">Xem đơn hàng</a></div>
 <div><small>Đơn đã giao</small><strong th:text="${report.sales.delivered}">0</strong><a th:href="@{/admin/orders(status='DELIVERED')}">Mở danh sách</a></div>
 <div><small>Doanh thu đã giao</small><strong th:text="${@view.money(report.sales.revenue)}">0 ₫</strong></div>
-<div><small>Giá trị đơn trung bình</small><strong th:text="${@view.money(report.sales.averageOrderValue)}">0 ₫</strong></div>
 <div id="cancel-rate"><small>Tỷ lệ hủy</small><strong th:text="|${report.sales.cancelRate}%|">0%</strong><a th:href="@{/admin/orders(status='CANCELLED')}">Xem đơn hủy</a></div>
 </div>
 <div class="row g-3 mb-3"><div class="col-xl-8"><article class="stats-card h-100"><header><div><span class="stats-section-label">THEO THỜI GIAN</span><h2>Doanh thu đã giao</h2></div></header><div id="revenueChart" class="statistics-chart"></div></article></div><div class="col-xl-4"><article class="stats-card h-100"><header><div><span class="stats-section-label">TRẠNG THÁI</span><h2>Cơ cấu đơn hàng</h2></div></header><div id="statusChart" class="statistics-donut"></div></article></div></div>

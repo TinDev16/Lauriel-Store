@@ -31,6 +31,7 @@ public class WebSupplierController {
         @RequestParam(required = false) ActiveStatus status,
         jakarta.servlet.http.HttpServletResponse response
     ) throws java.io.IOException {
+        ActiveStatus effectiveStatus = (status != null) ? status : ActiveStatus.ACTIVE;
         String timestamp = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
             .format(java.time.LocalDateTime.now());
         String filename = "suppliers_" + timestamp + ".xlsx";
@@ -40,7 +41,7 @@ public class WebSupplierController {
             org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
             "attachment; filename=\"" + filename + "\""
         );
-        exportService.exportSuppliers(keyword, status, response.getOutputStream());
+        exportService.exportSuppliers(keyword, effectiveStatus, response.getOutputStream());
         response.flushBuffer();
     }
 
@@ -52,10 +53,24 @@ public class WebSupplierController {
         @RequestParam(required = false) ActiveStatus status,
         Model m
     ) {
-        m.addAttribute("page", suppliers.list(page, size, keyword, status));
+        ActiveStatus effectiveStatus = (status != null) ? status : ActiveStatus.ACTIVE;
+        m.addAttribute("page", suppliers.list(page, size, keyword, effectiveStatus));
         m.addAttribute("keyword", keyword);
         m.addAttribute("status", status);
+        m.addAttribute("effectiveStatus", effectiveStatus);
+        m.addAttribute("activeCount", suppliers.countByStatus(ActiveStatus.ACTIVE));
+        m.addAttribute("inactiveCount", suppliers.countByStatus(ActiveStatus.INACTIVE));
         return "admin/suppliers/list";
+    }
+
+    @GetMapping("/inactive")
+    public String listInactive(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "12") int size,
+        @RequestParam(required = false) String keyword,
+        Model m
+    ) {
+        return list(page, size, keyword, ActiveStatus.INACTIVE, m);
     }
 
     @GetMapping("/new")
@@ -117,15 +132,17 @@ public class WebSupplierController {
         @PathVariable Long id,
         @Valid @ModelAttribute ProductStatusRequest f,
         BindingResult e,
+        @RequestParam(required = false) String returnUrl,
         RedirectAttributes flash
     ) {
         if (e.hasErrors()) {
             flash.addFlashAttribute("errorMessage", "Trạng thái không hợp lệ.");
             return "redirect:/admin/suppliers";
         }
+        String redirect = (returnUrl != null && !returnUrl.isBlank()) ? returnUrl : "/admin/suppliers";
         return WebActions.action(
             () -> suppliers.updateStatus(id, f.status()),
-            "/admin/suppliers",
+            redirect,
             flash
         );
     }

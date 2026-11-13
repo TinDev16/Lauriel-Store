@@ -1,6 +1,8 @@
 package com.lauriel.store.controller.web;
 
+import com.lauriel.store.dto.request.ProductStatusRequest;
 import com.lauriel.store.dto.request.SizeRequest;
+import com.lauriel.store.entity.enums.ActiveStatus;
 import com.lauriel.store.exception.ResourceNotFoundException;
 import com.lauriel.store.service.SizeService;
 import jakarta.validation.Valid;

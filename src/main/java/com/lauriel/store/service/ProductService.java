@@ -283,6 +283,14 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
+    public long countByStatus(ActiveStatus status) {
+        if (status == null) {
+            return productRepository.count();
+        }
+        return productRepository.countByStatus(status);
+    }
+
+    @Transactional(readOnly = true)
     public java.util.List<Product> listForExport(
         String keyword,
         Long categoryId,

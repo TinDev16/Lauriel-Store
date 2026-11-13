@@ -2,21 +2,56 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::section},'Sản phẩm','products')}">
 <body><section>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div class="d-flex gap-2">
-        <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/new}">
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary btn-sm fw-semibold shadow-sm" th:href="@{/admin/products/new}">
             <i class="bi bi-plus-lg me-1"></i>Thêm sản phẩm
         </a>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/products/import-template.xlsx}">
-            <i class="bi bi-download me-1"></i>Tải file mẫu
+        <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/products/import-template.xlsx}" title="Tải file mẫu Excel">
+            <i class="bi bi-download text-muted me-1"></i>Tải file mẫu
         </a>
-        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#importExcelModal">
-            <i class="bi bi-upload me-1"></i>Nhập Excel
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#importExcelModal" title="Nhập danh sách từ Excel">
+            <i class="bi bi-upload text-primary me-1"></i>Nhập Excel
         </button>
-        <a class="btn btn-outline-success btn-sm" th:href="@{/admin/products/export.xlsx(keyword=${keyword},categoryId=${categoryId},status=${status})}">
-            <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+        <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/products/export.xlsx(keyword=${keyword},categoryId=${categoryId},status=${effectiveStatus})}" title="Xuất dữ liệu Excel">
+            <i class="bi bi-file-earmark-excel text-success me-1"></i>Xuất Excel
         </a>
+    </div>
+</div>
+
+<!-- Tabs chuyển đổi trạng thái -->
+<ul class="nav admin-nav-tabs mb-3" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2"
+           th:classappend="${effectiveStatus.name() == 'ACTIVE'} ? 'active' : ''"
+           th:href="@{/admin/products(keyword=${keyword},categoryId=${categoryId})}">
+            <i class="bi bi-check-circle-fill text-success"></i>
+            <span>Đang kinh doanh</span>
+            <span class="badge rounded-pill"
+                  th:classappend="${effectiveStatus.name() == 'ACTIVE'} ? 'bg-primary text-white' : 'bg-secondary-subtle text-secondary'"
+                  th:text="${activeCount}">0</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2 tab-inactive"
+           th:classappend="${effectiveStatus.name() == 'INACTIVE'} ? 'active' : ''"
+           th:href="@{/admin/products(status='INACTIVE',keyword=${keyword},categoryId=${categoryId})}">
+            <i class="bi bi-slash-circle-fill text-danger"></i>
+            <span>Ngừng hoạt động</span>
+            <span class="badge rounded-pill"
+                  th:classappend="${effectiveStatus.name() == 'INACTIVE'} ? 'bg-danger text-white' : 'bg-danger-subtle text-danger'"
+                  th:text="${inactiveCount}">0</span>
+        </a>
+    </li>
+</ul>
+
+<!-- Banner thông báo khi xem danh sách ngừng hoạt động -->
+<div th:if="${effectiveStatus.name() == 'INACTIVE'}" class="alert alert-warning border-warning d-flex align-items-center py-2 px-3 mb-3">
+    <i class="bi bi-exclamation-triangle-fill text-warning fs-5 me-2"></i>
+    <div>
+        <strong>Danh sách sản phẩm ngừng hoạt động:</strong>
+        <span class="text-muted ms-1">Các sản phẩm này đã được ẩn khỏi danh sách kinh doanh chính và website bán hàng. Bạn có thể kích hoạt lại bất kỳ lúc nào.</span>
     </div>
 </div>
 
@@ -71,10 +106,10 @@
     </div>
 </div>
 <form class="row g-2 mb-3" method="get" data-live-filter data-preserve-scroll th:action="@{/admin/products}">
-<div class="col-lg-4"><input class="form-control" type="search" name="keyword" placeholder="Tìm tên sản phẩm" th:value="${keyword}"></div>
-<div class="col-lg-3"><select name="categoryId" class="form-select"><option value="">Tất cả phân loại</option><option th:each="c:${categories}" th:value="${c.categoryId}" th:text="${c.categoryName}" th:selected="${c.categoryId == categoryId}"></option></select></div>
-<div class="col-lg-2"><select name="status" class="form-select"><option value="">Tất cả trạng thái</option><option th:each="s:${statuses}" th:value="${s}" th:text="${@view.label(s)}" th:selected="${s == status}"></option></select></div>
-<div class="col-auto"><button class="btn btn-primary">Lọc</button> <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products}">Đặt lại</a></div>
+    <input type="hidden" name="status" th:value="${effectiveStatus.name()}">
+    <div class="col-lg-5"><input class="form-control" type="search" name="keyword" placeholder="Tìm tên sản phẩm..." th:value="${keyword}"></div>
+    <div class="col-lg-4"><select name="categoryId" class="form-select"><option value="">Tất cả phân loại</option><option th:each="c:${categories}" th:value="${c.categoryId}" th:text="${c.categoryName}" th:selected="${c.categoryId == categoryId}"></option></select></div>
+    <div class="col-auto"><button class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Lọc</button> <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/products(status=${effectiveStatus.name()})}">Đặt lại</a></div>
 </form>
 <div class="card"><div class="table-responsive">
 <table class="table table-hover align-middle mb-0">
@@ -82,11 +117,45 @@
 <tbody>
 <tr th:each="r:${page.content}">
 <td><img th:if="${r.imgUrl != null and !#strings.isEmpty(r.imgUrl)}" th:src="${r.imgUrl}" class="product-thumbnail" alt="Sản phẩm" loading="lazy"></td>
-<td th:text="${r.productName}"></td><td th:text="${r.category.categoryName}"></td><td th:text="${@view.money(r.price)}"></td><td th:text="${@view.label(r.status)}"></td><td class="text-center" th:text="${counts.getOrDefault(r.productId,0L)}"></td><td class="text-center"><strong th:classappend="${stockTotals.getOrDefault(r.productId,0L) == 0} ? ' text-danger' : (${stockTotals.getOrDefault(r.productId,0L) <= 5} ? ' text-warning' : ' text-success')" th:text="${stockTotals.getOrDefault(r.productId,0L)}"></strong></td>
-<td class="text-nowrap"><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{id}/edit(id=${r.productId})}">Sửa</a> <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/products/{id}/variants(id=${r.productId})}">Thuộc tính</a>
-<form class="d-inline" method="post" th:action="@{/admin/products/{id}/status(id=${r.productId})}" data-confirm="Thay đổi trạng thái?"><input type="hidden" name="status" th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}"><button class="btn btn-outline-secondary btn-sm" th:text="${r.status.name() == 'ACTIVE' ? 'Ngừng hoạt động' : 'Kích hoạt'}"></button></form></td>
+<td th:text="${r.productName}"></td>
+<td th:text="${r.category.categoryName}"></td>
+<td th:text="${@view.money(r.price)}"></td>
+<td>
+    <span class="badge-status" 
+          th:classappend="${r.status.name() == 'ACTIVE'} ? 'badge-status-active' : 'badge-status-inactive'">
+        <i class="bi" th:classappend="${r.status.name() == 'ACTIVE'} ? 'bi-check-circle-fill' : 'bi-pause-circle-fill'"></i>
+        <span th:text="${@view.label(r.status)}">Đang hoạt động</span>
+    </span>
+</td>
+<td class="text-center" th:text="${counts.getOrDefault(r.productId,0L)}"></td>
+<td class="text-center"><strong th:classappend="${stockTotals.getOrDefault(r.productId,0L) == 0} ? ' text-danger' : (${stockTotals.getOrDefault(r.productId,0L) <= 5} ? ' text-warning' : ' text-success')" th:text="${stockTotals.getOrDefault(r.productId,0L)}"></strong></td>
+<td class="text-nowrap">
+    <div class="table-actions">
+        <a class="btn btn-soft-primary" th:href="@{/admin/products/{id}/edit(id=${r.productId})}" title="Sửa sản phẩm">
+            <i class="bi bi-pencil"></i>Sửa
+        </a>
+        <a class="btn btn-soft-secondary" th:href="@{/admin/products/{id}/variants(id=${r.productId})}" title="Quản lý thuộc tính">
+            <i class="bi bi-sliders"></i>Thuộc tính
+        </a>
+        <form class="d-inline" method="post" th:action="@{/admin/products/{id}/status(id=${r.productId})}" th:data-confirm="${r.status.name() == 'ACTIVE' ? 'Xác nhận ngừng hoạt động sản phẩm này? Sản phẩm sẽ bị ẩn khỏi trang chính.' : 'Xác nhận kích hoạt lại sản phẩm này?'}">
+            <input type="hidden" name="status" th:value="${r.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
+            <input type="hidden" name="returnUrl" th:value="@{/admin/products(status=${effectiveStatus.name()},keyword=${keyword},categoryId=${categoryId},page=${page.page})}">
+            <button class="btn"
+                    th:classappend="${r.status.name() == 'ACTIVE'} ? 'btn-soft-danger' : 'btn-soft-success'"
+                    th:title="${r.status.name() == 'ACTIVE'} ? 'Ngừng kinh doanh' : 'Kích hoạt lại'">
+                <i class="bi" th:classappend="${r.status.name() == 'ACTIVE'} ? 'bi-pause-circle' : 'bi-play-circle'"></i>
+                <span th:text="${r.status.name() == 'ACTIVE'} ? 'Ngừng' : 'Kích hoạt'"></span>
+            </button>
+        </form>
+    </div>
+</td>
 </tr>
-<tr th:if="${#lists.isEmpty(page.content)}"><td colspan="8" class="text-muted text-center p-4">Chưa có dữ liệu phù hợp.</td></tr>
+<tr th:if="${#lists.isEmpty(page.content)}">
+    <td colspan="8" class="text-muted text-center p-4">
+        <i class="bi bi-inbox fs-3 d-block mb-1"></i>
+        <span th:text="${effectiveStatus.name() == 'INACTIVE' ? 'Hiện không có sản phẩm nào ngừng hoạt động.' : 'Chưa có sản phẩm nào phù hợp.'}">Chưa có dữ liệu phù hợp.</span>
+    </td>
+</tr>
 </tbody></table>
 </div></div>
 <div th:replace="~{fragments/pagination :: pagination}"></div>

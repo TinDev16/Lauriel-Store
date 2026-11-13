@@ -20,6 +20,14 @@ public class SupplierService {
     }
 
     @Transactional(readOnly = true)
+    public long countByStatus(com.lauriel.store.entity.enums.ActiveStatus status) {
+        if (status == null) {
+            return suppliers.count();
+        }
+        return suppliers.countByStatus(status);
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<SupplierResponse> list(int page, int size) {
         return list(page, size, null, null);
     }

@@ -80,13 +80,32 @@ public class WebPurchaseReceiptController {
             .stream()
             .map(r -> r.totalAmount() != null ? r.totalAmount() : BigDecimal.ZERO)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+        boolean isCancelledTab = (status == com.lauriel.store.entity.enums.PurchaseReceiptStatus.CANCELLED);
+        long activeCount = receipts.countActive();
+        long inactiveCount = receipts.countByStatus(com.lauriel.store.entity.enums.PurchaseReceiptStatus.CANCELLED);
+
         model.addAttribute("page", resultPage);
         model.addAttribute("pageTotalAmount", pageTotalAmount);
         model.addAttribute("keyword", keyword);
         model.addAttribute("status", status);
+        model.addAttribute("isCancelledTab", isCancelledTab);
+        model.addAttribute("activeCount", activeCount);
+        model.addAttribute("inactiveCount", inactiveCount);
         model.addAttribute("from", from);
         model.addAttribute("to", to);
         return "admin/purchase-receipts/list";
+    }
+
+    @GetMapping("/inactive")
+    public String listInactive(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "12") int size,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) java.time.LocalDateTime from,
+        @RequestParam(required = false) java.time.LocalDateTime to,
+        Model model
+    ) {
+        return list(page, size, keyword, com.lauriel.store.entity.enums.PurchaseReceiptStatus.CANCELLED, from, to, model);
     }
 
     @GetMapping("/new")

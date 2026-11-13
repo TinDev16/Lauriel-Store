@@ -19,6 +19,20 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
         ActiveStatus status
     );
 
+    long countByStatus(ActiveStatus status);
+
+    @Query(
+        """
+        select new com.lauriel.store.dto.response.CategoryResponse(
+            c.categoryId, c.categoryName, c.status, c.createdAt, count(p.productId))
+        from Category c left join c.products p
+        where c.status = :status
+        group by c.categoryId, c.categoryName, c.status, c.createdAt
+        order by c.categoryName, c.categoryId
+        """
+    )
+    List<CategoryResponse> findAllWithProductCountByStatus(ActiveStatus status);
+
     @Query(
         """
         select new com.lauriel.store.dto.response.CategoryResponse(

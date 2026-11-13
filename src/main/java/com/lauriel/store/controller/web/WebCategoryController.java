@@ -22,9 +22,22 @@ public class WebCategoryController {
     }
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("items", service.listAdmin());
+    public String list(
+        @RequestParam(required = false) ActiveStatus status,
+        Model model
+    ) {
+        ActiveStatus effectiveStatus = (status != null) ? status : ActiveStatus.ACTIVE;
+        model.addAttribute("items", service.listAdmin(effectiveStatus));
+        model.addAttribute("effectiveStatus", effectiveStatus);
+        model.addAttribute("status", status);
+        model.addAttribute("activeCount", service.countByStatus(ActiveStatus.ACTIVE));
+        model.addAttribute("inactiveCount", service.countByStatus(ActiveStatus.INACTIVE));
         return "admin/categories/list";
+    }
+
+    @GetMapping("/inactive")
+    public String listInactive(Model model) {
+        return list(ActiveStatus.INACTIVE, model);
     }
 
     @GetMapping("/new")
@@ -78,15 +91,17 @@ public class WebCategoryController {
         @PathVariable Long id,
         @Valid @ModelAttribute ProductStatusRequest request,
         BindingResult errors,
+        @RequestParam(required = false) String returnUrl,
         RedirectAttributes flash
     ) {
         if (errors.hasErrors()) {
             flash.addFlashAttribute("errorMessage", "Trạng thái không hợp lệ.");
             return "redirect:/admin/categories";
         }
+        String redirect = (returnUrl != null && !returnUrl.isBlank()) ? returnUrl : "/admin/categories";
         return WebActions.action(
             () -> service.updateStatus(id, request.status()),
-            "/admin/categories",
+            redirect,
             flash
         );
     }

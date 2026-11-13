@@ -28,6 +28,22 @@ public class CategoryService {
     }
 
     @Transactional(readOnly = true)
+    public List<CategoryResponse> listAdmin(ActiveStatus status) {
+        if (status == null) {
+            return listAdmin();
+        }
+        return repository.findAllWithProductCountByStatus(status);
+    }
+
+    @Transactional(readOnly = true)
+    public long countByStatus(ActiveStatus status) {
+        if (status == null) {
+            return repository.count();
+        }
+        return repository.countByStatus(status);
+    }
+
+    @Transactional(readOnly = true)
     public List<CategorySummaryResponse> listActive() {
         return repository
             .findByStatusOrderByCategoryNameAscCategoryIdAsc(

@@ -37,7 +37,8 @@
 </td>
 <td th:text="${@view.date(r.endDate)}">
 </td>
-<td th:text="${@view.label(r.status)}">
+<td>
+<span class="badge" th:classappend="${@view.marketingStatusClass(r.status, r.startDate, r.endDate)}" th:text="${@view.marketingStatusText(r.status, r.startDate, r.endDate)}"></span>
 </td>
 <td class="text-nowrap">
 <a class="btn btn-outline-primary btn-sm" th:href="@{/admin/promotions/{id}/edit(id=${r.promotionId})}">Sửa</a>

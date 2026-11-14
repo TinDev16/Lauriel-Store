@@ -65,4 +65,46 @@ public class WebViewSupport {
             default -> value.toString();
         };
     }
+
+    public String marketingStatusText(Object status, Integer quantity, LocalDateTime startDate, LocalDateTime endDate) {
+        if (status == null || "INACTIVE".equals(status.toString())) {
+            return "Ngừng hoạt động";
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (endDate != null && now.isAfter(endDate)) {
+            return "Đã hết hạn";
+        }
+        if (quantity != null && quantity <= 0) {
+            return "Hết lượt dùng";
+        }
+        if (startDate != null && now.isBefore(startDate)) {
+            return "Sắp diễn ra";
+        }
+        return "Đang diễn ra";
+    }
+
+    public String marketingStatusClass(Object status, Integer quantity, LocalDateTime startDate, LocalDateTime endDate) {
+        if (status == null || "INACTIVE".equals(status.toString())) {
+            return "text-bg-secondary";
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (endDate != null && now.isAfter(endDate)) {
+            return "text-bg-danger";
+        }
+        if (quantity != null && quantity <= 0) {
+            return "text-bg-warning text-dark";
+        }
+        if (startDate != null && now.isBefore(startDate)) {
+            return "text-bg-info text-dark";
+        }
+        return "text-bg-success";
+    }
+
+    public String marketingStatusText(Object status, LocalDateTime startDate, LocalDateTime endDate) {
+        return marketingStatusText(status, null, startDate, endDate);
+    }
+
+    public String marketingStatusClass(Object status, LocalDateTime startDate, LocalDateTime endDate) {
+        return marketingStatusClass(status, null, startDate, endDate);
+    }
 }

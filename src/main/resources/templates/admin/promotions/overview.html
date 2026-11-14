@@ -119,8 +119,8 @@
                             <td th:text="${@view.date(r.startDate)}"></td>
                             <td th:text="${@view.date(r.endDate)}"></td>
                             <td>
-                                <span class="badge" th:classappend="${r.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
-                                      th:text="${@view.label(r.status)}"></span>
+                                <span class="badge" th:classappend="${@view.marketingStatusClass(r.status, r.startDate, r.endDate)}"
+                                      th:text="${@view.marketingStatusText(r.status, r.startDate, r.endDate)}"></span>
                             </td>
                             <td class="text-end text-nowrap">
                                 <button type="button" class="btn btn-soft-primary btn-sm btn-quickview"
@@ -256,8 +256,8 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="badge" th:classappend="${r.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
-                                      th:text="${@view.label(r.status)}"></span>
+                                <span class="badge" th:classappend="${@view.marketingStatusClass(r.status, r.quantity, r.startDate, r.endDate)}"
+                                      th:text="${@view.marketingStatusText(r.status, r.quantity, r.startDate, r.endDate)}"></span>
                             </td>
                             <td class="text-end text-nowrap">
                                 <button type="button" class="btn btn-soft-primary btn-sm btn-quickview"
@@ -373,8 +373,8 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="badge" th:classappend="${r.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
-                                      th:text="${@view.label(r.status)}"></span>
+                                <span class="badge" th:classappend="${@view.marketingStatusClass(r.status, r.startDate, r.endDate)}"
+                                      th:text="${@view.marketingStatusText(r.status, r.startDate, r.endDate)}"></span>
                             </td>
                             <td class="text-end text-nowrap">
                                 <button type="button" class="btn btn-soft-primary btn-sm btn-quickview"

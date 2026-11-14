@@ -214,8 +214,8 @@ public class PromotionService {
                 product.getPrice(),
                 product.getImgUrl(),
                 product.getStatus(),
-                price.effectivePrice(),
-                price.promotion()
+                price != null ? price.effectivePrice() : product.getPrice(),
+                price != null ? price.promotion() : null
             );
         });
     }

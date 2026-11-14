@@ -179,46 +179,88 @@
 @media(max-width:575.98px){.account-hero{align-items:flex-start;flex-direction:column}.account-hero .btn{width:100%}.account-filter,.account-info-grid,.account-readonly-access{grid-template-columns:1fr}.account-wide{grid-column:auto}.account-table-card{border-radius:10px}.account-detail-head{padding:1rem}}
 
 /* ==========================================================================
-   Order & Receipt Quick View Side Panel (Drawer)
+   Unified Sub-Form Quick View Side Panel (Drawer)
+   Dùng chung một code cho toàn bộ sub-form / xem trước chi tiết trong hệ thống
+   Thiết kế bo tròn, phân định phạm vi rõ ràng, chuyên nghiệp
    ========================================================================== */
+.app-quickview-panel,
 .order-quickview-panel,
-.receipt-quickview-panel {
+.receipt-quickview-panel,
+.promotion-quickview-panel {
   position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 580px;
+  width: 590px;
   max-width: 95vw;
-  background: var(--bs-body-bg, #ffffff);
-  box-shadow: -10px 0 35px rgba(0, 0, 0, 0.18);
+  background: #f8fafc;
+  box-shadow: -12px 0 40px rgba(15, 23, 42, 0.2);
   z-index: 1045;
   display: flex;
   flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  border-left: 1px solid var(--bs-border-color, #e5e7eb);
+  transform: translateX(calc(100% + 24px));
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), top 0.1s ease;
+  overflow: hidden;
 }
 
+.app-quickview-panel.is-open,
 .order-quickview-panel.is-open,
-.receipt-quickview-panel.is-open {
+.receipt-quickview-panel.is-open,
+.promotion-quickview-panel.is-open {
   transform: translateX(0);
 }
 
+@media (min-width: 992px) {
+  .app-quickview-panel,
+  .order-quickview-panel,
+  .receipt-quickview-panel,
+  .promotion-quickview-panel {
+    top: 76px;
+    right: 16px;
+    bottom: 16px;
+    width: 610px;
+    max-width: calc(100vw - 32px);
+    border-radius: 18px;
+    border: 1.5px solid #cbd5e1;
+    box-shadow: 0 20px 48px -6px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(6, 78, 59, 0.14);
+    background: #f8fafc;
+  }
+}
+
+.app-quickview-header,
 .order-quickview-header,
-.receipt-quickview-header {
-  padding: 1.1rem 1.35rem;
-  border-bottom: 1px solid var(--bs-border-color, #e5e7eb);
+.receipt-quickview-header,
+.promotion-quickview-header {
+  padding: 1.15rem 1.4rem;
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bs-tertiary-bg, #f8f9fa);
+  background: #ffffff;
+  position: relative;
   flex-shrink: 0;
 }
 
+/* Đường viền nhận diện thương hiệu phía trên header */
+.app-quickview-header::before,
+.order-quickview-header::before,
+.receipt-quickview-header::before,
+.promotion-quickview-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--bs-primary, #064e3b), #10b981);
+}
+
+.app-quickview-icon,
 .order-quickview-icon,
-.receipt-quickview-icon {
-  width: 40px;
-  height: 40px;
+.receipt-quickview-icon,
+.promotion-quickview-icon {
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
   background: rgba(var(--bs-primary-rgb, 6, 78, 59), 0.1);
   color: var(--bs-primary, #064e3b);
@@ -226,46 +268,122 @@
   place-items: center;
   font-size: 1.25rem;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(6, 78, 59, 0.12);
 }
 
+.app-quickview-body,
 .order-quickview-body,
-.receipt-quickview-body {
-  padding: 1.25rem;
+.receipt-quickview-body,
+.promotion-quickview-body {
+  padding: 1.25rem 1.4rem;
   overflow-y: auto;
   flex: 1 1 auto;
+  background: #f8fafc;
 }
 
+/* Bo tròn và phân định viền rõ ràng cho từng khối nội dung bên trong sub-form */
+.app-quickview-body .card,
+.order-quickview-body .card,
+.receipt-quickview-body .card,
+.promotion-quickview-body .card {
+  border-radius: 14px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.app-quickview-body .card-header,
+.order-quickview-body .card-header,
+.receipt-quickview-body .card-header,
+.promotion-quickview-body .card-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  padding: 0.75rem 1rem !important;
+  font-weight: 600;
+}
+
+.app-quickview-body .table,
+.order-quickview-body .table,
+.receipt-quickview-body .table,
+.promotion-quickview-body .table {
+  margin-bottom: 0;
+}
+
+.app-quickview-body .table thead th,
+.order-quickview-body .table thead th,
+.receipt-quickview-body .table thead th,
+.promotion-quickview-body .table thead th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.65rem 0.75rem;
+}
+
+.app-quickview-body .table td,
+.order-quickview-body .table td,
+.receipt-quickview-body .table td,
+.promotion-quickview-body .table td {
+  padding: 0.7rem 0.75rem;
+  border-color: #f1f5f9;
+}
+
+/* Các nút bấm bo tròn đẹp mắt */
+.app-quickview-body .btn,
+.order-quickview-body .btn,
+.receipt-quickview-body .btn,
+.promotion-quickview-body .btn {
+  border-radius: 10px;
+}
+
+.app-quickview-body::-webkit-scrollbar,
 .order-quickview-body::-webkit-scrollbar,
-.receipt-quickview-body::-webkit-scrollbar {
+.receipt-quickview-body::-webkit-scrollbar,
+.promotion-quickview-body::-webkit-scrollbar {
   width: 6px;
 }
+.app-quickview-body::-webkit-scrollbar-thumb,
 .order-quickview-body::-webkit-scrollbar-thumb,
-.receipt-quickview-body::-webkit-scrollbar-thumb {
+.receipt-quickview-body::-webkit-scrollbar-thumb,
+.promotion-quickview-body::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
 }
 
 /* Row active styling */
+tr.quickview-row,
 tr.order-row,
-tr.receipt-row {
+tr.receipt-row,
+tr.promotion-row {
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
+tr.quickview-row-active,
 tr.order-row-active,
-tr.receipt-row-active {
+tr.receipt-row-active,
+tr.promotion-row-active {
   background-color: rgba(var(--bs-primary-rgb, 6, 78, 59), 0.08) !important;
   box-shadow: inset 4px 0 0 var(--bs-primary, #064e3b);
 }
 
+tr.quickview-row-active td,
 tr.order-row-active td,
-tr.receipt-row-active td {
+tr.receipt-row-active td,
+tr.promotion-row-active td {
   background-color: transparent !important;
 }
 
 /* Quickview backdrop for mobile only */
+.app-quickview-backdrop,
 .order-quickview-backdrop,
-.receipt-quickview-backdrop {
+.receipt-quickview-backdrop,
+.promotion-quickview-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
@@ -276,8 +394,10 @@ tr.receipt-row-active td {
 }
 
 @media (max-width: 767.98px) {
+  .app-quickview-backdrop.show,
   .order-quickview-backdrop.show,
-  .receipt-quickview-backdrop.show {
+  .receipt-quickview-backdrop.show,
+  .promotion-quickview-backdrop.show {
     opacity: 1;
     visibility: visible;
   }

@@ -40,7 +40,7 @@ public class WebPromotionController {
 
     @GetMapping("/overview")
     public String overview(
-        @RequestParam(defaultValue = "overview") String tab,
+        @RequestParam(defaultValue = "promotions") String tab,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "12") int size,
         @RequestParam(required = false) String keyword,
@@ -49,6 +49,9 @@ public class WebPromotionController {
         @RequestParam(required = false) String timeFilter,
         Model m
     ) {
+        if (tab == null || tab.isBlank() || "overview".equalsIgnoreCase(tab)) {
+            tab = "promotions";
+        }
         var overviewData = marketingOverview.getOverview();
         m.addAttribute("overview", overviewData);
         m.addAttribute("currentTab", tab);
@@ -76,6 +79,16 @@ public class WebPromotionController {
             );
         }
         return "admin/promotions/overview";
+    }
+
+    @GetMapping("/{id}/preview")
+    public String preview(@PathVariable Long id, Model m) {
+        var promo = promotions.detail(id);
+        var productsPage = promotions.products(id, 0, 10);
+        m.addAttribute("promotion", promo);
+        m.addAttribute("products", productsPage.content());
+        m.addAttribute("totalProducts", productsPage.totalElements());
+        return "admin/promotions/preview";
     }
 
     @GetMapping
@@ -218,7 +231,7 @@ public class WebPromotionController {
             "selectableProducts",
             promotions.selectableProducts(id, candidateKeyword, categoryId)
         );
-        m.addAttribute("categories", categories.listAdmin());
+        m.addAttribute("categories", categories.listActive());
         m.addAttribute("keyword", keyword);
         m.addAttribute("status", status);
         m.addAttribute("candidateKeyword", candidateKeyword);

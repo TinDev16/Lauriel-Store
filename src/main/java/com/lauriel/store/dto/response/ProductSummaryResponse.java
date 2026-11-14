@@ -11,8 +11,32 @@ public record ProductSummaryResponse(
     String imgUrl,
     ActiveStatus status,
     BigDecimal effectivePrice,
-    PromotionInfoResponse promotion
+    PromotionInfoResponse promotion,
+    Long totalStock
 ) {
+    public ProductSummaryResponse(
+        Long productId,
+        String productName,
+        CategorySummaryResponse category,
+        BigDecimal price,
+        String imgUrl,
+        ActiveStatus status,
+        BigDecimal effectivePrice,
+        PromotionInfoResponse promotion
+    ) {
+        this(
+            productId,
+            productName,
+            category,
+            price,
+            imgUrl,
+            status,
+            effectivePrice,
+            promotion,
+            null
+        );
+    }
+
     public ProductSummaryResponse(
         Long productId,
         String productName,
@@ -29,7 +53,20 @@ public record ProductSummaryResponse(
             imgUrl,
             status,
             price,
+            null,
             null
         );
+    }
+
+    public boolean isOutOfStock() {
+        return totalStock != null && totalStock <= 0;
+    }
+
+    public boolean isInStock() {
+        return totalStock == null || totalStock > 0;
+    }
+
+    public String imageUrl() {
+        return imgUrl;
     }
 }

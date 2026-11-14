@@ -29,7 +29,10 @@ public class WebStoreHomeController {
     }
 
     @GetMapping("/shop")
-    public String home(Model model) {
+    public String home(
+        @org.springframework.web.bind.annotation.CookieValue(name = "lauriel_viewed", required = false) String viewedCookie,
+        Model model
+    ) {
         model.addAttribute("categories", categories.listActive());
         model.addAttribute("products", products.featured(8));
         model.addAttribute("promotions", promotions.list(0, 6, true).content());
@@ -38,6 +41,16 @@ public class WebStoreHomeController {
             orderPromotions.active(0, 6).content()
         );
         model.addAttribute("vouchers", vouchers.listAvailable(0, 6).content());
+
+        java.util.List<Long> viewedIds = new java.util.ArrayList<>();
+        if (viewedCookie != null && !viewedCookie.isBlank()) {
+            for (String part : viewedCookie.split("[-_,]")) {
+                try {
+                    viewedIds.add(Long.valueOf(part.trim()));
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        model.addAttribute("recentlyViewed", products.listByIds(viewedIds));
         return "store/home";
     }
 }

@@ -318,5 +318,302 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-submit-once]').forEach(form => form.addEventListener('submit', () => {
     const button = form.querySelector('[data-submit-button]'); if (button) { button.disabled = true; button.classList.add('loading'); button.querySelector('span').textContent = 'Đang đặt hàng…'; }
   }));
-  window.setTimeout(() => document.querySelectorAll('.store-toast').forEach(alert => alert.classList.add('hide')), 4500);
+
+  // Toast notification helper: delegates to unified window.showToast
+  function showStoreToast(message, type = 'success', duration = 1500) {
+    if (typeof window.showToast === 'function') {
+      return window.showToast(message, type, duration);
+    }
+  }
+
+  // Header cart badge update
+  function updateStoreCartBadge(count) {
+    let badge = document.querySelector('.store-cart-badge');
+    if (badge) {
+      badge.textContent = count;
+      badge.style.display = count > 0 ? '' : 'none';
+    } else if (count > 0) {
+      const cartLink = document.querySelector('a[href="/shop/cart"]');
+      if (cartLink) {
+        badge = document.createElement('span');
+        badge.className = 'store-cart-badge';
+        badge.textContent = count;
+        cartLink.appendChild(badge);
+      }
+    }
+  }
+
+  // CSRF tokens
+  function getCsrfInfo() {
+    const tokenMeta = document.querySelector('meta[name="_csrf"]');
+    const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+    const token = tokenMeta ? tokenMeta.getAttribute('content') : '';
+    const header = headerMeta ? headerMeta.getAttribute('content') : 'X-CSRF-TOKEN';
+    return { token, header };
+  }
+
+  // Handle Add to Cart from Product Card
+  async function handleCardAddToCart(productId, quantity, button) {
+    if (!productId) return;
+    if (button) button.disabled = true;
+    try {
+      const { token, header } = getCsrfInfo();
+      const formData = new FormData();
+      formData.append('productId', productId);
+      formData.append('quantity', quantity);
+      if (token) formData.append('_csrf', token);
+
+      const headers = {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      };
+      if (token && header) headers[header] = token;
+
+      const res = await fetch('/shop/cart/add', {
+        method: 'POST',
+        headers,
+        body: formData
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success) {
+        showStoreToast(data.message || 'Thêm vào giỏ hàng thành công!', 'success', 1500);
+        if (data.cartCount !== undefined) updateStoreCartBadge(data.cartCount);
+      } else {
+        showStoreToast(data?.message || 'Không thể thêm vào giỏ hàng.', 'error', 1500);
+      }
+    } catch (err) {
+      showStoreToast('Lỗi kết nối khi thêm vào giỏ hàng.', 'error', 1500);
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  // Handle Buy Now from Product Card
+  function handleCardBuyNow(productId, quantity) {
+    if (!productId) return;
+    const { token } = getCsrfInfo();
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/shop/cart/buy-now';
+    form.style.display = 'none';
+
+    const pInput = document.createElement('input');
+    pInput.type = 'hidden';
+    pInput.name = 'productId';
+    pInput.value = productId;
+    form.appendChild(pInput);
+
+    const qInput = document.createElement('input');
+    qInput.type = 'hidden';
+    qInput.name = 'quantity';
+    qInput.value = quantity;
+    form.appendChild(qInput);
+
+    if (token) {
+      const csrfInput = document.createElement('input');
+      csrfInput.type = 'hidden';
+      csrfInput.name = '_csrf';
+      csrfInput.value = token;
+      form.appendChild(csrfInput);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  // Delegate click for product card stepper & buttons
+  document.addEventListener('click', event => {
+    const minusBtn = event.target.closest('[data-card-qty-minus]');
+    if (minusBtn) {
+      const stepper = minusBtn.closest('.store-card-qty-stepper');
+      const input = stepper?.querySelector('[data-card-qty-input]');
+      if (input) {
+        input.value = Math.max(1, Number(input.value || 1) - 1);
+      }
+      return;
+    }
+
+    const plusBtn = event.target.closest('[data-card-qty-plus]');
+    if (plusBtn) {
+      const stepper = plusBtn.closest('.store-card-qty-stepper');
+      const input = stepper?.querySelector('[data-card-qty-input]');
+      if (input) {
+        input.value = Math.min(999, Number(input.value || 1) + 1);
+      }
+      return;
+    }
+
+    const addBtn = event.target.closest('[data-card-add-cart]');
+    if (addBtn) {
+      const card = addBtn.closest('[data-product-card]');
+      const productId = addBtn.dataset.productId;
+      const input = card?.querySelector('[data-card-qty-input]');
+      const quantity = Math.max(1, Number(input?.value || 1));
+      handleCardAddToCart(productId, quantity, addBtn);
+      return;
+    }
+
+    const buyBtn = event.target.closest('[data-card-buy-now]');
+    if (buyBtn) {
+      const card = buyBtn.closest('[data-product-card]');
+      const productId = buyBtn.dataset.productId;
+      const input = card?.querySelector('[data-card-qty-input]');
+      const quantity = Math.max(1, Number(input?.value || 1));
+      handleCardBuyNow(productId, quantity);
+      return;
+    }
+  });
+
+  // Intercept standard Add-to-Cart form submits (e.g. from Product Detail page)
+  document.addEventListener('submit', async event => {
+    const form = event.target;
+    if (form && form.action && form.action.includes('/shop/cart/add')) {
+      event.preventDefault();
+      const submitBtn = form.querySelector('[data-purchase-button], button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      try {
+        const formData = new FormData(form);
+        const { token, header } = getCsrfInfo();
+        const headers = {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        };
+        if (token && header && !formData.has('_csrf')) headers[header] = token;
+
+        const res = await fetch(form.action, {
+          method: 'POST',
+          headers,
+          body: formData
+        });
+        const data = await res.json().catch(() => null);
+        if (res.ok && data?.success) {
+          showStoreToast(data.message || 'Thêm vào giỏ hàng thành công!', 'success', 1500);
+          if (data.cartCount !== undefined) updateStoreCartBadge(data.cartCount);
+        } else {
+          showStoreToast(data?.message || 'Không thể thêm vào giỏ hàng.', 'error', 1500);
+        }
+      } catch (err) {
+        showStoreToast('Lỗi kết nối khi thêm vào giỏ hàng.', 'error', 1500);
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    }
+  });
+
+  // Track recently viewed products in localStorage & cookie (works even without login)
+  const detailMain = document.querySelector('[data-detail-product-id]');
+  if (detailMain) {
+    const pid = detailMain.dataset.detailProductId;
+    if (pid) {
+      try {
+        let viewed = JSON.parse(localStorage.getItem('lauriel_viewed') || '[]');
+        if (!Array.isArray(viewed)) viewed = [];
+        viewed = [Number(pid), ...viewed.filter(id => Number(id) !== Number(pid))].slice(0, 12);
+        localStorage.setItem('lauriel_viewed', JSON.stringify(viewed));
+        document.cookie = `lauriel_viewed=${viewed.join('-')}; path=/; max-age=2592000; SameSite=Lax`;
+      } catch (e) {}
+    }
+  }
+
+  // Clear recently viewed button handler
+  document.addEventListener('click', async event => {
+    const clearBtn = event.target.closest('[data-clear-recently-viewed]');
+    if (!clearBtn) return;
+    clearBtn.disabled = true;
+    try {
+      localStorage.removeItem('lauriel_viewed');
+      document.cookie = 'lauriel_viewed=; path=/; max-age=0; SameSite=Lax';
+
+      const { token, header } = getCsrfInfo();
+      const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+      if (token && header) headers[header] = token;
+
+      await fetch('/shop/products/clear-recently-viewed', {
+        method: 'POST',
+        headers
+      });
+
+      const section = document.getElementById('recentlyViewedSection');
+      if (section) {
+        section.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        section.style.opacity = '0';
+        section.style.transform = 'translateY(10px)';
+        window.setTimeout(() => section.remove(), 300);
+      }
+      showStoreToast('Đã xóa lịch sử xem sản phẩm.', 'info');
+    } catch (e) {
+      showStoreToast('Không thể xóa lịch sử xem.', 'error');
+    } finally {
+      clearBtn.disabled = false;
+    }
+  });
+
+  // Save scroll position and origin URL before navigating to a product detail page
+  document.addEventListener('click', event => {
+    const productLink = event.target.closest('a[href*="/shop/products/"]');
+    if (!productLink) return;
+    if (productLink.closest('[data-store-back]') || event.target.closest('button')) return;
+
+    const card = productLink.closest('[data-product-card]');
+    const pid = card?.dataset?.cardProductId ||
+                productLink.getAttribute('href').split('/shop/products/')[1]?.split('?')[0];
+
+    sessionStorage.setItem('store_return_url', window.location.href);
+    sessionStorage.setItem('store_return_scroll_y', String(window.scrollY));
+    if (pid) {
+      sessionStorage.setItem('store_return_product_id', String(pid));
+    }
+  });
+
+  // Back button handler on Product Detail page
+  document.addEventListener('click', event => {
+    const backBtn = event.target.closest('[data-store-back]');
+    if (!backBtn) return;
+    event.preventDefault();
+
+    const returnUrl = sessionStorage.getItem('store_return_url');
+    if (window.history.length > 1 && document.referrer && document.referrer.includes(window.location.host)) {
+      window.history.back();
+    } else if (returnUrl && !returnUrl.includes(window.location.pathname)) {
+      window.location.href = returnUrl;
+    } else {
+      window.location.href = '/shop';
+    }
+  });
+
+  // Restore exact scroll position when returning from product detail
+  function tryRestoreProductScroll() {
+    const returnUrl = sessionStorage.getItem('store_return_url');
+    const savedY = sessionStorage.getItem('store_return_scroll_y');
+    const targetPid = sessionStorage.getItem('store_return_product_id');
+
+    if (returnUrl && window.location.href.split('#')[0] === returnUrl.split('#')[0] && savedY !== null) {
+      const targetScroll = parseInt(savedY, 10);
+      if (!isNaN(targetScroll)) {
+        window.requestAnimationFrame(() => {
+          window.scrollTo({ top: targetScroll, behavior: 'instant' });
+        });
+        window.setTimeout(() => {
+          window.scrollTo({ top: targetScroll, behavior: 'instant' });
+        }, 120);
+      }
+
+      if (targetPid) {
+        window.setTimeout(() => {
+          const card = document.getElementById(`product-card-${targetPid}`) ||
+                       document.querySelector(`[data-card-product-id="${targetPid}"]`);
+          if (card) {
+            card.classList.add('store-card-returned');
+            window.setTimeout(() => card.classList.remove('store-card-returned'), 1600);
+          }
+        }, 150);
+      }
+
+      sessionStorage.removeItem('store_return_scroll_y');
+      sessionStorage.removeItem('store_return_product_id');
+    }
+  }
+
+  window.addEventListener('pageshow', tryRestoreProductScroll);
+  tryRestoreProductScroll();
 });

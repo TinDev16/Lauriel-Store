@@ -94,7 +94,13 @@
                         </thead>
                     <tbody>
                         <tr th:each="r:${page.content}" th:id="|receipt-row-${r.receiptId}|"
-                            th:data-receipt-id="${r.receiptId}" class="receipt-row">
+                            th:data-receipt-id="${r.receiptId}"
+                            th:data-quickview-url="@{/admin/purchase-receipts/{id}/preview(id=${r.receiptId})}"
+                            th:data-quickview-title="|Phiếu nhập #PN-${r.receiptId}|"
+                            data-quickview-subtitle="Xem nhanh thông tin nhập hàng"
+                            data-quickview-icon="bi-box-seam"
+                            th:data-quickview-full-link="@{/admin/purchase-receipts/{id}(id=${r.receiptId})}"
+                            class="receipt-row quickview-row">
         <td class="fw-semibold text-nowrap" th:text="|#PN-${r.receiptId}|"></td>
         <td><span class="fw-semibold" th:text="${r.supplier.supplierName}"></span></td>
         <td class="text-nowrap" th:text="${@view.date(r.createdAt)}"></td>
@@ -116,11 +122,15 @@
         <td class="text-end fw-bold text-success text-nowrap" th:text="${@view.money(r.totalAmount)}"></td>
         <td class="text-center text-nowrap">
             <div class="table-actions justify-content-center">
-                <a class="btn btn-soft-primary btn-receipt-preview"
-                    th:href="@{/admin/purchase-receipts/{id}(id=${r.receiptId})}" th:data-receipt-id="${r.receiptId}"
+                <button type="button" class="btn btn-soft-primary btn-sm btn-quickview"
+                    th:data-quickview-url="@{/admin/purchase-receipts/{id}/preview(id=${r.receiptId})}"
+                    th:data-quickview-title="|Phiếu nhập #PN-${r.receiptId}|"
+                    data-quickview-subtitle="Xem nhanh thông tin nhập hàng"
+                    data-quickview-icon="bi-box-seam"
+                    th:data-quickview-full-link="@{/admin/purchase-receipts/{id}(id=${r.receiptId})}"
                     title="Xem nhanh chi tiết bên phải">
-                    <i class="bi bi-layout-sidebar-inset-reverse"></i>Chi tiết
-                </a>
+                    <i class="bi bi-layout-sidebar-inset-reverse me-1"></i>Chi tiết
+                </button>
             </div>
         </td>
         </tr>
@@ -145,33 +155,6 @@
         </div>
         </div>
         <div th:replace="~{fragments/pagination :: pagination}"></div>
-
-        <!-- Purchase Receipt Quick View Side Panel -->
-        <div class="receipt-quickview-backdrop" id="receiptQuickviewBackdrop"></div>
-        <aside class="receipt-quickview-panel shadow-lg" id="receiptQuickviewPanel" aria-hidden="true">
-            <div class="receipt-quickview-header">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="receipt-quickview-icon"><i class="bi bi-box-seam"></i></span>
-                    <div>
-                        <h2 class="h6 mb-0 fw-bold" id="receiptQuickviewTitle">Chi tiết phiếu nhập</h2>
-                        <small class="text-muted" id="receiptQuickviewSubtitle">Xem nhanh thông tin nhập hàng</small>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center gap-1">
-                    <a href="#" id="receiptQuickviewFullLink" class="btn btn-sm btn-outline-secondary" target="_blank"
-                        title="Mở trang chi tiết đầy đủ trong tab mới">
-                        <i class="bi bi-box-arrow-up-right"></i>
-                    </a>
-                    <button type="button" class="btn-close ms-2" id="receiptQuickviewClose" aria-label="Đóng"></button>
-                </div>
-            </div>
-            <div class="receipt-quickview-body" id="receiptQuickviewBody">
-                <div class="receipt-quickview-empty text-center p-5 text-muted">
-                    <i class="bi bi-box-seam fs-1 mb-2 d-block"></i>
-                    <p>Vui lòng chọn một phiếu nhập để xem chi tiết.</p>
-                </div>
-            </div>
-        </aside>
     </section>
 </body>
 

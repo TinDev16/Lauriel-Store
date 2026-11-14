@@ -176,7 +176,7 @@ public class WebProductController {
         model.addAttribute("page", result);
         model.addAttribute("counts", metrics.attributeCounts());
         model.addAttribute("stockTotals", metrics.stockTotals());
-        model.addAttribute("categories", categories.listAdmin());
+        model.addAttribute("categories", categories.listActive());
         model.addAttribute("keyword", keyword);
         model.addAttribute("categoryId", categoryId);
         model.addAttribute("status", status);

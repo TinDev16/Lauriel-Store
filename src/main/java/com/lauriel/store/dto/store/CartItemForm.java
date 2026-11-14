@@ -5,6 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public record CartItemForm(
-    @NotNull @Positive Long variantId,
+    @Positive Long variantId,
     @NotNull @Positive @Max(1000) Integer quantity
 ) {}

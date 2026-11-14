@@ -102,7 +102,7 @@
 <div class="sidebar-menu-title">Tiếp thị</div>
 <ul class="sidebar-menu-list">
 <li class="sidebar-menu-item">
-<a class="sidebar-menu-link" th:classappend="${menu == 'promotions-overview' or menu == 'promotions' or menu == 'vouchers' or menu == 'order-promotions'} ? 'active'" th:href="@{/admin/promotions/overview}">
+<a class="sidebar-menu-link" th:classappend="${menu == 'promotions-overview' or menu == 'promotions' or menu == 'vouchers' or menu == 'order-promotions'} ? 'active'" th:href="@{/admin/promotions/overview(tab='promotions')}">
 <i class="bi bi-megaphone"></i>
 <span>Khuyến mãi &amp; Tiếp thị</span>
 </a>

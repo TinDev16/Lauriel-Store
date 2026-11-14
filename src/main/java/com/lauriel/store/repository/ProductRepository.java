@@ -79,6 +79,13 @@ public interface ProductRepository
         ActiveStatus categoryStatus
     );
 
+    @EntityGraph(attributePaths = "category")
+    List<Product> findByProductIdInAndStatusAndCategory_Status(
+        java.util.Collection<Long> productIds,
+        ActiveStatus productStatus,
+        ActiveStatus categoryStatus
+    );
+
     boolean existsByProductIdAndStatus(Long productId, ActiveStatus status);
 
     @EntityGraph(attributePaths = "category")

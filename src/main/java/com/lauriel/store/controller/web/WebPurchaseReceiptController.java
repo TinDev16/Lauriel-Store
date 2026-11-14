@@ -28,17 +28,22 @@ public class WebPurchaseReceiptController {
     private final SupplierService suppliers;
     private final InventoryService inventory;
     private final com.lauriel.store.service.PurchaseReceiptExcelExportService exportService;
+    private final com.lauriel.store.service.ProductService products;
+
+    public record ReceiptProductItem(Long productId, String productName, java.math.BigDecimal basePrice) {}
 
     public WebPurchaseReceiptController(
         PurchaseReceiptService receipts,
         SupplierService suppliers,
         InventoryService inventory,
-        com.lauriel.store.service.PurchaseReceiptExcelExportService exportService
+        com.lauriel.store.service.PurchaseReceiptExcelExportService exportService,
+        com.lauriel.store.service.ProductService products
     ) {
         this.receipts = receipts;
         this.suppliers = suppliers;
         this.inventory = inventory;
         this.exportService = exportService;
+        this.products = products;
     }
 
     @GetMapping("/export.xlsx")
@@ -217,39 +222,61 @@ public class WebPurchaseReceiptController {
     @PostMapping("/{id}/complete")
     public String complete(
         @PathVariable Long id,
+        @RequestParam(required = false) String redirect,
+        @RequestHeader(value = "Referer", required = false) String referer,
         @AuthenticationPrincipal StoreUserDetails actor,
         RedirectAttributes flash
     ) {
+        String target = resolveRedirect(redirect, referer, "/admin/purchase-receipts/" + id);
         return WebActions.action(
             () -> receipts.complete(id, actor.getUserId()),
-            "/admin/purchase-receipts/" + id,
+            target,
             flash
         );
     }
 
     @PostMapping("/{id}/cancel")
-    public String cancel(@PathVariable Long id, RedirectAttributes flash) {
+    public String cancel(
+        @PathVariable Long id,
+        @RequestParam(required = false) String redirect,
+        @RequestHeader(value = "Referer", required = false) String referer,
+        RedirectAttributes flash
+    ) {
+        String target = resolveRedirect(redirect, referer, "/admin/purchase-receipts/" + id);
         return WebActions.action(
             () -> receipts.cancel(id),
-            "/admin/purchase-receipts/" + id,
+            target,
             flash
         );
+    }
+
+    private String resolveRedirect(String redirect, String referer, String fallback) {
+        if (redirect != null && !redirect.isBlank() && redirect.startsWith("/")) {
+            return redirect;
+        }
+        if (referer != null && !referer.isBlank()) {
+            try {
+                var uri = java.net.URI.create(referer);
+                String path = uri.getPath();
+                if (path != null && path.startsWith("/admin")) {
+                    String query = uri.getQuery();
+                    return path + (query != null ? "?" + query : "");
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return fallback;
     }
 
     private String detailModel(Long id, Model model) {
         model.addAttribute("receipt", receipts.detail(id));
         var variants = inventory.selectableVariants();
-        var products = variants
-            .stream()
-            .collect(
-                Collectors.toMap(
-                    InventoryResponse::productId,
-                    variant -> variant,
-                    (current, ignored) -> current,
-                    LinkedHashMap::new
-                )
-            );
-        model.addAttribute("receiptProducts", products);
+        var allProducts = products.listAll();
+        var productMap = new LinkedHashMap<Long, ReceiptProductItem>();
+        for (var p : allProducts) {
+            productMap.put(p.getProductId(), new ReceiptProductItem(p.getProductId(), p.getProductName(), p.getPrice()));
+        }
+        model.addAttribute("receiptProducts", productMap);
         model.addAttribute("variants", variants);
         return "admin/purchase-receipts/detail";
     }

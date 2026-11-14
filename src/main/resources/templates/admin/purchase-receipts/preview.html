@@ -2,48 +2,6 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <body>
 <div class="receipt-preview-content">
-    <!-- Header info card -->
-    <div class="card mb-3 border-0 bg-light shadow-sm">
-        <div class="card-body p-3">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                    <h5 class="mb-1 text-primary fw-bold" th:text="|Phiếu nhập #PN-${receipt.receiptId}|">#PN-123</h5>
-                    <small class="text-muted">
-                        <i class="bi bi-clock me-1"></i><span th:text="${@view.date(receipt.createdAt)}">dd/MM/yyyy HH:mm</span>
-                    </small>
-                </div>
-                <span class="badge fs-6 px-3 py-2"
-                      th:classappend="${receipt.status.name() == 'DRAFT'} ? 'text-bg-warning' : (${receipt.status.name() == 'COMPLETED'} ? 'text-bg-success' : 'text-bg-secondary')"
-                      th:text="${@view.label(receipt.status)}">
-                    Trạng thái
-                </span>
-            </div>
-            <div class="mt-2 pt-2 border-top small">
-                <div class="mb-1 d-flex" th:if="${receipt.supplier != null}">
-                    <span class="text-muted text-nowrap me-2" style="width: 110px;">
-                        <i class="bi bi-building me-1"></i>Nhà cung cấp:
-                    </span>
-                    <span class="fw-semibold" th:text="${receipt.supplier.supplierName}">Tên nhà cung cấp</span>
-                </div>
-                <div class="mb-1 d-flex" th:if="${receipt.supplier != null and receipt.supplier.phone != null and !#strings.isEmpty(receipt.supplier.phone)}">
-                    <span class="text-muted text-nowrap me-2" style="width: 110px;">
-                        <i class="bi bi-telephone me-1"></i>Điện thoại:
-                    </span>
-                    <span>
-                        <a th:href="|tel:${receipt.supplier.phone}|" class="text-decoration-none fw-semibold" th:text="${receipt.supplier.phone}">0912345678</a>
-                    </span>
-                </div>
-                <div class="d-flex">
-                    <span class="text-muted text-nowrap me-2" style="width: 110px;">
-                        <i class="bi bi-person me-1"></i>Người lập phiếu:
-                    </span>
-                    <span class="fw-semibold" th:if="${receipt.createdBy != null}" th:text="${receipt.createdBy.fullName != null and !#strings.isEmpty(receipt.createdBy.fullName) ? receipt.createdBy.fullName : receipt.createdBy.username}">Admin</span>
-                    <span class="text-muted" th:if="${receipt.createdBy == null}">Không có thông tin</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Items list -->
     <div class="card mb-3 border shadow-sm">
         <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center">
@@ -103,6 +61,38 @@
         </div>
     </div>
 
+    <!-- Supplier & Creator info card (chuyển xuống dưới dữ liệu tiền) -->
+    <div class="card mb-3 border shadow-sm">
+        <div class="card-header bg-white py-2 px-3">
+            <strong class="small text-uppercase text-secondary">
+                <i class="bi bi-building me-1"></i>Thông tin nhà cung cấp &amp; người lập
+            </strong>
+        </div>
+        <div class="card-body p-3 small">
+            <div class="mb-2 d-flex align-items-baseline" th:if="${receipt.supplier != null}">
+                <span class="text-muted text-nowrap me-2" style="width: 125px;">
+                    <i class="bi bi-building me-1"></i>Nhà cung cấp:
+                </span>
+                <span class="fw-semibold text-dark" th:text="${receipt.supplier.supplierName}">Tên nhà cung cấp</span>
+            </div>
+            <div class="mb-2 d-flex align-items-baseline" th:if="${receipt.supplier != null and receipt.supplier.phone != null and !#strings.isEmpty(receipt.supplier.phone)}">
+                <span class="text-muted text-nowrap me-2" style="width: 125px;">
+                    <i class="bi bi-telephone me-1"></i>Điện thoại:
+                </span>
+                <span>
+                    <a th:href="|tel:${receipt.supplier.phone}|" class="text-decoration-none fw-semibold" th:text="${receipt.supplier.phone}">0912345678</a>
+                </span>
+            </div>
+            <div class="d-flex align-items-baseline">
+                <span class="text-muted text-nowrap me-2" style="width: 125px;">
+                    <i class="bi bi-person me-1"></i>Người lập phiếu:
+                </span>
+                <span class="fw-semibold text-dark" th:if="${receipt.createdBy != null}" th:text="${receipt.createdBy.fullName != null and !#strings.isEmpty(receipt.createdBy.fullName) ? receipt.createdBy.fullName : receipt.createdBy.username}">Admin</span>
+                <span class="text-muted" th:if="${receipt.createdBy == null}">Không có thông tin</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Action buttons -->
     <div class="d-flex flex-column gap-2 mb-2 receipt-preview-actions">
         <div class="d-flex gap-2">
@@ -136,7 +126,7 @@
             </form>
         </div>
 
-        <button type="button" class="btn btn-outline-secondary btn-receipt-quickview-close">
+        <button type="button" class="btn btn-outline-secondary btn-receipt-quickview-close btn-quickview-close">
             <i class="bi bi-x-lg me-1"></i>Đóng
         </button>
     </div>

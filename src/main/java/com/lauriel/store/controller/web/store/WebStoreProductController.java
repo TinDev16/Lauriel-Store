@@ -68,8 +68,14 @@ public class WebStoreProductController {
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model) {
+    public String detail(
+        @PathVariable Long id,
+        @CookieValue(name = "lauriel_viewed", required = false) String viewedCookie,
+        jakarta.servlet.http.HttpServletResponse response,
+        Model model
+    ) {
         var product = products.getPublicDetail(id);
+        updateRecentlyViewedCookie(id, viewedCookie, response);
         var uniqueSizes = new LinkedHashMap<
             Long,
             com.lauriel.store.dto.response.SizeResponse
@@ -90,5 +96,48 @@ public class WebStoreProductController {
         model.addAttribute("colors", uniqueColors.values());
         model.addAttribute("related", products.related(id, 6));
         return "store/product-detail";
+    }
+
+    @PostMapping("/clear-recently-viewed")
+    @ResponseBody
+    public java.util.Map<String, Object> clearRecentlyViewed(jakarta.servlet.http.HttpServletResponse response) {
+        org.springframework.http.ResponseCookie cookie = org.springframework.http.ResponseCookie.from("lauriel_viewed", "")
+            .path("/")
+            .maxAge(0)
+            .sameSite("Lax")
+            .httpOnly(false)
+            .build();
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
+        return java.util.Map.of("success", true);
+    }
+
+    private void updateRecentlyViewedCookie(
+        Long currentId,
+        String viewedCookie,
+        jakarta.servlet.http.HttpServletResponse response
+    ) {
+        java.util.List<Long> ids = new java.util.ArrayList<>();
+        ids.add(currentId);
+        if (viewedCookie != null && !viewedCookie.isBlank()) {
+            for (String part : viewedCookie.split("[-_,]")) {
+                try {
+                    Long pid = Long.valueOf(part.trim());
+                    if (!pid.equals(currentId) && !ids.contains(pid)) {
+                        ids.add(pid);
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        if (ids.size() > 12) {
+            ids = ids.subList(0, 12);
+        }
+        String newVal = ids.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining("-"));
+        org.springframework.http.ResponseCookie cookie = org.springframework.http.ResponseCookie.from("lauriel_viewed", newVal)
+            .path("/")
+            .maxAge(java.time.Duration.ofDays(30))
+            .sameSite("Lax")
+            .httpOnly(false)
+            .build();
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }

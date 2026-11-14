@@ -68,11 +68,16 @@
                         </thead>
                         <tbody>
                             <tr th:each="r:${page.content}" th:id="|order-row-${r.orderId}|"
-                                th:data-order-id="${r.orderId}" class="order-row">
+                                th:data-order-id="${r.orderId}"
+                                th:data-quickview-url="@{/admin/orders/{id}/preview(id=${r.orderId})}"
+                                th:data-quickview-title="|Đơn hàng #${r.orderId}|"
+                                data-quickview-subtitle="Thông tin chi tiết hóa đơn"
+                                data-quickview-icon="bi-receipt"
+                                th:data-quickview-full-link="@{/admin/orders/{id}(id=${r.orderId})}"
+                                class="order-row quickview-row">
                                 <td class="fw-semibold" th:text="|#${r.orderId}|"></td>
                                 <td>
                                     <a class="text-decoration-none fw-semibold text-dark hover-primary" th:href="@{/admin/orders(customerId=${r.customerId})}" th:text="${customerNames.get(r.customerId)}" title="Xem tất cả đơn của khách này"></a>
-                                    <small class="text-muted" th:text="| (#${r.customerId})|"></small>
                                 </td>
                                 <td class="text-nowrap" th:text="${@view.date(r.createdAt)}"></td>
                                 <td>
@@ -94,11 +99,15 @@
                                 </td>
                                 <td class="text-end text-nowrap fw-bold text-primary fs-6" th:text="${@view.money(r.finalAmount)}"></td>
                                 <td class="text-center text-nowrap">
-                                    <a class="btn btn-outline-primary btn-sm btn-order-preview"
-                                        th:href="@{/admin/orders/{id}(id=${r.orderId})}" th:data-order-id="${r.orderId}"
+                                    <button type="button" class="btn btn-outline-primary btn-sm btn-quickview"
+                                        th:data-quickview-url="@{/admin/orders/{id}/preview(id=${r.orderId})}"
+                                        th:data-quickview-title="|Đơn hàng #${r.orderId}|"
+                                        data-quickview-subtitle="Thông tin chi tiết hóa đơn"
+                                        data-quickview-icon="bi-receipt"
+                                        th:data-quickview-full-link="@{/admin/orders/{id}(id=${r.orderId})}"
                                         title="Xem nhanh bên phải">
                                         <i class="bi bi-layout-sidebar-inset-reverse me-1"></i>Chi tiết
-                                    </a>
+                                    </button>
                                 </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(page.content)}">
@@ -120,33 +129,6 @@
         </div>
         <div th:replace="~{fragments/pagination :: pagination}">
         </div>
-
-        <!-- Order Quick View Side Panel -->
-        <div class="order-quickview-backdrop" id="orderQuickviewBackdrop"></div>
-        <aside class="order-quickview-panel shadow-lg" id="orderQuickviewPanel" aria-hidden="true">
-            <div class="order-quickview-header">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="order-quickview-icon"><i class="bi bi-receipt"></i></span>
-                    <div>
-                        <h2 class="h6 mb-0 fw-bold" id="orderQuickviewTitle">Chi tiết đơn hàng</h2>
-                        <small class="text-muted" id="orderQuickviewSubtitle">Xem nhanh thông tin hóa đơn</small>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center gap-1">
-                    <a href="#" id="orderQuickviewFullLink" class="btn btn-sm btn-outline-secondary" target="_blank"
-                        title="Mở trang chi tiết đầy đủ trong tab mới">
-                        <i class="bi bi-box-arrow-up-right"></i>
-                    </a>
-                    <button type="button" class="btn-close ms-2" id="orderQuickviewClose" aria-label="Đóng"></button>
-                </div>
-            </div>
-            <div class="order-quickview-body" id="orderQuickviewBody">
-                <div class="order-quickview-empty text-center p-5 text-muted">
-                    <i class="bi bi-inbox fs-1 mb-2 d-block"></i>
-                    <p>Vui lòng chọn một đơn hàng để xem chi tiết.</p>
-                </div>
-            </div>
-        </aside>
     </section>
 </body>
 

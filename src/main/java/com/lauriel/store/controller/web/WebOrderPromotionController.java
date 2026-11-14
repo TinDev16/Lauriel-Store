@@ -113,6 +113,13 @@ public class WebOrderPromotionController {
         );
     }
 
+    @GetMapping("/{id}/preview")
+    public String preview(@PathVariable Long id, Model m) {
+        var orderPromotion = service.detail(id);
+        m.addAttribute("orderPromotion", orderPromotion);
+        return "admin/order-promotions/preview";
+    }
+
     private String form(Model m, Long id) {
         m.addAttribute("id", id);
         m.addAttribute(

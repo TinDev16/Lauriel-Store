@@ -8,6 +8,8 @@ import com.lauriel.store.service.PricingService;
 import com.lauriel.store.service.StoreCartService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import java.util.Map;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -47,37 +49,64 @@ public class WebStoreCartController {
     }
 
     @PostMapping("/add")
-    public String add(
+    public Object add(
         @Valid @ModelAttribute CartItemForm form,
         BindingResult errors,
         @RequestParam Long productId,
         @AuthenticationPrincipal StoreUserDetails user,
         HttpSession session,
-        RedirectAttributes flash
+        RedirectAttributes flash,
+        @RequestHeader(value = "Accept", defaultValue = "") String accept,
+        @RequestHeader(value = "X-Requested-With", defaultValue = "") String requestedWith,
+        @RequestHeader(value = "Referer", required = false) String referer
     ) {
-        if (errors.hasErrors()) return error(
-            flash,
-            "Sản phẩm hoặc số lượng không hợp lệ.",
-            productId
-        );
+        boolean isAjax = "XMLHttpRequest".equalsIgnoreCase(requestedWith) || accept.contains("application/json");
+        if (errors.hasErrors()) {
+            if (isAjax) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Sản phẩm hoặc số lượng không hợp lệ."
+                ));
+            }
+            return error(
+                flash,
+                "Sản phẩm hoặc số lượng không hợp lệ.",
+                productId
+            );
+        }
         try {
-            carts.add(session, form.variantId(), form.quantity(), userId(user));
+            if (form.variantId() != null) {
+                carts.add(session, form.variantId(), form.quantity(), userId(user));
+            } else {
+                carts.addProduct(session, productId, form.quantity(), userId(user));
+            }
             var cartView = carts.view(session, false);
+            String successMsg = "Đã thêm vào giỏ hàng thành công!";
             var suggestion = pricing.nextOrderPromotionSuggestion(cartView.subtotal());
             if (suggestion != null) {
-                flash.addFlashAttribute(
-                    "successMessage",
-                    "Đã thêm vào giỏ hàng! Mua thêm " + view.money(suggestion.remainingAmount()) +
-                        " để nhận ưu đãi \"" + suggestion.promotionName() +
-                        "\" (giảm " + view.number(suggestion.discountPercent()) + "%)."
-                );
-            } else {
-                flash.addFlashAttribute("successMessage", "Đã thêm vào giỏ hàng.");
+                successMsg = "Đã thêm vào giỏ hàng thành công! Mua thêm " + view.money(suggestion.remainingAmount()) +
+                    " để nhận ưu đãi \"" + suggestion.promotionName() +
+                    "\" (giảm " + view.number(suggestion.discountPercent()) + "%).";
             }
+            if (isAjax) {
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", successMsg,
+                    "cartCount", cartView.totalQuantity()
+                ));
+            }
+            flash.addFlashAttribute("successMessage", successMsg);
         } catch (BadRequestException | ResourceNotFoundException exception) {
+            if (isAjax) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", exception.getMessage()
+                ));
+            }
             flash.addFlashAttribute("errorMessage", exception.getMessage());
         }
-        return "redirect:/shop/products/" + productId;
+        String redirectTarget = (referer != null && !referer.isBlank()) ? referer : ("/shop/products/" + productId);
+        return "redirect:" + redirectTarget;
     }
 
     @PostMapping("/buy-now")
@@ -86,7 +115,8 @@ public class WebStoreCartController {
         BindingResult errors,
         @RequestParam Long productId,
         HttpSession session,
-        RedirectAttributes flash
+        RedirectAttributes flash,
+        @RequestHeader(value = "Referer", required = false) String referer
     ) {
         if (errors.hasErrors()) return error(
             flash,
@@ -94,11 +124,16 @@ public class WebStoreCartController {
             productId
         );
         try {
-            carts.buyNow(session, form.variantId(), form.quantity());
+            if (form.variantId() != null) {
+                carts.buyNow(session, form.variantId(), form.quantity());
+            } else {
+                carts.buyNowProduct(session, productId, form.quantity());
+            }
             return "redirect:/shop/checkout?mode=buy-now";
         } catch (BadRequestException | ResourceNotFoundException exception) {
             flash.addFlashAttribute("errorMessage", exception.getMessage());
-            return "redirect:/shop/products/" + productId;
+            String redirectTarget = (referer != null && !referer.isBlank()) ? referer : ("/shop/products/" + productId);
+            return "redirect:" + redirectTarget;
         }
     }
 

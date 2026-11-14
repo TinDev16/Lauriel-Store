@@ -47,6 +47,31 @@ public class StoreCartService {
         add(session, variantId, quantity, null);
     }
 
+    public Long resolveDefaultVariantId(Long productId) {
+        if (productId == null || productId <= 0) {
+            throw new BadRequestException("Sản phẩm không hợp lệ.");
+        }
+        var activeVariants = variants.findByProduct_ProductIdAndStatusOrderByVariantIdAsc(
+            productId,
+            com.lauriel.store.entity.enums.ActiveStatus.ACTIVE
+        );
+        return activeVariants.stream()
+            .filter(v -> v.getQuantity() != null && v.getQuantity() > 0)
+            .map(ProductVariant::getVariantId)
+            .findFirst()
+            .orElseThrow(() -> new BadRequestException("Sản phẩm hiện đang tạm hết hàng."));
+    }
+
+    public void addProduct(HttpSession session, Long productId, int quantity, Long userId) {
+        Long variantId = resolveDefaultVariantId(productId);
+        add(session, variantId, quantity, userId);
+    }
+
+    public void buyNowProduct(HttpSession session, Long productId, int quantity) {
+        Long variantId = resolveDefaultVariantId(productId);
+        buyNow(session, variantId, quantity);
+    }
+
     public void add(
         HttpSession session,
         Long variantId,

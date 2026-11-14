@@ -124,6 +124,13 @@ public class WebVoucherController {
         );
     }
 
+    @GetMapping("/{id}/preview")
+    public String preview(@PathVariable Long id, Model m) {
+        var voucher = vouchers.detail(id);
+        m.addAttribute("voucher", voucher);
+        return "admin/vouchers/preview";
+    }
+
     private String form(Model m, Long id) {
         m.addAttribute("id", id);
         m.addAttribute(

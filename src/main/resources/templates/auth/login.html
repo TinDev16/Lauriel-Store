@@ -8,21 +8,47 @@
     <link rel="stylesheet" th:href="@{/assets/libs/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/assets/libs/bootstrap-icons/bootstrap-icons.css}">
     <link rel="stylesheet" th:href="@{/assets/css/store.css}">
+    <link rel="stylesheet" th:href="@{/assets/css/toast.css}">
 </head>
 
 <body class="store-auth">
+    <div class="app-toast-container" id="appToastContainer">
+        <div class="app-toast app-toast-error" role="alert" th:if="${param.error}">
+            <i class="bi bi-x-circle-fill"></i>
+            <div class="app-toast-content"><span class="app-toast-message">Không thể đăng nhập. Kiểm tra tài khoản và mật khẩu.</span></div>
+            <button type="button" class="app-toast-close" data-dismiss-toast aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="app-toast app-toast-warning" role="alert" th:if="${param.checkout}">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div class="app-toast-content"><span class="app-toast-message">Vui lòng đăng nhập để mua hàng.</span></div>
+            <button type="button" class="app-toast-close" data-dismiss-toast aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="app-toast app-toast-success" role="status" th:if="${param.logout}">
+            <i class="bi bi-check-circle-fill"></i>
+            <div class="app-toast-content"><span class="app-toast-message">Bạn đã đăng xuất.</span></div>
+            <button type="button" class="app-toast-close" data-dismiss-toast aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="app-toast app-toast-warning" role="alert" th:if="${param.disabled}">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div class="app-toast-content"><span class="app-toast-message">Tài khoản đã bị khóa, ngừng hoạt động hoặc thay đổi quyền. Vui lòng đăng nhập lại.</span></div>
+            <button type="button" class="app-toast-close" data-dismiss-toast aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="app-toast app-toast-success" role="status" th:if="${successMessage}">
+            <i class="bi bi-check-circle-fill"></i>
+            <div class="app-toast-content"><span class="app-toast-message" th:text="${successMessage}"></span></div>
+            <button type="button" class="app-toast-close" data-dismiss-toast aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="app-toast app-toast-error" role="alert" th:if="${errorMessage}">
+            <i class="bi bi-x-circle-fill"></i>
+            <div class="app-toast-content"><span class="app-toast-message" th:text="${errorMessage}"></span></div>
+            <button type="button" class="app-toast-close" data-dismiss-toast aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+        </div>
+    </div>
     <a class="store-auth-brand" th:href="@{/shop}">LAURIEL</a>
     <main class="store-auth-card">
         <span>CHÀO MỪNG TRỞ LẠI</span>
         <h1>Đăng nhập</h1>
         <p>Dùng tài khoản khách hàng, quản trị viên hoặc nhân viên của bạn.</p>
-        <div class="alert alert-danger" th:if="${param.error}">Không thể đăng nhập. Kiểm tra tài khoản và mật khẩu.
-        </div>
-        <div class="alert alert-warning" th:if="${param.checkout}">Vui lòng đăng nhập để mua hàng.</div>
-        <div class="alert alert-success" th:if="${param.logout}">Bạn đã đăng xuất.</div>
-        <div class="alert alert-warning" th:if="${param.disabled}">Tài khoản đã bị khóa, ngừng hoạt động hoặc thay đổi
-            quyền. Vui lòng đăng nhập lại.</div>
-        <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
         <form method="post" th:action="@{/login}">
             <label>Tên đăng nhập
                 <input class="form-control" name="username" required maxlength="100" autocomplete="username" autofocus>
@@ -35,6 +61,7 @@
         <p class="store-auth-switch">Chưa có tài khoản? <a th:href="@{/register}">Đăng ký ngay</a></p>
         <a class="store-continue" th:href="@{/shop}"><i class="bi bi-arrow-left"></i> Tiếp tục xem cửa hàng</a>
     </main>
+    <script th:src="@{/assets/js/toast.js}"></script>
 </body>
 
 </html>

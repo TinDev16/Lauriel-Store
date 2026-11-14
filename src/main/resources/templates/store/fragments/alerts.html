@@ -1,4 +1,1 @@
-<div xmlns:th="http://www.thymeleaf.org" th:fragment="alerts">
-  <div class="store-toast store-toast-success" th:if="${successMessage}"><i class="bi bi-check-circle"></i><span th:text="${successMessage}"></span><button type="button" data-dismiss-alert><i class="bi bi-x"></i></button></div>
-  <div class="store-toast store-toast-error" th:if="${errorMessage}"><i class="bi bi-exclamation-circle"></i><span th:text="${errorMessage}"></span><button type="button" data-dismiss-alert><i class="bi bi-x"></i></button></div>
-</div>
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="alerts" th:replace="~{fragments/alerts :: alerts}"></div>

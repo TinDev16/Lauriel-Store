@@ -12,7 +12,13 @@ import com.lauriel.store.repository.ProductImageRepository;
 import com.lauriel.store.repository.ProductRepository;
 import com.lauriel.store.repository.ProductSpecifications;
 import com.lauriel.store.repository.ProductSummaryView;
+import com.lauriel.store.repository.ProductVariantRepository;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -30,6 +36,7 @@ public class ProductService {
     private final CategoryService categories;
     private final PricingService pricing;
     private final ProductImageRepository productImages;
+    private final ProductVariantRepository productVariants;
 
     public ProductService(
         ProductRepository productRepository,
@@ -37,10 +44,33 @@ public class ProductService {
         PricingService pricing,
         ProductImageRepository productImages
     ) {
+        this(productRepository, categories, pricing, productImages, null);
+    }
+
+    @Autowired
+    public ProductService(
+        ProductRepository productRepository,
+        CategoryService categories,
+        PricingService pricing,
+        ProductImageRepository productImages,
+        ProductVariantRepository productVariants
+    ) {
         this.productRepository = productRepository;
         this.categories = categories;
         this.pricing = pricing;
         this.productImages = productImages;
+        this.productVariants = productVariants;
+    }
+
+    private Map<Long, Long> stockTotals(Collection<Long> productIds) {
+        if (productVariants == null || productIds == null || productIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        var map = new HashMap<Long, Long>();
+        productVariants.countForProducts(productIds).forEach(item ->
+            map.put(item.getProductId(), item.getTotalQuantity())
+        );
+        return map;
     }
 
     @Transactional(readOnly = true)
@@ -90,11 +120,21 @@ public class ProductService {
                 )
             );
         var prices = pricing.priceProducts(basePrices, pricing.now());
+        var productIds = result
+            .getContent()
+            .stream()
+            .map(ProductSummaryView::getProductId)
+            .toList();
+        var stockMap = stockTotals(productIds);
         var content = result
             .getContent()
             .stream()
             .map(product ->
-                summary(product, prices.get(product.getProductId()))
+                summary(
+                    product,
+                    prices.get(product.getProductId()),
+                    stockMap.getOrDefault(product.getProductId(), 0L)
+                )
             )
             .toList();
         return new PageResponse<>(
@@ -123,11 +163,63 @@ public class ProductService {
                 )
             );
         var prices = pricing.priceProducts(basePrices, pricing.now());
+        var productIds = featured
+            .stream()
+            .map(Product::getProductId)
+            .toList();
+        var stockMap = stockTotals(productIds);
         return featured
             .stream()
             .map(product ->
-                summary(product, prices.get(product.getProductId()))
+                summary(
+                    product,
+                    prices.get(product.getProductId()),
+                    stockMap.getOrDefault(product.getProductId(), 0L)
+                )
             )
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<ProductSummaryResponse> listByIds(java.util.List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        var limitedIds = ids.stream().filter(java.util.Objects::nonNull).distinct().limit(12).toList();
+        if (limitedIds.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        var found = productRepository.findByProductIdInAndStatusAndCategory_Status(
+            limitedIds,
+            ActiveStatus.ACTIVE,
+            ActiveStatus.ACTIVE
+        );
+        var basePrices = found
+            .stream()
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    Product::getProductId,
+                    Product::getPrice
+                )
+            );
+        var prices = pricing.priceProducts(basePrices, pricing.now());
+        var stockMap = stockTotals(limitedIds);
+        var productMap = found
+            .stream()
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    Product::getProductId,
+                    product -> summary(
+                        product,
+                        prices.get(product.getProductId()),
+                        stockMap.getOrDefault(product.getProductId(), 0L)
+                    )
+                )
+            );
+        return limitedIds
+            .stream()
+            .map(productMap::get)
+            .filter(java.util.Objects::nonNull)
             .toList();
     }
 
@@ -204,19 +296,19 @@ public class ProductService {
                 )
             );
         var prices = pricing.priceProducts(basePrices, pricing.now());
+        var productIds = related
+            .stream()
+            .map(Product::getProductId)
+            .toList();
+        var stockMap = stockTotals(productIds);
         return related
             .stream()
             .map(product -> {
                 var price = prices.get(product.getProductId());
-                return new ProductSummaryResponse(
-                    product.getProductId(),
-                    product.getProductName(),
-                    CatalogMapper.category(product.getCategory()),
-                    product.getPrice(),
-                    product.getImgUrl(),
-                    product.getStatus(),
-                    price.effectivePrice(),
-                    price.promotion()
+                return summary(
+                    product,
+                    price,
+                    stockMap.getOrDefault(product.getProductId(), 0L)
                 );
             })
             .toList();
@@ -291,6 +383,13 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
+    public java.util.List<Product> listAll() {
+        return productRepository.findAll(
+            Sort.by(Sort.Order.asc("productName"), Sort.Order.asc("productId"))
+        );
+    }
+
+    @Transactional(readOnly = true)
     public java.util.List<Product> listForExport(
         String keyword,
         Long categoryId,
@@ -342,7 +441,8 @@ public class ProductService {
 
     private ProductSummaryResponse summary(
         ProductSummaryView product,
-        PriceCalculation price
+        PriceCalculation price,
+        Long totalStock
     ) {
         var category = product.getCategory();
         return new ProductSummaryResponse(
@@ -355,14 +455,16 @@ public class ProductService {
             product.getPrice(),
             product.getImgUrl(),
             product.getStatus(),
-            price.effectivePrice(),
-            price.promotion()
+            price != null ? price.effectivePrice() : product.getPrice(),
+            price != null ? price.promotion() : null,
+            totalStock
         );
     }
 
     private ProductSummaryResponse summary(
         Product product,
-        PriceCalculation price
+        PriceCalculation price,
+        Long totalStock
     ) {
         return new ProductSummaryResponse(
             product.getProductId(),
@@ -371,9 +473,24 @@ public class ProductService {
             product.getPrice(),
             product.getImgUrl(),
             product.getStatus(),
-            price.effectivePrice(),
-            price.promotion()
+            price != null ? price.effectivePrice() : product.getPrice(),
+            price != null ? price.promotion() : null,
+            totalStock
         );
+    }
+
+    private ProductSummaryResponse summary(
+        ProductSummaryView product,
+        PriceCalculation price
+    ) {
+        return summary(product, price, null);
+    }
+
+    private ProductSummaryResponse summary(
+        Product product,
+        PriceCalculation price
+    ) {
+        return summary(product, price, null);
     }
 
     private ProductSummaryResponse summary(ProductSummaryView product) {

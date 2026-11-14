@@ -47,7 +47,7 @@
     }
     productResult.textContent = term
       ? visible + " sản phẩm phù hợp"
-      : productOptions.length + " sản phẩm có thuộc tính";
+      : productOptions.length + " sản phẩm";
   }
 
   function uniqueById(items, idKey, nameKey) {
@@ -98,6 +98,8 @@
       variantResult.textContent = "SKU: " + selected.sku + " · Tồn hiện tại: " + selected.quantity;
     } else if (!productSelect.value) {
       variantResult.textContent = "Chọn sản phẩm để xem kích cỡ và màu sắc hiện có.";
+    } else if (productVariants().length === 0) {
+      variantResult.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>Sản phẩm này chưa có biến thể size/màu nào. <a href="/admin/products/' + productSelect.value + '/variants/bulk" target="_blank" class="fw-bold text-decoration-underline">Thêm tổ hợp biến thể ngay</a></span>';
     } else if (!sizeSelect.value) {
       variantResult.textContent = "Chọn kích cỡ để xem các màu sắc tương ứng.";
     } else {

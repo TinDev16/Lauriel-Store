@@ -29,4 +29,25 @@
   </div>
 </section>
 <section class="store-section"><div class="container-xl"><div class="store-section-heading"><div><span>BÁN CHẠY</span><h2>Sản phẩm nổi bật</h2></div><a th:href="@{/shop/products}">Xem tất cả <i class="bi bi-arrow-right"></i></a></div><div class="store-product-grid"><th:block th:each="p:${products}"><div th:replace="~{store/fragments/product-card :: card(${p})}"></div></th:block></div></div></section>
+<section class="store-section store-recently-viewed store-section-soft" id="recentlyViewedSection" th:if="${!#lists.isEmpty(recentlyViewed)}">
+  <div class="container-xl">
+    <div class="store-section-heading">
+      <div>
+        <span>DÀNH CHO BẠN</span>
+        <h2>Sản phẩm đã xem</h2>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none p-0" data-clear-recently-viewed title="Xóa lịch sử đã xem">
+          <i class="bi bi-trash3 me-1"></i>Xóa lịch sử
+        </button>
+        <a th:href="@{/shop/products}">Xem tất cả <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </div>
+    <div class="store-product-grid">
+      <th:block th:each="p:${recentlyViewed}">
+        <div th:replace="~{store/fragments/product-card :: card(${p})}"></div>
+      </th:block>
+    </div>
+  </div>
+</section>
 </main></body></html>

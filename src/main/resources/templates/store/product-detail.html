@@ -1,5 +1,11 @@
-<!DOCTYPE html><html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{store/fragments/layout :: layout(~{::main},${product.productName})}"><body><main class="container-xl store-page">
-<nav class="store-breadcrumb"><a th:href="@{/shop}">Trang chủ</a><i class="bi bi-chevron-right"></i><a th:href="@{/shop/products}">Sản phẩm</a><i class="bi bi-chevron-right"></i><a th:href="@{/shop/products(categoryId=${product.category.categoryId})}" th:text="${product.category.categoryName}"></a><i class="bi bi-chevron-right"></i><span th:text="${product.productName}"></span></nav>
+<!DOCTYPE html><html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{store/fragments/layout :: layout(~{::main},${product.productName})}"><body><main class="container-xl store-page" th:attr="data-detail-product-id=${product.productId}">
+<div class="store-detail-nav">
+  <button type="button" class="store-back-button" data-store-back title="Quay lại trang trước" aria-label="Quay lại trang trước">
+    <i class="bi bi-arrow-left"></i>
+    <span>Quay lại</span>
+  </button>
+  <nav class="store-breadcrumb"><a th:href="@{/shop}">Trang chủ</a><i class="bi bi-chevron-right"></i><a th:href="@{/shop/products}">Sản phẩm</a><i class="bi bi-chevron-right"></i><a th:href="@{/shop/products(categoryId=${product.category.categoryId})}" th:text="${product.category.categoryName}"></a><i class="bi bi-chevron-right"></i><span th:text="${product.productName}"></span></nav>
+</div>
 <div class="store-detail"><section class="store-gallery"><div class="store-main-image"><img data-main-image th:src="${!#lists.isEmpty(product.images)} ? ${product.images[0].url} : (${product.imgUrl != null} ? ${product.imgUrl} : @{/assets/images/product-placeholder.svg})" th:alt="${product.productName}"></div><div class="store-thumbnails"><button th:each="image:${product.images}" type="button" th:attr="data-gallery-image=${image.url}"><img th:src="${image.url}" th:alt="${product.productName}"></button></div></section>
 <section class="store-purchase-panel"><small th:text="${product.category.categoryName}"></small><h1 th:text="${product.productName}"></h1><div class="store-detail-price"><strong data-effective-price th:text="${@view.money(product.basePrice)}"></strong><del data-original-price hidden></del></div><p class="store-promo-note" data-promotion hidden></p><p class="store-description" th:text="${product.description}"></p>
 <div class="store-option"><div><label>Kích cỡ</label><span data-size-help>Chọn kích cỡ</span></div><div class="store-option-buttons" data-size-options><button th:each="s:${sizes}" type="button" th:attr="data-size=${s.sizeId}" th:text="${s.sizeName}"></button></div></div>

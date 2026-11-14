@@ -1,8 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('form[data-confirm]').forEach(form => {
-    form.addEventListener('submit', event => {
-      if (!window.confirm(form.dataset.confirm)) event.preventDefault();
-    });
+  document.addEventListener('submit', event => {
+    const confirmForm = event.target.closest('form[data-confirm]');
+    if (confirmForm && confirmForm.dataset.confirm) {
+      if (!window.confirm(confirmForm.dataset.confirm)) {
+        event.preventDefault();
+      }
+    }
   });
 
   const numberInputs = document.querySelectorAll('.number-input');
@@ -147,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const requiredProductChoices = form.querySelectorAll('input[name="productIds"]');
       if (requiredProductChoices.length > 0 && !form.querySelector('input[name="productIds"]:checked')) {
         event.preventDefault();
-        window.alert('Vui lòng chọn ít nhất một sản phẩm.');
+        window.showToast('Vui lòng chọn ít nhất một sản phẩm.', 'warning');
       }
     });
     update();
@@ -251,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', event => {
       if (selectedScope?.checked && !options.some(option => option.checked)) {
         event.preventDefault();
-        window.alert('Vui lòng chọn ít nhất một tổ hợp kích cỡ và màu.');
+        window.showToast('Vui lòng chọn ít nhất một tổ hợp kích cỡ và màu.', 'warning');
       }
     });
     render();
@@ -291,253 +294,285 @@ document.addEventListener('DOMContentLoaded', () => {
   overlay?.addEventListener('click', close);
   document.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
 
-  // --- Order Quick View Side Panel ---
-  const orderQuickviewPanel = document.getElementById('orderQuickviewPanel');
-  const orderQuickviewBody = document.getElementById('orderQuickviewBody');
-  const orderQuickviewTitle = document.getElementById('orderQuickviewTitle');
-  const orderQuickviewSubtitle = document.getElementById('orderQuickviewSubtitle');
-  const orderQuickviewFullLink = document.getElementById('orderQuickviewFullLink');
-  const orderQuickviewClose = document.getElementById('orderQuickviewClose');
-  const orderQuickviewBackdrop = document.getElementById('orderQuickviewBackdrop');
-  let currentQuickviewOrderId = null;
+  // ==========================================================================
+  // Unified Sub-Form Quick View System (Dùng chung một code cho toàn bộ sub-form)
+  // ==========================================================================
+  const quickviewPanel = document.getElementById('appQuickviewPanel') 
+    || document.getElementById('orderQuickviewPanel') 
+    || document.getElementById('receiptQuickviewPanel') 
+    || document.getElementById('promotionQuickviewPanel');
 
-  const closeOrderQuickview = () => {
-    if (!orderQuickviewPanel) return;
-    orderQuickviewPanel.classList.remove('is-open');
-    orderQuickviewBackdrop?.classList.remove('show');
-    document.querySelectorAll('tr.order-row-active').forEach(r => r.classList.remove('order-row-active'));
-    currentQuickviewOrderId = null;
+  const quickviewBackdrop = document.getElementById('appQuickviewBackdrop')
+    || document.getElementById('orderQuickviewBackdrop')
+    || document.getElementById('receiptQuickviewBackdrop')
+    || document.getElementById('promotionQuickviewBackdrop');
+
+  const quickviewBody = document.getElementById('appQuickviewBody')
+    || document.getElementById('orderQuickviewBody')
+    || document.getElementById('receiptQuickviewBody')
+    || document.getElementById('promotionQuickviewBody');
+
+  const quickviewTitle = document.getElementById('appQuickviewTitle')
+    || document.getElementById('orderQuickviewTitle')
+    || document.getElementById('receiptQuickviewTitle')
+    || document.getElementById('promotionQuickviewTitle');
+
+  const quickviewSubtitle = document.getElementById('appQuickviewSubtitle')
+    || document.getElementById('orderQuickviewSubtitle')
+    || document.getElementById('receiptQuickviewSubtitle')
+    || document.getElementById('promotionQuickviewSubtitle');
+
+  const quickviewIcon = document.getElementById('appQuickviewIcon')
+    || document.querySelector('.app-quickview-icon')
+    || document.querySelector('.order-quickview-icon')
+    || document.querySelector('.receipt-quickview-icon')
+    || document.querySelector('.promotion-quickview-icon');
+
+  const quickviewFullLink = document.getElementById('appQuickviewFullLink')
+    || document.getElementById('orderQuickviewFullLink')
+    || document.getElementById('receiptQuickviewFullLink')
+    || document.getElementById('promotionQuickviewFullLink');
+
+  const quickviewClose = document.getElementById('appQuickviewClose')
+    || document.getElementById('orderQuickviewClose')
+    || document.getElementById('receiptQuickviewClose')
+    || document.getElementById('promotionQuickviewClose');
+
+  let currentQuickviewUrl = null;
+
+  const syncQuickviewTop = (force = false) => {
+    if (!quickviewPanel) return;
+    const isForce = force === true;
+    if (!isForce && !quickviewPanel.classList.contains('is-open')) return;
+    if (window.innerWidth >= 992) {
+      const listForm = document.querySelector('.order-filter-card')
+        || document.querySelector('.receipt-filter-card')
+        || document.querySelector('form[data-live-filter]')
+        || document.querySelector('form.card')
+        || document.querySelector('.table-responsive')?.closest('.card');
+      const navbar = document.querySelector('.navbar-custom');
+      const navbarBottom = navbar ? Math.max(0, Math.round(navbar.getBoundingClientRect().bottom)) : 70;
+      if (listForm) {
+        const rect = listForm.getBoundingClientRect();
+        const targetTop = Math.max(navbarBottom, Math.round(rect.top));
+        quickviewPanel.style.top = `${targetTop}px`;
+      } else {
+        quickviewPanel.style.top = `${navbarBottom}px`;
+      }
+    } else {
+      quickviewPanel.style.top = '0';
+    }
   };
 
-  const bindQuickviewForm = (container, orderId) => {
-    const form = container.querySelector('.order-status-quick-form');
-    if (!form) return;
-    form.addEventListener('submit', async event => {
-      event.preventDefault();
-      const submitBtn = form.querySelector('button[type="submit"]');
-      const originalText = submitBtn ? submitBtn.innerHTML : '';
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Đang lưu...';
+  const closeQuickview = () => {
+    if (!quickviewPanel) return;
+    quickviewPanel.classList.remove('is-open');
+    quickviewBackdrop?.classList.remove('show');
+    document.querySelectorAll('.quickview-row-active, .order-row-active, .receipt-row-active, .promotion-row-active')
+      .forEach(r => r.classList.remove('quickview-row-active', 'order-row-active', 'receipt-row-active', 'promotion-row-active'));
+    currentQuickviewUrl = null;
+    setTimeout(() => {
+      if (!quickviewPanel.classList.contains('is-open')) {
+        quickviewPanel.style.top = '';
       }
-      try {
-        const formData = new FormData(form);
-        const response = await fetch(form.action, {
-          method: 'POST',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          body: formData
-        });
-        const data = await response.json().catch(() => null);
-        if (response.ok && data?.success) {
-          const row = document.getElementById(`order-row-${orderId}`);
-          if (row) {
-            const badge = row.querySelector('.order-status-badge');
-            if (badge) {
-              const statusName = data.status;
-              const statusLabel = form.querySelector(`option[value="${statusName}"]`)?.textContent?.trim() || statusName;
-              badge.textContent = statusLabel;
-              badge.className = 'order-status-badge badge ' + (
-                statusName === 'DELIVERED' ? 'bg-success' :
-                (statusName === 'CANCELLED' || statusName === 'RETURNED') ? 'bg-danger' :
-                statusName === 'PENDING' ? 'bg-warning text-dark' :
-                statusName === 'CONFIRMED' ? 'bg-info text-dark' : 'bg-primary'
-              );
+    }, 320);
+  };
+
+  const bindQuickviewInnerForms = (container, url) => {
+    // 1. Bind order status transition quick form
+    const form = container.querySelector('.order-status-quick-form');
+    if (form) {
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Đang lưu...';
+        }
+        try {
+          const formData = new FormData(form);
+          const response = await fetch(form.action, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+          });
+          const data = await response.json().catch(() => null);
+          if (response.ok && data?.success) {
+            const orderId = form.dataset.orderId;
+            const row = document.getElementById(`order-row-${orderId}`);
+            if (row) {
+              const badge = row.querySelector('.order-status-badge');
+              if (badge) {
+                const statusName = data.status;
+                const statusLabel = form.querySelector(`option[value="${statusName}"]`)?.textContent?.trim() || statusName;
+                badge.textContent = statusLabel;
+                badge.className = 'order-status-badge badge ' + (
+                  statusName === 'DELIVERED' ? 'bg-success' :
+                  (statusName === 'CANCELLED' || statusName === 'RETURNED') ? 'bg-danger' :
+                  statusName === 'PENDING' ? 'bg-warning text-dark' :
+                  statusName === 'CONFIRMED' ? 'bg-info text-dark' : 'bg-primary'
+                );
+              }
+            }
+            window.showToast('Cập nhật trạng thái đơn hàng thành công!', 'success');
+            loadQuickview({ url, targetRow: row });
+          } else {
+            window.showToast(data?.message || 'Không thể cập nhật trạng thái đơn hàng.', 'error');
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalText;
             }
           }
-          loadOrderQuickview(orderId, row);
-        } else {
-          window.alert(data?.message || 'Không thể cập nhật trạng thái đơn hàng.');
+        } catch (err) {
+          window.showToast('Lỗi kết nối khi cập nhật đơn hàng.', 'error');
           if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
           }
         }
-      } catch (err) {
-        window.alert('Lỗi kết nối khi cập nhật đơn hàng.');
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = originalText;
-        }
-      }
-    });
+      });
+    }
 
-    container.querySelectorAll('.btn-order-quickview-close').forEach(btn => {
-      btn.addEventListener('click', closeOrderQuickview);
-    });
+    // 2. Bind close buttons inside the loaded content
+    container.querySelectorAll('.btn-quickview-close, .btn-order-quickview-close, .btn-receipt-quickview-close, .btn-promotion-quickview-close')
+      .forEach(btn => btn.addEventListener('click', closeQuickview));
   };
 
-  const loadOrderQuickview = async (orderId, targetRow) => {
-    if (!orderQuickviewPanel || !orderQuickviewBody) return;
-    currentQuickviewOrderId = orderId;
+  const loadQuickview = async ({ url, title, subtitle, icon, fullLink, targetRow }) => {
+    if (!quickviewPanel || !quickviewBody || !url) return;
+    currentQuickviewUrl = url;
 
-    document.querySelectorAll('tr.order-row-active').forEach(r => r.classList.remove('order-row-active'));
-    targetRow?.classList.add('order-row-active');
+    document.querySelectorAll('.quickview-row-active, .order-row-active, .receipt-row-active, .promotion-row-active')
+      .forEach(r => r.classList.remove('quickview-row-active', 'order-row-active', 'receipt-row-active', 'promotion-row-active'));
+    if (targetRow) {
+      targetRow.classList.add('quickview-row-active');
+    }
 
-    orderQuickviewPanel.classList.add('is-open');
-    orderQuickviewBackdrop?.classList.add('show');
-    if (orderQuickviewTitle) orderQuickviewTitle.textContent = `Đơn hàng #${orderId}`;
-    if (orderQuickviewSubtitle) orderQuickviewSubtitle.textContent = 'Đang tải thông tin chi tiết...';
-    if (orderQuickviewFullLink) orderQuickviewFullLink.href = `/admin/orders/${orderId}`;
+    syncQuickviewTop(true);
+    quickviewPanel.classList.add('is-open');
+    quickviewBackdrop?.classList.add('show');
+    requestAnimationFrame(() => syncQuickviewTop(true));
 
-    orderQuickviewBody.innerHTML = `
+    if (quickviewTitle && title) quickviewTitle.textContent = title;
+    if (quickviewSubtitle) quickviewSubtitle.textContent = subtitle || 'Đang tải thông tin chi tiết...';
+    if (quickviewIcon && icon) {
+      quickviewIcon.innerHTML = `<i class="bi ${icon}"></i>`;
+    }
+    if (quickviewFullLink) {
+      if (fullLink) {
+        quickviewFullLink.href = fullLink;
+        quickviewFullLink.style.display = '';
+      } else {
+        quickviewFullLink.style.display = 'none';
+      }
+    }
+
+    quickviewBody.innerHTML = `
       <div class="text-center py-5 text-muted">
         <div class="spinner-border text-primary mb-3" style="width: 2.2rem; height: 2.2rem;" role="status">
           <span class="visually-hidden">Đang tải...</span>
         </div>
-        <p class="mb-0 fw-semibold">Đang tải chi tiết đơn #${orderId}...</p>
+        <p class="mb-0 fw-semibold">Đang tải chi tiết...</p>
       </div>
     `;
 
     try {
-      const response = await fetch(`/admin/orders/${orderId}/preview`, {
+      const response = await fetch(url, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
       if (!response.ok) throw new Error('Không thể tải chi tiết');
       const html = await response.text();
-      if (currentQuickviewOrderId === orderId) {
-        orderQuickviewBody.innerHTML = html;
-        if (orderQuickviewSubtitle) orderQuickviewSubtitle.textContent = 'Thông tin chi tiết hóa đơn';
-        bindQuickviewForm(orderQuickviewBody, orderId);
+      if (currentQuickviewUrl === url) {
+        quickviewBody.innerHTML = html;
+        if (quickviewSubtitle && !subtitle) quickviewSubtitle.textContent = 'Thông tin chi tiết';
+        bindQuickviewInnerForms(quickviewBody, url);
       }
     } catch (e) {
-      if (currentQuickviewOrderId === orderId) {
-        orderQuickviewBody.innerHTML = `
+      if (currentQuickviewUrl === url) {
+        quickviewBody.innerHTML = `
           <div class="alert alert-danger my-4" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            Không thể tải thông tin đơn hàng #${orderId}. Vui lòng thử lại.
+            Không thể tải thông tin chi tiết. Vui lòng thử lại.
           </div>
         `;
-        if (orderQuickviewSubtitle) orderQuickviewSubtitle.textContent = 'Lỗi tải dữ liệu';
+        if (quickviewSubtitle) quickviewSubtitle.textContent = 'Lỗi tải dữ liệu';
       }
     }
   };
 
-  if (orderQuickviewPanel) {
-    orderQuickviewClose?.addEventListener('click', closeOrderQuickview);
-    orderQuickviewBackdrop?.addEventListener('click', closeOrderQuickview);
+  // Expose to window for global programmatic use
+  window.AppQuickview = {
+    open: loadQuickview,
+    close: closeQuickview,
+    syncTop: syncQuickviewTop
+  };
+
+  if (quickviewPanel) {
+    quickviewClose?.addEventListener('click', closeQuickview);
+    quickviewBackdrop?.addEventListener('click', closeQuickview);
 
     document.addEventListener('click', event => {
-      const previewBtn = event.target.closest('.btn-order-preview');
+      // 1. Explicit button click with .btn-quickview or backward-compatible classes
+      const previewBtn = event.target.closest('.btn-quickview, .btn-order-preview, .btn-receipt-preview, .btn-promotion-preview');
       if (previewBtn) {
         event.preventDefault();
-        const orderId = previewBtn.dataset.orderId;
         const row = previewBtn.closest('tr');
-        loadOrderQuickview(orderId, row);
+        const url = previewBtn.dataset.quickviewUrl
+          || previewBtn.dataset.previewUrl
+          || (previewBtn.dataset.orderId ? `/admin/orders/${previewBtn.dataset.orderId}/preview` : null)
+          || (previewBtn.dataset.receiptId ? `/admin/purchase-receipts/${previewBtn.dataset.receiptId}/preview` : null);
+        const title = previewBtn.dataset.quickviewTitle
+          || previewBtn.dataset.title
+          || (previewBtn.dataset.orderId ? `Đơn hàng #${previewBtn.dataset.orderId}` : null)
+          || (previewBtn.dataset.receiptId ? `Phiếu nhập #PN-${previewBtn.dataset.receiptId}` : null);
+        const subtitle = previewBtn.dataset.quickviewSubtitle;
+        const icon = previewBtn.dataset.quickviewIcon
+          || (previewBtn.dataset.orderId ? 'bi-receipt' : (previewBtn.dataset.receiptId ? 'bi-box-seam' : 'bi-megaphone'));
+        const fullLink = previewBtn.dataset.quickviewFullLink
+          || previewBtn.dataset.fullLink
+          || (previewBtn.dataset.orderId ? `/admin/orders/${previewBtn.dataset.orderId}` : null)
+          || (previewBtn.dataset.receiptId ? `/admin/purchase-receipts/${previewBtn.dataset.receiptId}` : null);
+
+        if (url) {
+          loadQuickview({ url, title, subtitle, icon, fullLink, targetRow: row });
+        }
         return;
       }
 
-      const row = event.target.closest('tr.order-row');
-      if (row && !event.target.closest('a, button, input, select, textarea')) {
-        const orderId = row.dataset.orderId;
-        if (orderId) {
-          loadOrderQuickview(orderId, row);
+      // 2. Table row click with data-quickview-url or backward-compatible row classes
+      const row = event.target.closest('tr.quickview-row, tr.order-row, tr.receipt-row, tr.promotion-row');
+      if (row && !event.target.closest('a, button, input, select, textarea, label')) {
+        const url = row.dataset.quickviewUrl
+          || row.dataset.previewUrl
+          || (row.dataset.orderId ? `/admin/orders/${row.dataset.orderId}/preview` : null)
+          || (row.dataset.receiptId ? `/admin/purchase-receipts/${row.dataset.receiptId}/preview` : null);
+        const title = row.dataset.quickviewTitle
+          || row.dataset.title
+          || (row.dataset.orderId ? `Đơn hàng #${row.dataset.orderId}` : null)
+          || (row.dataset.receiptId ? `Phiếu nhập #PN-${row.dataset.receiptId}` : null);
+        const subtitle = row.dataset.quickviewSubtitle;
+        const icon = row.dataset.quickviewIcon
+          || (row.dataset.orderId ? 'bi-receipt' : (row.dataset.receiptId ? 'bi-box-seam' : 'bi-megaphone'));
+        const fullLink = row.dataset.quickviewFullLink
+          || row.dataset.fullLink
+          || (row.dataset.orderId ? `/admin/orders/${row.dataset.orderId}` : null)
+          || (row.dataset.receiptId ? `/admin/purchase-receipts/${row.dataset.receiptId}` : null);
+
+        if (url) {
+          loadQuickview({ url, title, subtitle, icon, fullLink, targetRow: row });
         }
       }
     });
 
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && orderQuickviewPanel.classList.contains('is-open')) {
-        closeOrderQuickview();
-      }
-    });
-  }
-
-  // --- Purchase Receipt Quick View Side Panel ---
-  const receiptQuickviewPanel = document.getElementById('receiptQuickviewPanel');
-  const receiptQuickviewBody = document.getElementById('receiptQuickviewBody');
-  const receiptQuickviewTitle = document.getElementById('receiptQuickviewTitle');
-  const receiptQuickviewSubtitle = document.getElementById('receiptQuickviewSubtitle');
-  const receiptQuickviewFullLink = document.getElementById('receiptQuickviewFullLink');
-  const receiptQuickviewClose = document.getElementById('receiptQuickviewClose');
-  const receiptQuickviewBackdrop = document.getElementById('receiptQuickviewBackdrop');
-  let currentQuickviewReceiptId = null;
-
-  const closeReceiptQuickview = () => {
-    if (!receiptQuickviewPanel) return;
-    receiptQuickviewPanel.classList.remove('is-open');
-    receiptQuickviewBackdrop?.classList.remove('show');
-    document.querySelectorAll('tr.receipt-row-active').forEach(r => r.classList.remove('receipt-row-active'));
-    currentQuickviewReceiptId = null;
-  };
-
-  const loadReceiptQuickview = async (receiptId, targetRow) => {
-    if (!receiptQuickviewPanel || !receiptQuickviewBody) return;
-    currentQuickviewReceiptId = receiptId;
-
-    document.querySelectorAll('tr.receipt-row-active').forEach(r => r.classList.remove('receipt-row-active'));
-    targetRow?.classList.add('receipt-row-active');
-
-    receiptQuickviewPanel.classList.add('is-open');
-    receiptQuickviewBackdrop?.classList.add('show');
-    if (receiptQuickviewTitle) receiptQuickviewTitle.textContent = `Phiếu nhập #PN-${receiptId}`;
-    if (receiptQuickviewSubtitle) receiptQuickviewSubtitle.textContent = 'Đang tải thông tin chi tiết...';
-    if (receiptQuickviewFullLink) receiptQuickviewFullLink.href = `/admin/purchase-receipts/${receiptId}`;
-
-    receiptQuickviewBody.innerHTML = `
-      <div class="text-center py-5 text-muted">
-        <div class="spinner-border text-primary mb-3" style="width: 2.2rem; height: 2.2rem;" role="status">
-          <span class="visually-hidden">Đang tải...</span>
-        </div>
-        <p class="mb-0 fw-semibold">Đang tải chi tiết phiếu nhập #PN-${receiptId}...</p>
-      </div>
-    `;
-
-    try {
-      const response = await fetch(`/admin/purchase-receipts/${receiptId}/preview`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-      });
-      if (!response.ok) throw new Error('Không thể tải chi tiết');
-      const html = await response.text();
-      if (currentQuickviewReceiptId === receiptId) {
-        receiptQuickviewBody.innerHTML = html;
-        if (receiptQuickviewSubtitle) receiptQuickviewSubtitle.textContent = 'Thông tin chi tiết phiếu nhập hàng';
-        receiptQuickviewBody.querySelectorAll('.btn-receipt-quickview-close').forEach(btn => {
-          btn.addEventListener('click', closeReceiptQuickview);
-        });
-      }
-    } catch (e) {
-      if (currentQuickviewReceiptId === receiptId) {
-        receiptQuickviewBody.innerHTML = `
-          <div class="alert alert-danger my-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            Không thể tải thông tin phiếu nhập #PN-${receiptId}. Vui lòng thử lại.
-          </div>
-        `;
-        if (receiptQuickviewSubtitle) receiptQuickviewSubtitle.textContent = 'Lỗi tải dữ liệu';
-      }
-    }
-  };
-
-  if (receiptQuickviewPanel) {
-    receiptQuickviewClose?.addEventListener('click', closeReceiptQuickview);
-    receiptQuickviewBackdrop?.addEventListener('click', closeReceiptQuickview);
-
-    document.addEventListener('click', event => {
-      const previewBtn = event.target.closest('.btn-receipt-preview');
-      if (previewBtn) {
-        event.preventDefault();
-        const receiptId = previewBtn.dataset.receiptId;
-        const row = previewBtn.closest('tr');
-        loadReceiptQuickview(receiptId, row);
-        return;
-      }
-
-      const row = event.target.closest('tr.receipt-row');
-      if (row && !event.target.closest('a, button, input, select, textarea')) {
-        const receiptId = row.dataset.receiptId;
-        if (receiptId) {
-          loadReceiptQuickview(receiptId, row);
-        }
+      if (event.key === 'Escape' && quickviewPanel.classList.contains('is-open')) {
+        closeQuickview();
       }
     });
 
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && receiptQuickviewPanel.classList.contains('is-open')) {
-        closeReceiptQuickview();
-      }
-    });
+    window.addEventListener('scroll', syncQuickviewTop, { passive: true });
+    window.addEventListener('resize', syncQuickviewTop, { passive: true });
   }
 
 });

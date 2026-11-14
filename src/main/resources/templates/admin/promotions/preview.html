@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div class="promotion-preview-content">
+    <!-- Header info card -->
+    <div class="card mb-3 border-0 bg-light shadow-sm">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h5 class="mb-1 text-primary fw-bold" th:text="${promotion.promotionName}">Tên chương trình</h5>
+                    <small class="text-muted">
+                        <i class="bi bi-tag me-1"></i>Mã khuyến mãi: <span class="fw-semibold" th:text="|#KM-${promotion.promotionId}|">#KM-1</span>
+                    </small>
+                </div>
+                <span class="badge fs-6 px-3 py-2"
+                      th:classappend="${promotion.status.name() == 'ACTIVE'} ? 'text-bg-success' : 'text-bg-secondary'"
+                      th:text="${@view.label(promotion.status)}">
+                    Trạng thái
+                </span>
+            </div>
+            <div class="mt-2 pt-2 border-top small" th:if="${promotion.description != null and !#strings.isEmpty(promotion.description)}">
+                <span class="text-muted d-block mb-1">Mô tả:</span>
+                <p class="mb-0 text-dark preserve-lines" th:text="${promotion.description}"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discount and Time Summary -->
+    <div class="card mb-3 border shadow-sm">
+        <div class="card-body p-3">
+            <div class="row g-2 text-center">
+                <div class="col-6 border-end">
+                    <span class="text-muted small d-block mb-1">Mức giảm</span>
+                    <span class="h4 mb-0 fw-bold text-danger" th:text="|-${@view.number(promotion.discountPercent)}%|">-10%</span>
+                </div>
+                <div class="col-6">
+                    <span class="text-muted small d-block mb-1">Sản phẩm áp dụng</span>
+                    <span class="h4 mb-0 fw-bold text-primary" th:text="${totalProducts != null ? totalProducts : #lists.size(products)}">0</span>
+                </div>
+            </div>
+            <hr class="my-2">
+            <div class="small">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted"><i class="bi bi-calendar-event me-1"></i>Thời gian bắt đầu:</span>
+                    <span class="fw-semibold" th:text="${@view.date(promotion.startDate)}">01/01/2026 00:00</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted"><i class="bi bi-calendar-check me-1"></i>Thời gian kết thúc:</span>
+                    <span class="fw-semibold text-danger" th:text="${@view.date(promotion.endDate)}">31/12/2026 23:59</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products list in promotion -->
+    <div class="card mb-3 border shadow-sm">
+        <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+            <strong class="small text-uppercase text-secondary">
+                <i class="bi bi-box-seam me-1"></i>Sản phẩm trong chương trình
+            </strong>
+            <span class="badge bg-secondary-subtle text-secondary rounded-pill" th:text="|${totalProducts != null ? totalProducts : #lists.size(products)} sản phẩm|">0 sản phẩm</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th class="text-end">Giá gốc</th>
+                        <th class="text-end">Giá sau giảm</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${products}">
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <img th:if="${p.imgUrl != null and !#strings.isEmpty(p.imgUrl)}"
+                                     th:src="@{${p.imgUrl}}"
+                                     alt="Ảnh" class="rounded border" style="width: 32px; height: 32px; object-fit: cover; flex-shrink: 0;">
+                                <div class="overflow-hidden">
+                                    <span class="fw-semibold text-truncate d-block" style="max-width: 170px;" th:text="${p.productName}">Tên SP</span>
+                                    <small class="text-muted d-block" th:text="|#${p.productId}|">#1</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-end text-muted text-decoration-line-through" th:text="${@view.money(p.price)}">100.000 ₫</td>
+                        <td class="text-end fw-bold text-danger" th:text="${@view.money(p.effectivePrice)}">90.000 ₫</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(products)}">
+                        <td colspan="3" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-4 d-block mb-1"></i>
+                            Chưa có sản phẩm nào được gán vào chương trình này.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white text-center py-2 border-top" th:if="${totalProducts != null and totalProducts > 10}">
+            <small class="text-muted">Đang hiển thị 10 sản phẩm đầu tiên. <a th:href="@{/admin/promotions/{id}/products(id=${promotion.promotionId})}" class="fw-semibold">Xem tất cả</a></small>
+        </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="d-flex flex-column gap-2 mb-2 promotion-preview-actions">
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-primary flex-grow-1 d-flex align-items-center justify-content-center gap-1"
+               th:href="@{/admin/promotions/{id}/products(id=${promotion.promotionId})}">
+                <i class="bi bi-box-seam"></i>
+                <span>Quản lý sản phẩm</span>
+            </a>
+            <a class="btn btn-primary flex-grow-1 d-flex align-items-center justify-content-center gap-1"
+               th:href="@{/admin/promotions/{id}/edit(id=${promotion.promotionId})}">
+                <i class="bi bi-pencil"></i>
+                <span>Chỉnh sửa</span>
+            </a>
+        </div>
+
+        <form method="post" th:action="@{/admin/promotions/{id}/status(id=${promotion.promotionId})}"
+              data-confirm="Xác nhận thay đổi trạng thái chương trình khuyến mãi này?">
+            <input type="hidden" name="status" th:value="${promotion.status.name() == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">
+            <button class="btn w-100 d-flex align-items-center justify-content-center gap-1"
+                    th:classappend="${promotion.status.name() == 'ACTIVE'} ? 'btn-outline-danger' : 'btn-outline-success'">
+                <i class="bi" th:classappend="${promotion.status.name() == 'ACTIVE'} ? 'bi-stop-circle' : 'bi-play-circle'"></i>
+                <span th:text="${promotion.status.name() == 'ACTIVE' ? 'Ngừng kích hoạt' : 'Kích hoạt chương trình'}"></span>
+            </button>
+        </form>
+
+        <button type="button" class="btn btn-outline-secondary btn-promotion-quickview-close btn-quickview-close">
+            <i class="bi bi-x-lg me-1"></i>Đóng
+        </button>
+    </div>
+</div>
+</body>
+</html>
+

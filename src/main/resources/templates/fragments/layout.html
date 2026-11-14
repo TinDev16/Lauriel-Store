@@ -20,10 +20,13 @@
 <th:block th:replace="${content}">
 </th:block>
 </main>
+<div th:replace="~{fragments/quickview :: quickview}"></div>
 <footer th:replace="~{fragments/footer :: footer}">
 </footer>
 </div>
 <script th:src="@{/assets/libs/bootstrap/js/bootstrap.bundle.min.js}">
+</script>
+<script th:src="@{/assets/js/toast.js}">
 </script>
 <script th:src="@{/assets/js/admin.js}">
 </script>

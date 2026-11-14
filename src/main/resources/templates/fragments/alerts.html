@@ -1,6 +1,34 @@
-<div xmlns:th="http://www.thymeleaf.org" th:fragment="alerts">
-<div class="alert alert-success" role="status" th:if="${successMessage}" th:text="${successMessage}">
-</div>
-<div class="alert alert-danger" role="alert" th:if="${errorMessage}" th:text="${errorMessage}">
-</div>
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="alerts" class="app-toast-container" id="appToastContainer">
+  <!-- Success -->
+  <div class="app-toast app-toast-success" role="status" th:if="${successMessage}">
+    <i class="bi bi-check-circle-fill"></i>
+    <div class="app-toast-content">
+      <span class="app-toast-message" th:text="${successMessage}"></span>
+    </div>
+    <button type="button" class="app-toast-close" data-dismiss-toast aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <!-- Error -->
+  <div class="app-toast app-toast-error" role="alert" th:if="${errorMessage}">
+    <i class="bi bi-x-circle-fill"></i>
+    <div class="app-toast-content">
+      <span class="app-toast-message" th:text="${errorMessage}"></span>
+    </div>
+    <button type="button" class="app-toast-close" data-dismiss-toast aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <!-- Warning -->
+  <div class="app-toast app-toast-warning" role="alert" th:if="${warningMessage}">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <div class="app-toast-content">
+      <span class="app-toast-message" th:text="${warningMessage}"></span>
+    </div>
+    <button type="button" class="app-toast-close" data-dismiss-toast aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <!-- Info -->
+  <div class="app-toast app-toast-info" role="status" th:if="${infoMessage}">
+    <i class="bi bi-info-circle-fill"></i>
+    <div class="app-toast-content">
+      <span class="app-toast-message" th:text="${infoMessage}"></span>
+    </div>
+    <button type="button" class="app-toast-close" data-dismiss-toast aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+  </div>
 </div>

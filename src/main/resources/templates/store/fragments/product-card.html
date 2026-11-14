@@ -1,9 +1,39 @@
-<article xmlns:th="http://www.thymeleaf.org" th:fragment="card(product)" class="store-product-card">
+<article xmlns:th="http://www.thymeleaf.org" th:fragment="card(product)" 
+         class="store-product-card" 
+         th:classappend="${product.outOfStock} ? ' is-sold-out' : ''"
+         data-product-card 
+         th:attr="data-card-product-id=${product.productId}" 
+         th:id="|product-card-${product.productId}|">
   <a class="store-product-image" th:href="@{/shop/products/{id}(id=${product.productId})}">
     <img loading="lazy" th:src="${product.imgUrl != null and !#strings.isEmpty(product.imgUrl)} ? ${product.imgUrl} : @{/assets/images/product-placeholder.svg}" th:alt="${product.productName}">
-    <span class="store-sale-badge" th:if="${product.promotion != null}" th:text="|-${@view.number(product.promotion.discountPercent)}%|">-20%</span>
+    <span class="store-sale-badge" th:if="${product.promotion != null and !product.outOfStock}" th:text="|-${@view.number(product.promotion.discountPercent)}%|">-20%</span>
+    <div class="store-sold-out-overlay" th:if="${product.outOfStock}">
+      <span class="store-sold-out-badge">Hết hàng</span>
+    </div>
   </a>
-  <div class="store-product-info"><small th:text="${product.category.categoryName}"></small><a th:href="@{/shop/products/{id}(id=${product.productId})}" th:text="${product.productName}"></a>
+  <div class="store-product-info">
+    <small th:text="${product.category.categoryName}"></small>
+    <a th:href="@{/shop/products/{id}(id=${product.productId})}" th:text="${product.productName}"></a>
     <div class="store-price"><strong th:text="${@view.money(product.effectivePrice)}"></strong><del th:if="${product.effectivePrice.compareTo(product.price) < 0}" th:text="${@view.money(product.price)}"></del></div>
+    <div class="store-card-actions">
+      <div class="store-card-action-bar" th:if="${!product.outOfStock}">
+        <div class="store-card-qty-stepper">
+          <button type="button" class="btn-card-qty" data-card-qty-minus aria-label="Giảm số lượng">−</button>
+          <input type="number" class="input-card-qty" data-card-qty-input value="1" min="1" max="999" aria-label="Số lượng">
+          <button type="button" class="btn-card-qty" data-card-qty-plus aria-label="Tăng số lượng">+</button>
+        </div>
+        <button type="button" class="store-btn-card store-btn-card-cart" data-card-add-cart th:data-product-id="${product.productId}" title="Thêm vào giỏ hàng" aria-label="Thêm vào giỏ hàng">
+          <i class="bi bi-cart-plus"></i>
+        </button>
+        <button type="button" class="store-btn-card store-btn-card-buy" data-card-buy-now th:data-product-id="${product.productId}" title="Mua ngay">
+          <span>Mua ngay</span>
+        </button>
+      </div>
+      <div class="store-card-action-bar store-card-action-sold-out" th:if="${product.outOfStock}">
+        <a th:href="@{/shop/products/{id}(id=${product.productId})}" class="store-btn-card-out-of-stock text-decoration-none w-100 text-center" title="Xem chi tiết sản phẩm">
+          <i class="bi bi-eye me-1"></i><span>Xem chi tiết</span>
+        </a>
+      </div>
+    </div>
   </div>
 </article>
